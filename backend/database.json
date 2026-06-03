@@ -1,0 +1,523 @@
+{
+  "departments": [
+    {
+      "id": 1,
+      "name": "Engineering",
+      "code": "ENG",
+      "description": "Software engineering, DevOps, and QA operations.",
+      "created_at": "2026-02-23T09:39:45.330Z",
+      "manager_id": 1
+    },
+    {
+      "id": 2,
+      "name": "Product Design",
+      "code": "DES",
+      "description": "UI/UX design, visual design, user research, and branding.",
+      "created_at": "2026-02-24T09:39:45.331Z",
+      "manager_id": 3
+    },
+    {
+      "id": 3,
+      "name": "Product Management",
+      "code": "PM",
+      "description": "Product strategy, planning, roadmaps, and execution.",
+      "created_at": "2026-02-25T09:39:45.331Z",
+      "manager_id": 7
+    },
+    {
+      "id": 4,
+      "name": "Human Resources",
+      "code": "HR",
+      "description": "Talent acquisition, employee success, and culture.",
+      "created_at": "2026-02-26T09:39:45.331Z",
+      "manager_id": 5
+    },
+    {
+      "id": 5,
+      "name": "Finance & Ops",
+      "code": "FIN",
+      "description": "Financial planning, accounting, and general operations.",
+      "created_at": "2026-02-27T09:39:45.331Z",
+      "manager_id": 11
+    }
+  ],
+  "employees": [
+    {
+      "id": 1,
+      "employee_id": "EMP-001",
+      "first_name": "Sarah",
+      "last_name": "Jenkins",
+      "email": "sarah.j@enterprise.io",
+      "designation": "VP of Engineering",
+      "status": "Active",
+      "joining_date": "2022-01-15",
+      "role": "Admin",
+      "bio": "Veteran tech leader focused on scaling teams, building robust architectures, and promoting developer happiness.",
+      "phone": "+1 (555) 123-4567",
+      "address": "San Francisco, CA",
+      "password": "$2b$10$S5EQWymInYMSdwokZBjYvuZv4hHa65QSCbdYH/4SPQiaNPv6uPNPq",
+      "department_id": 1,
+      "created_at": "2022-01-15T00:00:00.000Z",
+      "updated_at": "2022-01-15T00:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "employee_id": "EMP-002",
+      "first_name": "David",
+      "last_name": "Chen",
+      "email": "david.c@enterprise.io",
+      "designation": "Principal Architect",
+      "status": "Active",
+      "joining_date": "2022-04-10",
+      "role": "Manager",
+      "bio": "Passionate builder of microservices, distributed systems, and real-time data pipelines.",
+      "phone": "+1 (555) 234-5678",
+      "address": "Seattle, WA",
+      "password": "$2b$10$S5EQWymInYMSdwokZBjYvuZv4hHa65QSCbdYH/4SPQiaNPv6uPNPq",
+      "department_id": 1,
+      "created_at": "2022-04-10T00:00:00.000Z",
+      "updated_at": "2022-04-10T00:00:00.000Z"
+    },
+    {
+      "id": 3,
+      "employee_id": "EMP-003",
+      "first_name": "Aisha",
+      "last_name": "Rahman",
+      "email": "aisha.r@enterprise.io",
+      "designation": "Lead UI/UX Designer",
+      "status": "Active",
+      "joining_date": "2023-02-01",
+      "role": "Manager",
+      "bio": "Creating beautiful, user-centered digital interfaces that simplify complex B2B enterprise workflows.",
+      "phone": "+1 (555) 345-6789",
+      "address": "New York, NY",
+      "password": "$2b$10$S5EQWymInYMSdwokZBjYvuZv4hHa65QSCbdYH/4SPQiaNPv6uPNPq",
+      "department_id": 2,
+      "created_at": "2023-02-01T00:00:00.000Z",
+      "updated_at": "2023-02-01T00:00:00.000Z"
+    },
+    {
+      "id": 4,
+      "employee_id": "EMP-004",
+      "first_name": "Marcus",
+      "last_name": "Vance",
+      "email": "marcus.v@enterprise.io",
+      "designation": "Senior Frontend Engineer",
+      "status": "Active",
+      "joining_date": "2023-06-15",
+      "role": "Employee",
+      "bio": "Component-driven development advocate. Loves CSS-in-JS, animation, and performance optimization.",
+      "phone": "+1 (555) 456-7890",
+      "address": "Austin, TX",
+      "password": "$2b$10$S5EQWymInYMSdwokZBjYvuZv4hHa65QSCbdYH/4SPQiaNPv6uPNPq",
+      "department_id": 1,
+      "created_at": "2023-06-15T00:00:00.000Z",
+      "updated_at": "2023-06-15T00:00:00.000Z"
+    },
+    {
+      "id": 5,
+      "employee_id": "EMP-005",
+      "first_name": "Elena",
+      "last_name": "Rostova",
+      "email": "elena.r@enterprise.io",
+      "designation": "HR Director",
+      "status": "Active",
+      "joining_date": "2021-09-01",
+      "role": "Admin",
+      "bio": "Dedicated to cultivating positive corporate culture, managing talent development, and HR compliance.",
+      "phone": "+1 (555) 567-8901",
+      "address": "Chicago, IL",
+      "password": "$2b$10$S5EQWymInYMSdwokZBjYvuZv4hHa65QSCbdYH/4SPQiaNPv6uPNPq",
+      "department_id": 4,
+      "created_at": "2021-09-01T00:00:00.000Z",
+      "updated_at": "2021-09-01T00:00:00.000Z"
+    },
+    {
+      "id": 6,
+      "employee_id": "EMP-006",
+      "first_name": "John",
+      "last_name": "Doe",
+      "email": "john.doe@enterprise.io",
+      "designation": "Senior React Developer",
+      "status": "Active",
+      "joining_date": "2024-01-10",
+      "role": "Employee",
+      "bio": "Passionate about building responsive, accessible web interfaces.",
+      "phone": "+1 (555) 678-9012",
+      "address": "Boston, MA",
+      "password": "$2b$10$S5EQWymInYMSdwokZBjYvuZv4hHa65QSCbdYH/4SPQiaNPv6uPNPq",
+      "department_id": 1,
+      "created_at": "2024-01-10T00:00:00.000Z",
+      "updated_at": "2024-01-10T00:00:00.000Z"
+    },
+    {
+      "id": 7,
+      "employee_id": "EMP-007",
+      "first_name": "Jane",
+      "last_name": "Smith",
+      "email": "jane.smith@enterprise.io",
+      "designation": "Senior Product Manager",
+      "status": "Active",
+      "joining_date": "2023-08-20",
+      "role": "Manager",
+      "bio": "Driving product strategy, defining roadmaps, and collaborating across engineering and design.",
+      "phone": "+1 (555) 789-0123",
+      "address": "Los Angeles, CA",
+      "password": "$2b$10$S5EQWymInYMSdwokZBjYvuZv4hHa65QSCbdYH/4SPQiaNPv6uPNPq",
+      "department_id": 3,
+      "created_at": "2023-08-20T00:00:00.000Z",
+      "updated_at": "2023-08-20T00:00:00.000Z"
+    },
+    {
+      "id": 8,
+      "employee_id": "EMP-008",
+      "first_name": "Liam",
+      "last_name": "O'Connor",
+      "email": "liam.o@enterprise.io",
+      "designation": "DevOps Engineer",
+      "status": "Active",
+      "joining_date": "2024-03-01",
+      "role": "Employee",
+      "bio": "Automating cloud infrastructure, managing CI/CD pipelines, and ensuring system uptime.",
+      "phone": "+1 (555) 890-1234",
+      "address": "Denver, CO",
+      "password": "$2b$10$S5EQWymInYMSdwokZBjYvuZv4hHa65QSCbdYH/4SPQiaNPv6uPNPq",
+      "department_id": 1,
+      "created_at": "2024-03-01T00:00:00.000Z",
+      "updated_at": "2024-03-01T00:00:00.000Z"
+    },
+    {
+      "id": 9,
+      "employee_id": "EMP-009",
+      "first_name": "Chloe",
+      "last_name": "Tan",
+      "email": "chloe.tan@enterprise.io",
+      "designation": "UI Designer",
+      "status": "On Leave",
+      "joining_date": "2026-03-15",
+      "role": "Employee",
+      "bio": "Junior designer obsessed with typography, grids, and design systems.",
+      "phone": "+1 (555) 901-2345",
+      "address": "San Francisco, CA",
+      "password": "$2b$10$S5EQWymInYMSdwokZBjYvuZv4hHa65QSCbdYH/4SPQiaNPv6uPNPq",
+      "department_id": 2,
+      "created_at": "2026-03-15T00:00:00.000Z",
+      "updated_at": "2026-06-03T10:20:39.771Z"
+    },
+    {
+      "id": 10,
+      "employee_id": "EMP-010",
+      "first_name": "Kofi",
+      "last_name": "Anan",
+      "email": "kofi.a@enterprise.io",
+      "designation": "Backend Engineer",
+      "status": "On Leave",
+      "joining_date": "2022-11-10",
+      "role": "Employee",
+      "bio": "API developer who writes clean, modular code in Node.js and Go.",
+      "phone": "+1 (555) 012-3456",
+      "address": "Washington, DC",
+      "password": "$2b$10$S5EQWymInYMSdwokZBjYvuZv4hHa65QSCbdYH/4SPQiaNPv6uPNPq",
+      "department_id": 1,
+      "created_at": "2022-11-10T00:00:00.000Z",
+      "updated_at": "2022-11-10T00:00:00.000Z"
+    },
+    {
+      "id": 11,
+      "employee_id": "EMP-011",
+      "first_name": "Sophia",
+      "last_name": "Martinez",
+      "email": "sophia.m@enterprise.io",
+      "designation": "Finance Lead",
+      "status": "Inactive",
+      "joining_date": "2022-03-01",
+      "role": "Manager",
+      "bio": "Overseeing financial health, modeling growth, and optimizing tax strategies.",
+      "phone": "+1 (555) 123-7890",
+      "address": "Miami, FL",
+      "password": "$2b$10$S5EQWymInYMSdwokZBjYvuZv4hHa65QSCbdYH/4SPQiaNPv6uPNPq",
+      "department_id": 5,
+      "created_at": "2022-03-01T00:00:00.000Z",
+      "updated_at": "2026-06-03T09:52:17.703Z"
+    },
+    {
+      "id": 12,
+      "employee_id": "EMP-012",
+      "first_name": "Julian",
+      "last_name": "Draxler",
+      "email": "julian.d@enterprise.io",
+      "designation": "QA Specialist",
+      "status": "Inactive",
+      "joining_date": "2023-10-15",
+      "role": "Employee",
+      "bio": "Breaking software so customers don't. Specialized in automated browser testing.",
+      "phone": "+1 (555) 234-8901",
+      "address": "Portland, OR",
+      "password": "$2b$10$S5EQWymInYMSdwokZBjYvuZv4hHa65QSCbdYH/4SPQiaNPv6uPNPq",
+      "department_id": 1,
+      "created_at": "2023-10-15T00:00:00.000Z",
+      "updated_at": "2023-10-15T00:00:00.000Z"
+    }
+  ],
+  "skills": [
+    {
+      "id": 1,
+      "name": "React",
+      "category": "Frontend"
+    },
+    {
+      "id": 2,
+      "name": "TypeScript",
+      "category": "Frontend"
+    },
+    {
+      "id": 3,
+      "name": "Tailwind CSS",
+      "category": "Frontend"
+    },
+    {
+      "id": 4,
+      "name": "Next.js",
+      "category": "Frontend"
+    },
+    {
+      "id": 5,
+      "name": "Node.js",
+      "category": "Backend"
+    },
+    {
+      "id": 6,
+      "name": "Express",
+      "category": "Backend"
+    },
+    {
+      "id": 7,
+      "name": "PostgreSQL",
+      "category": "Backend"
+    },
+    {
+      "id": 8,
+      "name": "Go",
+      "category": "Backend"
+    },
+    {
+      "id": 9,
+      "name": "Docker",
+      "category": "DevOps"
+    },
+    {
+      "id": 10,
+      "name": "AWS",
+      "category": "DevOps"
+    },
+    {
+      "id": 11,
+      "name": "Figma",
+      "category": "Design"
+    },
+    {
+      "id": 12,
+      "name": "UI/UX Research",
+      "category": "Design"
+    },
+    {
+      "id": 13,
+      "name": "Product Roadmap",
+      "category": "Management"
+    },
+    {
+      "id": 14,
+      "name": "Talent Acquisition",
+      "category": "Management"
+    },
+    {
+      "id": 15,
+      "name": "Financial Modeling",
+      "category": "Finance"
+    }
+  ],
+  "employee_skills": [
+    {
+      "employee_id": 1,
+      "skill_id": 13,
+      "proficiency_level": "Expert"
+    },
+    {
+      "employee_id": 1,
+      "skill_id": 14,
+      "proficiency_level": "Expert"
+    },
+    {
+      "employee_id": 2,
+      "skill_id": 5,
+      "proficiency_level": "Expert"
+    },
+    {
+      "employee_id": 2,
+      "skill_id": 7,
+      "proficiency_level": "Expert"
+    },
+    {
+      "employee_id": 2,
+      "skill_id": 8,
+      "proficiency_level": "Expert"
+    },
+    {
+      "employee_id": 2,
+      "skill_id": 9,
+      "proficiency_level": "Expert"
+    },
+    {
+      "employee_id": 3,
+      "skill_id": 11,
+      "proficiency_level": "Expert"
+    },
+    {
+      "employee_id": 3,
+      "skill_id": 12,
+      "proficiency_level": "Expert"
+    },
+    {
+      "employee_id": 4,
+      "skill_id": 1,
+      "proficiency_level": "Expert"
+    },
+    {
+      "employee_id": 4,
+      "skill_id": 2,
+      "proficiency_level": "Expert"
+    },
+    {
+      "employee_id": 4,
+      "skill_id": 3,
+      "proficiency_level": "Intermediate"
+    },
+    {
+      "employee_id": 5,
+      "skill_id": 6,
+      "proficiency_level": "Intermediate"
+    },
+    {
+      "employee_id": 6,
+      "skill_id": 7,
+      "proficiency_level": "Expert"
+    },
+    {
+      "employee_id": 7,
+      "skill_id": 8,
+      "proficiency_level": "Intermediate"
+    },
+    {
+      "employee_id": 8,
+      "skill_id": 9,
+      "proficiency_level": "Intermediate"
+    },
+    {
+      "employee_id": 9,
+      "skill_id": 10,
+      "proficiency_level": "Expert"
+    },
+    {
+      "employee_id": 10,
+      "skill_id": 11,
+      "proficiency_level": "Intermediate"
+    },
+    {
+      "employee_id": 11,
+      "skill_id": 12,
+      "proficiency_level": "Intermediate"
+    },
+    {
+      "employee_id": 12,
+      "skill_id": 13,
+      "proficiency_level": "Expert"
+    }
+  ],
+  "documents": [
+    {
+      "id": 1,
+      "employee_id": 1,
+      "name": "offer_letter.pdf",
+      "file_path": "uploads/demo_offer.pdf",
+      "file_size": 154200,
+      "file_type": "application/pdf",
+      "uploaded_at": "2022-01-10T00:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "employee_id": 1,
+      "name": "resume.pdf",
+      "file_path": "uploads/demo_resume.pdf",
+      "file_size": 245000,
+      "file_type": "application/pdf",
+      "uploaded_at": "2022-01-10T00:00:00.000Z"
+    },
+    {
+      "id": 3,
+      "employee_id": 4,
+      "name": "portfolio.pdf",
+      "file_path": "uploads/demo_portfolio.pdf",
+      "file_size": 489000,
+      "file_type": "application/pdf",
+      "uploaded_at": "2023-06-12T00:00:00.000Z"
+    }
+  ],
+  "activities": [
+    {
+      "id": 1,
+      "employee_id": 1,
+      "activity_type": "EMPLOYEE_CREATED",
+      "description": "Sarah Jenkins joined the company as VP of Engineering.",
+      "created_at": "2022-01-15T00:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "employee_id": 1,
+      "activity_type": "STATUS_CHANGE",
+      "description": "Sarah Jenkins status set to Active.",
+      "created_at": "2022-01-15T00:00:00.000Z"
+    },
+    {
+      "id": 3,
+      "employee_id": 2,
+      "activity_type": "EMPLOYEE_CREATED",
+      "description": "David Chen was hired as Principal Architect.",
+      "created_at": "2022-04-10T00:00:00.000Z"
+    },
+    {
+      "id": 4,
+      "employee_id": 3,
+      "activity_type": "EMPLOYEE_CREATED",
+      "description": "Aisha Rahman joined design division as Lead UI/UX Designer.",
+      "created_at": "2023-02-01T00:00:00.000Z"
+    },
+    {
+      "id": 5,
+      "employee_id": 4,
+      "activity_type": "SKILL_ASSIGNED",
+      "description": "React assigned to Marcus Vance with Expert proficiency.",
+      "created_at": "2023-06-16T00:00:00.000Z"
+    },
+    {
+      "id": 6,
+      "employee_id": 9,
+      "activity_type": "EMPLOYEE_CREATED",
+      "description": "Chloe Tan added to roster on Probation.",
+      "created_at": "2026-03-15T00:00:00.000Z"
+    },
+    {
+      "id": 7,
+      "employee_id": 11,
+      "activity_type": "STATUS_CHANGE",
+      "description": "Employee status bulk-updated to Inactive.",
+      "created_at": "2026-06-03T09:52:17.704Z"
+    },
+    {
+      "id": 8,
+      "employee_id": 9,
+      "activity_type": "STATUS_CHANGE",
+      "description": "Employee status bulk-updated to On Leave.",
+      "created_at": "2026-06-03T10:20:39.773Z"
+    }
+  ]
+}
