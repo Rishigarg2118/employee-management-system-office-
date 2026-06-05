@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Layout, Menu, Button, Input, Dropdown, Badge, Avatar, Space } from 'antd';
+import { Layout, Menu, Button, Input, Dropdown, Badge, Avatar, Space, Drawer, List, Typography, Divider } from 'antd';
 import { 
   DashboardOutlined, 
   UserOutlined, 
@@ -15,11 +15,17 @@ import {
   SearchOutlined,
   CalendarOutlined,
   ClockCircleOutlined,
-  CheckSquareOutlined
+  CheckSquareOutlined,
+  ProjectOutlined,
+  TeamOutlined,
+  BarChartOutlined,
+  HistoryOutlined
 } from '@ant-design/icons';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { API_URL } from '../services/api';
+import api, { API_URL } from '../services/api';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { GlobalSearch } from '../components/GlobalSearch';
 
 const { Header, Sider, Content } = Layout;
 
@@ -28,6 +34,41 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  const [notifDrawerVisible, setNotifDrawerVisible] = useState(false);
+  const queryClient = useQueryClient();
+
+  // Query notifications
+  const { data: notifications = [] } = useQuery<any[]>({
+    queryKey: ['notifications'],
+    queryFn: async () => {
+      return await api.getNotifications();
+    },
+    enabled: !!user,
+    refetchInterval: 15000 // Poll every 15s
+  });
+
+  const unreadCount = notifications.filter(n => !n.is_read).length;
+
+  // Mutation to mark notification as read
+  const markReadMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await api.markNotificationAsRead(id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    }
+  });
+
+  // Mutation to mark all as read
+  const markAllReadMutation = useMutation({
+    mutationFn: async () => {
+      await api.markAllNotificationsAsRead();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    }
+  });
 
   const handleMenuClick = ({ key }: { key: string }) => {
     if (key === 'logout') {
@@ -48,23 +89,29 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
     if (path.startsWith('/leaves')) return '/leaves';
     if (path.startsWith('/attendance')) return '/attendance';
     if (path.startsWith('/tasks')) return '/tasks';
+    if (path.startsWith('/projects')) return '/projects';
+    if (path.startsWith('/teams')) return '/teams';
+    if (path.startsWith('/reports')) return '/reports';
+    if (path.startsWith('/audit-logs')) return '/audit-logs';
     if (path.startsWith('/settings')) return '/settings';
     return '/';
   };
-
   const isTabAllowed = (key: string, role?: string): boolean => {
     if (!role) return false;
     if (role === 'Super Admin' || role === 'Admin') {
       return true;
     }
     if (role === 'HR') {
-      return ['/', '/employees', '/skills', '/documents', '/leaves', '/attendance', '/tasks'].includes(key);
+      return ['/', '/employees', '/skills', '/documents', '/leaves', '/attendance', '/reports'].includes(key);
     }
-    if (role === 'Manager' || role === 'Employee') {
-      return ['/', '/employees', '/leaves', '/attendance', '/tasks'].includes(key);
+    if (role === 'Manager') {
+      return ['/', '/projects', '/teams', '/tasks', '/attendance', '/leaves'].includes(key);
+    }
+    if (role === 'Employee') {
+      return ['/', '/tasks', '/attendance', '/leaves', '/projects'].includes(key);
     }
     if (role === 'Intern') {
-      return ['/', '/employees', '/leaves', '/attendance'].includes(key);
+      return ['/', '/tasks', '/attendance', '/leaves'].includes(key);
     }
     return false;
   };
@@ -74,11 +121,15 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
     { key: '/', icon: <DashboardOutlined />, label: 'Dashboard' },
     { key: '/employees', icon: <UserOutlined />, label: 'Employees' },
     { key: '/departments', icon: <AppstoreOutlined />, label: 'Departments' },
+    { key: '/teams', icon: <TeamOutlined />, label: 'Teams' },
+    { key: '/projects', icon: <ProjectOutlined />, label: 'Projects' },
     { key: '/skills', icon: <BulbOutlined />, label: 'Skills' },
     { key: '/documents', icon: <FileTextOutlined />, label: 'Documents' },
     { key: '/leaves', icon: <CalendarOutlined />, label: 'Leaves' },
     { key: '/attendance', icon: <ClockCircleOutlined />, label: 'Attendance' },
     { key: '/tasks', icon: <CheckSquareOutlined />, label: 'Tasks' },
+    { key: '/reports', icon: <BarChartOutlined />, label: 'Reports' },
+    { key: '/audit-logs', icon: <HistoryOutlined />, label: 'Audit Trail' },
     { key: '/settings', icon: <SettingOutlined />, label: 'Settings' }
   ];
 
@@ -222,18 +273,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
               onClick={() => setCollapsed(!collapsed)}
               style={{ fontSize: '16px', width: 40, height: 40 }}
             />
-            <Input
-              placeholder="Search anything..."
-              prefix={<SearchOutlined style={{ color: '#8c8c8c' }} />}
-              style={{
-                width: 280,
-                height: 36,
-                background: 'var(--hover-color)',
-                border: 'none',
-                borderRadius: 6
-              }}
-              onPressEnter={(e) => navigate(`/employees?search=${(e.target as HTMLInputElement).value}`)}
-            />
+            <GlobalSearch />
           </Space>
 
           <Space size={20}>
@@ -256,11 +296,12 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
             </Dropdown>
 
             {/* Notifications */}
-            <Badge dot color="#10B981">
+            <Badge count={unreadCount} overflowCount={9} color="#10B981">
               <Button
                 type="text"
                 icon={<BellOutlined style={{ fontSize: 18 }} />}
                 style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                onClick={() => setNotifDrawerVisible(true)}
               />
             </Badge>
 
@@ -296,6 +337,69 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
           </div>
         </Content>
       </Layout>
+      
+      {/* Notifications Drawer */}
+      <Drawer
+        title={
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+            <span>Notifications</span>
+            {unreadCount > 0 && (
+              <Button 
+                type="link" 
+                onClick={() => markAllReadMutation.mutate()} 
+                style={{ padding: 0, fontSize: 13, color: '#10B981' }}
+              >
+                Mark all as read
+              </Button>
+            )}
+          </div>
+        }
+        placement="right"
+        onClose={() => setNotifDrawerVisible(false)}
+        open={notifDrawerVisible}
+        width={360}
+      >
+        <List
+          dataSource={notifications}
+          locale={{ emptyText: 'No notifications yet' }}
+          renderItem={(item: any) => (
+            <List.Item
+              style={{
+                padding: '12px 16px',
+                background: item.is_read ? 'transparent' : 'rgba(16, 185, 129, 0.04)',
+                borderBottom: '1px solid #F1F5F9',
+                cursor: 'pointer'
+              }}
+              onClick={() => {
+                if (!item.is_read) {
+                  markReadMutation.mutate(item.id);
+                }
+              }}
+            >
+              <List.Item.Meta
+                title={
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                    <Typography.Text strong={!item.is_read} style={{ fontSize: 14 }}>
+                      {item.title}
+                    </Typography.Text>
+                    {!item.is_read && <Badge status="processing" color="#10B981" />}
+                  </div>
+                }
+                description={
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    <Typography.Text type="secondary" style={{ fontSize: 13 }}>
+                      {item.message}
+                    </Typography.Text>
+                    <Typography.Text type="secondary" style={{ fontSize: 11 }}>
+                      {item.created_at ? new Date(item.created_at).toLocaleString() : ''}
+                    </Typography.Text>
+                  </div>
+                }
+              />
+            </List.Item>
+          )}
+        />
+      </Drawer>
     </Layout>
   );
 };

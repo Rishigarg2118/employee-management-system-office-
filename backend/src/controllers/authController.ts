@@ -6,6 +6,9 @@ import { AuthenticatedRequest } from '../middleware/auth';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'enterprise_hrms_super_secure_jwt_secret_key_2026';
 
+// Store valid sessions (refresh tokens) in memory for validation and revocation
+export const activeSessions = new Set<string>();
+
 export async function login(req: AuthenticatedRequest, res: Response): Promise<void> {
   const { email, password } = req.body;
 
@@ -32,18 +35,28 @@ export async function login(req: AuthenticatedRequest, res: Response): Promise<v
       return;
     }
 
-    // Generate JWT Token
-    const token = jwt.sign(
+    // Generate Access & Refresh tokens
+    const accessToken = jwt.sign(
       { id: employee.id, email: employee.email, role: employee.role },
       JWT_SECRET,
-      { expiresIn: '24h' }
+      { expiresIn: '15m' }
     );
+
+    const refreshToken = jwt.sign(
+      { id: employee.id, email: employee.email, role: employee.role },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    // Save refresh token session
+    activeSessions.add(refreshToken);
 
     // Remove password from response
     const { password: _, ...userWithoutPassword } = employee;
 
     res.json({
-      token,
+      token: accessToken, // Keep key name "token" for frontend compatibility or send separately
+      refreshToken,
       user: userWithoutPassword
     });
   } catch (err) {
@@ -120,5 +133,76 @@ export async function me(req: AuthenticatedRequest, res: Response): Promise<void
   } catch (err) {
     console.error('Profile fetching error:', err);
     res.status(500).json({ message: 'Internal server error fetching user.' });
+  }
+}
+
+export async function refresh(req: AuthenticatedRequest, res: Response): Promise<void> {
+  const { refreshToken } = req.body;
+
+  if (!refreshToken) {
+    res.status(400).json({ message: 'Refresh token is required.' });
+    return;
+  }
+
+  if (!activeSessions.has(refreshToken)) {
+    res.status(401).json({ message: 'Invalid or expired refresh session.' });
+    return;
+  }
+
+  try {
+    const decoded = jwt.verify(refreshToken, JWT_SECRET) as any;
+    
+    // Check if employee still exists and is Active
+    const employee = await db.getEmployeeById(decoded.id);
+    if (!employee || employee.status === 'Inactive') {
+      activeSessions.delete(refreshToken);
+      res.status(403).json({ message: 'Access denied. Employee status is inactive.' });
+      return;
+    }
+
+    // Generate new Access & Refresh tokens (token rotation)
+    const newAccessToken = jwt.sign(
+      { id: employee.id, email: employee.email, role: employee.role },
+      JWT_SECRET,
+      { expiresIn: '15m' }
+    );
+
+    const newRefreshToken = jwt.sign(
+      { id: employee.id, email: employee.email, role: employee.role },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    // Rotate refresh token
+    activeSessions.delete(refreshToken);
+    activeSessions.add(newRefreshToken);
+
+    res.json({
+      token: newAccessToken,
+      refreshToken: newRefreshToken
+    });
+  } catch (err) {
+    activeSessions.delete(refreshToken);
+    res.status(403).json({ message: 'Refresh session expired or invalid.' });
+  }
+}
+
+export async function logout(req: AuthenticatedRequest, res: Response): Promise<void> {
+  const { refreshToken } = req.body;
+  if (refreshToken) {
+    activeSessions.delete(refreshToken);
+  }
+  res.json({ message: 'Logged out successfully.' });
+}
+
+export async function systemStatus(req: AuthenticatedRequest, res: Response): Promise<void> {
+  try {
+    const employees = await db.getEmployees();
+    res.json({
+      initialized: employees.length > 0
+    });
+  } catch (err) {
+    console.error('System status check error:', err);
+    res.status(500).json({ message: 'Error checking system initialization status.' });
   }
 }

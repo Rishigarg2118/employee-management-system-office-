@@ -24,12 +24,22 @@ const storage = multer.diskStorage({
 // Configure file filtering
 const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
   const allowedExtensions = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.png', '.jpg', '.jpeg'];
+  const allowedMimeTypes = [
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'image/png',
+    'image/jpeg'
+  ];
+
   const ext = path.extname(file.originalname).toLowerCase();
   
-  if (allowedExtensions.includes(ext)) {
+  if (allowedExtensions.includes(ext) && allowedMimeTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error(`Invalid file type. Allowed: ${allowedExtensions.join(', ')}`));
+    cb(new Error(`Invalid file type or format. Allowed extensions: ${allowedExtensions.join(', ')}`));
   }
 };
 

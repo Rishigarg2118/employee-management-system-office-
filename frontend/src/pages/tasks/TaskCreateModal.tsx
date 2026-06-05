@@ -10,13 +10,17 @@ interface TaskCreateModalProps {
   onClose: () => void;
   employees: Employee[];
   departments: Department[];
+  projectId?: number;
+  teamId?: number;
 }
 
 export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
   visible,
   onClose,
   employees,
-  departments
+  departments,
+  projectId,
+  teamId
 }) => {
   const [form] = Form.useForm();
   const queryClient = useQueryClient();
@@ -42,7 +46,9 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
         priority: values.priority,
         due_date: values.due_date ? values.due_date.format('YYYY-MM-DD') : null,
         assignee_id: values.assignee_id || null,
-        department_id: values.department_id || null
+        department_id: values.department_id || null,
+        project_id: projectId || null,
+        team_id: teamId || null
       };
       createMutation.mutate(payload);
     });

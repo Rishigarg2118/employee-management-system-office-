@@ -20,6 +20,11 @@ import { Settings } from './pages/Settings';
 import { LeavesWorkspace } from './pages/leaves/LeavesWorkspace';
 import { AttendanceWorkspace } from './pages/attendance/AttendanceWorkspace';
 import { TaskWorkspace } from './pages/tasks/TaskWorkspace';
+import { ProjectWorkspace } from './pages/projects/ProjectWorkspace';
+import { ProjectDetails } from './pages/projects/ProjectDetails';
+import { TeamWorkspace } from './pages/teams/TeamWorkspace';
+import { ReportsCenter } from './pages/reports/ReportsCenter';
+import { AuditLogs } from './pages/audit/AuditLogs';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -126,21 +131,24 @@ const App: React.FC = () => {
               {/* Public Auth Pathways */}
               <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
               <Route path="/setup" element={<PublicRoute><Setup /></PublicRoute>} />
-
               {/* Protected System Pathways */}
               <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-              <Route path="/employees" element={<ProtectedRoute><EmployeeList /></ProtectedRoute>} />
-              <Route path="/employees/new" element={<ProtectedRoute allowedRoles={['Super Admin', 'Admin', 'HR', 'Manager']}><EmployeeWizard /></ProtectedRoute>} />
+              <Route path="/employees" element={<ProtectedRoute allowedRoles={['Super Admin', 'Admin', 'HR']}><EmployeeList /></ProtectedRoute>} />
+              <Route path="/employees/new" element={<ProtectedRoute allowedRoles={['Super Admin', 'Admin', 'HR']}><EmployeeWizard /></ProtectedRoute>} />
               <Route path="/employees/:id" element={<ProtectedRoute><EmployeeProfile /></ProtectedRoute>} />
-              <Route path="/employees/:id/edit" element={<ProtectedRoute allowedRoles={['Super Admin', 'Admin', 'HR', 'Manager']}><EmployeeWizard /></ProtectedRoute>} />
+              <Route path="/employees/:id/edit" element={<ProtectedRoute allowedRoles={['Super Admin', 'Admin', 'HR']}><EmployeeWizard /></ProtectedRoute>} />
               <Route path="/departments" element={<ProtectedRoute allowedRoles={['Super Admin', 'Admin']}><Departments /></ProtectedRoute>} />
               <Route path="/skills" element={<ProtectedRoute allowedRoles={['Super Admin', 'Admin', 'HR']}><Skills /></ProtectedRoute>} />
               <Route path="/documents" element={<ProtectedRoute allowedRoles={['Super Admin', 'Admin', 'HR']}><Documents /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute allowedRoles={['Super Admin', 'Admin']}><Settings /></ProtectedRoute>} />
               <Route path="/leaves" element={<ProtectedRoute><LeavesWorkspace /></ProtectedRoute>} />
               <Route path="/attendance" element={<ProtectedRoute><AttendanceWorkspace /></ProtectedRoute>} />
-              <Route path="/tasks" element={<ProtectedRoute allowedRoles={['Super Admin', 'Admin', 'HR', 'Manager', 'Employee']}><TaskWorkspace /></ProtectedRoute>} />
-
+              <Route path="/tasks" element={<ProtectedRoute allowedRoles={['Super Admin', 'Admin', 'HR', 'Manager', 'Employee', 'Intern']}><TaskWorkspace /></ProtectedRoute>} />
+              <Route path="/projects" element={<ProtectedRoute allowedRoles={['Super Admin', 'Admin', 'HR', 'Manager', 'Employee']}><ProjectWorkspace /></ProtectedRoute>} />
+              <Route path="/projects/:id" element={<ProtectedRoute allowedRoles={['Super Admin', 'Admin', 'HR', 'Manager', 'Employee']}><ProjectDetails /></ProtectedRoute>} />
+              <Route path="/teams" element={<ProtectedRoute allowedRoles={['Super Admin', 'Admin', 'HR', 'Manager']}><TeamWorkspace /></ProtectedRoute>} />
+              <Route path="/reports" element={<ProtectedRoute allowedRoles={['Super Admin', 'Admin', 'HR']}><ReportsCenter /></ProtectedRoute>} />
+              <Route path="/audit-logs" element={<ProtectedRoute allowedRoles={['Super Admin', 'Admin']}><AuditLogs /></ProtectedRoute>} />
               {/* Catch-all Redirect */}
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

@@ -22,11 +22,12 @@ export interface Employee {
   department_id?: number | null;
   designation: string;
   status: EmployeeStatus;
-  joining_date: string; // ISO date string (YYYY-MM-DD)
+  joining_date: string; // YYYY-MM-DD
   avatar_url?: string;
   address?: string;
   bio?: string;
   role: EmployeeRole;
+  deleted_at?: string | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -182,6 +183,8 @@ export interface Task {
   assignee_id?: number | null;
   creator_id?: number | null;
   department_id?: number | null;
+  project_id?: number | null;
+  team_id?: number | null;
   created_at?: string;
   updated_at?: string;
   assignee?: Omit<Employee, 'password'> | null;
@@ -209,4 +212,67 @@ export interface TaskActivity {
   created_at?: string;
   employee?: Omit<Employee, 'password'> | null;
 }
+
+export type ProjectStatus = 'Planning' | 'Active' | 'Review' | 'Completed' | 'Archived';
+
+export interface Project {
+  id: number;
+  name: string;
+  description?: string;
+  start_date: string;
+  deadline?: string | null;
+  status: ProjectStatus;
+  manager_id?: number | null;
+  created_at?: string;
+  updated_at?: string;
+  manager?: Omit<Employee, 'password'> | null;
+  members?: Omit<Employee, 'password'>[];
+}
+
+export interface ProjectMember {
+  project_id: number;
+  employee_id: number;
+}
+
+export interface Team {
+  id: number;
+  name: string;
+  department_id?: number | null;
+  lead_id?: number | null;
+  created_at?: string;
+  department?: Department | null;
+  lead?: Omit<Employee, 'password'> | null;
+  members?: Omit<Employee, 'password'>[];
+}
+
+export interface TeamMember {
+  team_id: number;
+  employee_id: number;
+}
+
+export type NotificationType = 'TASK' | 'LEAVE' | 'ATTENDANCE' | 'PROJECT' | 'SYSTEM';
+
+export interface Notification {
+  id: number;
+  employee_id: number;
+  title: string;
+  message: string;
+  type: NotificationType;
+  is_read: boolean;
+  created_at?: string;
+}
+
+export type AuditLogModule = 'AUTH' | 'EMPLOYEES' | 'DEPARTMENTS' | 'LEAVES' | 'ATTENDANCE' | 'TASKS' | 'PROJECTS' | 'TEAMS' | 'SYSTEM';
+
+export interface AuditLog {
+  id: number;
+  actor_id?: number | null;
+  actor_name: string;
+  action: string;
+  module: AuditLogModule;
+  old_value?: string | null;
+  new_value?: string | null;
+  created_at?: string;
+}
+
 

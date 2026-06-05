@@ -22,14 +22,12 @@ export const Login: React.FC = () => {
     // Check if system is uninitialized
     async function checkSystemState() {
       try {
-        const res = await api.getEmployees({ limit: 1 });
-        if (res.pagination.total === 0) {
+        const res = await api.getSystemStatus();
+        if (!res.initialized) {
           setIsSystemEmpty(true);
         }
       } catch (err) {
-        // If DB is completely empty and setup API is ready, it may error or return 0
         console.warn('System checks empty:', err);
-        setIsSystemEmpty(true);
       }
     }
     checkSystemState();

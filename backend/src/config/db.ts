@@ -2,7 +2,7 @@ import { Pool } from 'pg';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as bcrypt from 'bcryptjs';
-import { Department, Employee, Skill, EmployeeSkill, Document, Activity, LeaveType, LeaveBalance, LeaveRequest, LeaveApproval, LeaveDashboardData, Attendance, AttendanceStatus, AttendanceAnalytics, Task, TaskComment, TaskActivity, TaskStatus, TaskPriority } from '../types';
+import { Department, Employee, Skill, EmployeeSkill, Document, Activity, LeaveType, LeaveBalance, LeaveRequest, LeaveApproval, LeaveDashboardData, Attendance, AttendanceStatus, AttendanceAnalytics, Task, TaskComment, TaskActivity, TaskStatus, TaskPriority, Project, ProjectMember, Team, TeamMember, Notification, NotificationType, AuditLog, AuditLogModule, ProjectStatus } from '../types';
 
 // Load environment variables
 import * as dotenv from 'dotenv';
@@ -51,6 +51,12 @@ interface JsonDatabase {
   tasks: Task[];
   task_comments: TaskComment[];
   task_activities: TaskActivity[];
+  projects: Project[];
+  project_members: ProjectMember[];
+  teams: Team[];
+  team_members: TeamMember[];
+  notifications: Notification[];
+  audit_logs: AuditLog[];
 }
 
 let jsonDb: JsonDatabase = {
@@ -67,7 +73,13 @@ let jsonDb: JsonDatabase = {
   attendance: [],
   tasks: [],
   task_comments: [],
-  task_activities: []
+  task_activities: [],
+  projects: [],
+  project_members: [],
+  teams: [],
+  team_members: [],
+  notifications: [],
+  audit_logs: []
 };
 
 // Seed Data definition
@@ -656,11 +668,87 @@ async function seedJsonDatabase() {
   // 11. Seed Attendance
   jsonDb.attendance = generateSeedAttendance(jsonDb.employees);
 
-  // 12. Seed Tasks
+  // 12. Seed Projects & Teams
+  jsonDb.projects = [
+    {
+      id: 1,
+      name: 'Event Management 360',
+      description: 'Design and rollout of the global corporate events scheduling platform.',
+      start_date: '2026-06-01',
+      deadline: '2026-07-31',
+      status: 'Active',
+      manager_id: 7, // Jane (PM)
+      created_at: new Date('2026-06-01T09:00:00Z').toISOString(),
+      updated_at: new Date('2026-06-01T09:00:00Z').toISOString()
+    }
+  ];
+  jsonDb.project_members = [
+    { project_id: 1, employee_id: 7 }, // Jane
+    { project_id: 1, employee_id: 4 }, // Marcus
+    { project_id: 1, employee_id: 2 }  // David
+  ];
+  jsonDb.teams = [
+    {
+      id: 1,
+      name: 'Core Platform',
+      department_id: 1, // Engineering
+      lead_id: 2, // David
+      created_at: new Date('2026-05-01T09:00:00Z').toISOString()
+    }
+  ];
+  jsonDb.team_members = [
+    { team_id: 1, employee_id: 2 }, // David
+    { team_id: 1, employee_id: 4 }, // Marcus
+    { team_id: 1, employee_id: 8 }  // Liam
+  ];
+
+  // 13. Seed Tasks
   const taskSeeds = generateSeedTasks(jsonDb.employees);
+  // Associate some tasks with project/team
+  taskSeeds.tasks[0].project_id = 1; // Implement Phase 1 Attendance module
+  taskSeeds.tasks[0].team_id = 1;
+  taskSeeds.tasks[2].project_id = 1; // Setup PostgreSQL staging server
+  taskSeeds.tasks[2].team_id = 1;
+
   jsonDb.tasks = taskSeeds.tasks;
   jsonDb.task_comments = taskSeeds.comments;
   jsonDb.task_activities = taskSeeds.activities;
+
+  // 14. Seed Notifications
+  jsonDb.notifications = [
+    {
+      id: 1,
+      employee_id: 4, // Marcus
+      title: 'New Task Assigned',
+      message: 'You have been assigned the task "Implement Phase 1 Attendance module"',
+      type: 'TASK',
+      is_read: false,
+      created_at: new Date('2026-05-20T09:05:00Z').toISOString()
+    },
+    {
+      id: 2,
+      employee_id: 7, // Jane
+      title: 'Project Activated',
+      message: 'Project "Event Management 360" has been set to Active status.',
+      type: 'PROJECT',
+      is_read: true,
+      created_at: new Date('2026-06-01T09:00:00Z').toISOString()
+    }
+  ];
+
+  // 15. Seed Audit Logs
+  jsonDb.audit_logs = [
+    {
+      id: 1,
+      actor_id: 1, // Sarah (Super Admin)
+      actor_name: 'Sarah Jenkins',
+      action: 'Created Project "Event Management 360"',
+      module: 'PROJECTS',
+      old_value: null,
+      new_value: JSON.stringify(jsonDb.projects[0]),
+      created_at: new Date('2026-06-01T09:00:00Z').toISOString()
+    }
+  ];
 
   saveJsonDb();
   console.log('[Database] Fallback JSON database successfully seeded.');
@@ -763,6 +851,103 @@ export async function initializeDatabase() {
         await client.query('CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status)');
         await client.query('CREATE INDEX IF NOT EXISTS idx_task_comments_task ON task_comments(task_id)');
         await client.query('CREATE INDEX IF NOT EXISTS idx_task_activities_task ON task_activities(task_id)');
+
+        // Run additive schema migrations (Projects, Teams, Notifications, Audit Logs)
+        await client.query(`
+          CREATE TABLE IF NOT EXISTS projects (
+              id SERIAL PRIMARY KEY,
+              name VARCHAR(255) NOT NULL,
+              description TEXT,
+              start_date DATE NOT NULL,
+              deadline DATE,
+              status VARCHAR(50) DEFAULT 'Planning' CHECK (status IN ('Planning', 'Active', 'Review', 'Completed', 'Archived')),
+              manager_id INTEGER REFERENCES employees(id) ON DELETE SET NULL,
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+              updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          );
+        `);
+        await client.query(`
+          CREATE TABLE IF NOT EXISTS project_members (
+              project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE,
+              employee_id INTEGER REFERENCES employees(id) ON DELETE CASCADE,
+              PRIMARY KEY (project_id, employee_id)
+          );
+        `);
+        await client.query('CREATE INDEX IF NOT EXISTS idx_projects_manager ON projects(manager_id)');
+        await client.query('CREATE INDEX IF NOT EXISTS idx_projects_status ON projects(status)');
+
+        await client.query(`
+          CREATE TABLE IF NOT EXISTS teams (
+              id SERIAL PRIMARY KEY,
+              name VARCHAR(255) NOT NULL,
+              department_id INTEGER REFERENCES departments(id) ON DELETE SET NULL,
+              lead_id INTEGER REFERENCES employees(id) ON DELETE SET NULL,
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          );
+        `);
+        await client.query(`
+          CREATE TABLE IF NOT EXISTS team_members (
+              team_id INTEGER REFERENCES teams(id) ON DELETE CASCADE,
+              employee_id INTEGER REFERENCES employees(id) ON DELETE CASCADE,
+              PRIMARY KEY (team_id, employee_id)
+          );
+        `);
+        await client.query('CREATE INDEX IF NOT EXISTS idx_teams_dept ON teams(department_id)');
+        await client.query('CREATE INDEX IF NOT EXISTS idx_teams_lead ON teams(lead_id)');
+
+        // Task associations
+        await client.query(`
+          DO $$ 
+          BEGIN 
+              IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tasks' AND column_name='project_id') THEN
+                  ALTER TABLE tasks ADD COLUMN project_id INTEGER REFERENCES projects(id) ON DELETE SET NULL;
+              END IF;
+              IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tasks' AND column_name='team_id') THEN
+                  ALTER TABLE tasks ADD COLUMN team_id INTEGER REFERENCES teams(id) ON DELETE SET NULL;
+              END IF;
+          END $$;
+        `);
+        await client.query('CREATE INDEX IF NOT EXISTS idx_tasks_project ON tasks(project_id)');
+        await client.query('CREATE INDEX IF NOT EXISTS idx_tasks_team ON tasks(team_id)');
+
+        await client.query(`
+          CREATE TABLE IF NOT EXISTS notifications (
+              id SERIAL PRIMARY KEY,
+              employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+              title VARCHAR(255) NOT NULL,
+              message TEXT NOT NULL,
+              type VARCHAR(50) NOT NULL CHECK (type IN ('TASK', 'LEAVE', 'ATTENDANCE', 'PROJECT', 'SYSTEM')),
+              is_read BOOLEAN DEFAULT FALSE,
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          );
+        `);
+        await client.query('CREATE INDEX IF NOT EXISTS idx_notifications_employee ON notifications(employee_id)');
+        await client.query('CREATE INDEX IF NOT EXISTS idx_notifications_unread ON notifications(employee_id) WHERE is_read = FALSE');
+
+        await client.query(`
+          CREATE TABLE IF NOT EXISTS audit_logs (
+              id SERIAL PRIMARY KEY,
+              actor_id INTEGER REFERENCES employees(id) ON DELETE SET NULL,
+              actor_name VARCHAR(255) NOT NULL,
+              action VARCHAR(100) NOT NULL,
+              module VARCHAR(50) NOT NULL CHECK (module IN ('AUTH', 'EMPLOYEES', 'DEPARTMENTS', 'LEAVES', 'ATTENDANCE', 'TASKS', 'PROJECTS', 'TEAMS', 'SYSTEM')),
+              old_value TEXT,
+              new_value TEXT,
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          );
+        `);
+        await client.query('CREATE INDEX IF NOT EXISTS idx_audit_module ON audit_logs(module)');
+        await client.query('CREATE INDEX IF NOT EXISTS idx_audit_created ON audit_logs(created_at DESC)');
+
+        // Additional performance lookup indexes (Phase 4 Database Optimization)
+        await client.query('CREATE INDEX IF NOT EXISTS idx_employees_email ON employees(email)');
+        await client.query('CREATE INDEX IF NOT EXISTS idx_employees_first_last ON employees(first_name, last_name)');
+        await client.query('CREATE INDEX IF NOT EXISTS idx_tasks_title ON tasks(title)');
+        await client.query('CREATE INDEX IF NOT EXISTS idx_project_members_ids ON project_members(project_id, employee_id)');
+        await client.query('CREATE INDEX IF NOT EXISTS idx_team_members_ids ON team_members(team_id, employee_id)');
+
+        // Add deleted_at column for soft deletes migration (Phase 5 Database Hardening)
+        await client.query('ALTER TABLE employees ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP');
 
         const empCount = await client.query('SELECT COUNT(*) FROM employees');
         if (parseInt(empCount.rows[0].count) === 0) {
@@ -939,11 +1124,44 @@ async function initJsonDatabase() {
       jsonDb = JSON.parse(data);
       console.log('[Database] Loaded existing JSON database from database.json');
       
+      let needsSave = false;
+
+      // Auto-upgrade database schema to verify all default seed employees are present
+      const hashedPassword = await bcrypt.hash('password123', 10);
+      let nextEmpId = jsonDb.employees.length > 0 ? Math.max(...jsonDb.employees.map(e => e.id)) + 1 : 1;
+      
+      for (const seedEmp of seedEmployeesData) {
+        if (!jsonDb.employees.some(e => e.email === seedEmp.email)) {
+          console.log(`[Database] Seeding missing employee ${seedEmp.first_name} ${seedEmp.last_name} (${seedEmp.email}) to existing JSON database...`);
+          
+          let deptId = 1; // Engineering
+          if (seedEmp.designation.includes('Designer') || seedEmp.designation.includes('Design')) {
+            deptId = 2; // Design
+          } else if (seedEmp.designation.includes('Product Manager')) {
+            deptId = 3; // PM
+          } else if (seedEmp.designation.includes('HR')) {
+            deptId = 4; // HR
+          } else if (seedEmp.designation.includes('Finance')) {
+            deptId = 5; // Finance
+          }
+
+          jsonDb.employees.push({
+            id: nextEmpId++,
+            ...seedEmp,
+            password: hashedPassword,
+            department_id: deptId,
+            created_at: new Date(seedEmp.joining_date).toISOString(),
+            updated_at: new Date(seedEmp.joining_date).toISOString()
+          });
+          needsSave = true;
+        }
+      }
+
       // Auto-upgrade database schema if attendance key is missing
       if (!jsonDb.attendance || jsonDb.attendance.length === 0) {
         console.log('[Database] Seeding attendance logs to existing JSON database...');
         jsonDb.attendance = generateSeedAttendance(jsonDb.employees);
-        saveJsonDb();
+        needsSave = true;
       }
 
       // Auto-upgrade database schema if tasks key is missing
@@ -953,6 +1171,81 @@ async function initJsonDatabase() {
         jsonDb.tasks = taskSeeds.tasks;
         jsonDb.task_comments = taskSeeds.comments;
         jsonDb.task_activities = taskSeeds.activities;
+        needsSave = true;
+      }
+
+      // Auto-upgrade for Projects, Teams, Notifications, Audit Logs
+      if (!jsonDb.projects) {
+        jsonDb.projects = [
+          {
+            id: 1,
+            name: 'Event Management 360',
+            description: 'Design and rollout of the global corporate events scheduling platform.',
+            start_date: '2026-06-01',
+            deadline: '2026-07-31',
+            status: 'Active',
+            manager_id: 7,
+            created_at: new Date('2026-06-01T09:00:00Z').toISOString(),
+            updated_at: new Date('2026-06-01T09:00:00Z').toISOString()
+          }
+        ];
+        jsonDb.project_members = [
+          { project_id: 1, employee_id: 7 },
+          { project_id: 1, employee_id: 4 },
+          { project_id: 1, employee_id: 2 }
+        ];
+        needsSave = true;
+      }
+
+      if (!jsonDb.project_members) {
+        jsonDb.project_members = [];
+        needsSave = true;
+      }
+
+      if (!jsonDb.teams) {
+        jsonDb.teams = [
+          {
+            id: 1,
+            name: 'Core Platform',
+            department_id: 1,
+            lead_id: 2,
+            created_at: new Date('2026-05-01T09:00:00Z').toISOString()
+          }
+        ];
+        jsonDb.team_members = [
+          { team_id: 1, employee_id: 2 },
+          { team_id: 1, employee_id: 4 },
+          { team_id: 1, employee_id: 8 }
+        ];
+        needsSave = true;
+      }
+
+      if (!jsonDb.team_members) {
+        jsonDb.team_members = [];
+        needsSave = true;
+      }
+
+      if (!jsonDb.notifications) {
+        jsonDb.notifications = [
+          {
+            id: 1,
+            employee_id: 4,
+            title: 'New Task Assigned',
+            message: 'You have been assigned the task "Implement Phase 1 Attendance module"',
+            type: 'TASK',
+            is_read: false,
+            created_at: new Date('2026-05-20T09:05:00Z').toISOString()
+          }
+        ];
+        needsSave = true;
+      }
+
+      if (!jsonDb.audit_logs) {
+        jsonDb.audit_logs = [];
+        needsSave = true;
+      }
+
+      if (needsSave) {
         saveJsonDb();
       }
     } catch (err) {
@@ -1037,34 +1330,34 @@ export const db = {
   // --- EMPLOYEES CRUDS ---
   async getEmployees(): Promise<Employee[]> {
     if (this.isPostgres() && pool) {
-      const res = await pool.query('SELECT * FROM employees ORDER BY id DESC');
+      const res = await pool.query('SELECT * FROM employees WHERE deleted_at IS NULL ORDER BY id DESC');
       return res.rows;
     }
-    return [...jsonDb.employees].reverse();
+    return jsonDb.employees.filter(e => !e.deleted_at).reverse();
   },
 
   async getEmployeeById(id: number): Promise<Employee | null> {
     if (this.isPostgres() && pool) {
-      const res = await pool.query('SELECT * FROM employees WHERE id = $1', [id]);
+      const res = await pool.query('SELECT * FROM employees WHERE id = $1 AND deleted_at IS NULL', [id]);
       return res.rows[0] || null;
     }
-    return jsonDb.employees.find(e => e.id === id) || null;
+    return jsonDb.employees.find(e => e.id === id && !e.deleted_at) || null;
   },
 
   async getEmployeeByEmail(email: string): Promise<Employee | null> {
     if (this.isPostgres() && pool) {
-      const res = await pool.query('SELECT * FROM employees WHERE email = $1', [email]);
+      const res = await pool.query('SELECT * FROM employees WHERE email = $1 AND deleted_at IS NULL', [email]);
       return res.rows[0] || null;
     }
-    return jsonDb.employees.find(e => e.email.toLowerCase() === email.toLowerCase()) || null;
+    return jsonDb.employees.find(e => e.email.toLowerCase() === email.toLowerCase() && !e.deleted_at) || null;
   },
 
   async getEmployeeByCode(code: string): Promise<Employee | null> {
     if (this.isPostgres() && pool) {
-      const res = await pool.query('SELECT * FROM employees WHERE employee_id = $1', [code]);
+      const res = await pool.query('SELECT * FROM employees WHERE employee_id = $1 AND deleted_at IS NULL', [code]);
       return res.rows[0] || null;
     }
-    return jsonDb.employees.find(e => e.employee_id === code) || null;
+    return jsonDb.employees.find(e => e.employee_id === code && !e.deleted_at) || null;
   },
 
   async createEmployee(data: Omit<Employee, 'id'>): Promise<Employee> {
@@ -1114,7 +1407,7 @@ export const db = {
     if (this.isPostgres() && pool) {
       // Set managers to null before deleting
       await pool.query('UPDATE departments SET manager_id = NULL WHERE manager_id = $1', [id]);
-      const res = await pool.query('DELETE FROM employees WHERE id = $1', [id]);
+      const res = await pool.query('UPDATE employees SET deleted_at = NOW(), status = \'Inactive\' WHERE id = $1', [id]);
       return (res.rowCount ?? 0) > 0;
     }
     const index = jsonDb.employees.findIndex(e => e.id === id);
@@ -1125,12 +1418,8 @@ export const db = {
       if (dept.manager_id === id) dept.manager_id = null;
     });
     
-    // Cascading deletes in json database
-    jsonDb.employee_skills = jsonDb.employee_skills.filter(es => es.employee_id !== id);
-    jsonDb.documents = jsonDb.documents.filter(doc => doc.employee_id !== id);
-    jsonDb.activities = jsonDb.activities.filter(act => act.employee_id !== id);
-    
-    jsonDb.employees.splice(index, 1);
+    jsonDb.employees[index].deleted_at = new Date().toISOString();
+    jsonDb.employees[index].status = 'Inactive';
     saveJsonDb();
     return true;
   },
@@ -2496,7 +2785,7 @@ export const db = {
   },
 
   // --- TASK MANAGEMENT METHODS ---
-  async getTasks(filters: { status?: TaskStatus; assigneeId?: number; departmentId?: number; priority?: TaskPriority } = {}): Promise<Task[]> {
+  async getTasks(filters: { status?: TaskStatus; assigneeId?: number; departmentId?: number; priority?: TaskPriority; projectId?: number; teamId?: number } = {}): Promise<Task[]> {
     if (this.isPostgres() && pool) {
       let queryText = `
         SELECT t.*,
@@ -2532,6 +2821,14 @@ export const db = {
         queryText += ` AND t.priority = $${index++}`;
         params.push(filters.priority);
       }
+      if (filters.projectId) {
+        queryText += ` AND t.project_id = $${index++}`;
+        params.push(filters.projectId);
+      }
+      if (filters.teamId) {
+        queryText += ` AND t.team_id = $${index++}`;
+        params.push(filters.teamId);
+      }
 
       queryText += ` ORDER BY t.id DESC`;
       const res = await pool.query(queryText, params);
@@ -2548,6 +2845,8 @@ export const db = {
     if (filters.assigneeId) list = list.filter(t => t.assignee_id === filters.assigneeId);
     if (filters.departmentId) list = list.filter(t => t.department_id === filters.departmentId);
     if (filters.priority) list = list.filter(t => t.priority === filters.priority);
+    if (filters.projectId) list = list.filter(t => t.project_id === filters.projectId);
+    if (filters.teamId) list = list.filter(t => t.team_id === filters.teamId);
 
     return list.map(t => {
       const assignee = jsonDb.employees.find(e => e.id === t.assignee_id);
@@ -2616,10 +2915,10 @@ export const db = {
   async createTask(data: Omit<Task, 'id' | 'created_at' | 'updated_at'>): Promise<Task> {
     if (this.isPostgres() && pool) {
       const res = await pool.query(`
-        INSERT INTO tasks (title, description, status, priority, due_date, assignee_id, creator_id, department_id)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        INSERT INTO tasks (title, description, status, priority, due_date, assignee_id, creator_id, department_id, project_id, team_id)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         RETURNING *
-      `, [data.title, data.description || null, data.status || 'Todo', data.priority || 'Medium', data.due_date || null, data.assignee_id || null, data.creator_id || null, data.department_id || null]);
+      `, [data.title, data.description || null, data.status || 'Todo', data.priority || 'Medium', data.due_date || null, data.assignee_id || null, data.creator_id || null, data.department_id || null, data.project_id || null, data.team_id || null]);
       return (await this.getTaskById(res.rows[0].id))!;
     }
 
@@ -2634,6 +2933,8 @@ export const db = {
       assignee_id: data.assignee_id,
       creator_id: data.creator_id,
       department_id: data.department_id,
+      project_id: data.project_id || null,
+      team_id: data.team_id || null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
@@ -2808,6 +3109,692 @@ export const db = {
     jsonDb.task_activities.push(newAct);
     saveJsonDb();
     return newAct;
+  },
+
+  // --- PROJECTS METHODS ---
+  async getProjects(filters: { status?: ProjectStatus; employeeId?: number } = {}): Promise<Project[]> {
+    if (this.isPostgres() && pool) {
+      let query = `
+        SELECT p.*,
+               json_build_object(
+                 'id', e.id, 'employee_id', e.employee_id, 'first_name', e.first_name, 'last_name', e.last_name, 'email', e.email, 'designation', e.designation, 'role', e.role, 'status', e.status, 'joining_date', e.joining_date::text
+               ) as manager
+        FROM projects p
+        LEFT JOIN employees e ON p.manager_id = e.id
+        WHERE 1=1
+      `;
+      const params: any[] = [];
+      let idx = 1;
+      if (filters.status) {
+        query += ` AND p.status = $${idx++}`;
+        params.push(filters.status);
+      }
+      if (filters.employeeId) {
+        query += ` AND (p.manager_id = $${idx} OR EXISTS (SELECT 1 FROM project_members pm WHERE pm.project_id = p.id AND pm.employee_id = $${idx}))`;
+        params.push(filters.employeeId);
+      }
+      query += ` ORDER BY p.id DESC`;
+      const res = await pool.query(query, params);
+      
+      for (const row of res.rows) {
+        if (row.manager && row.manager.id === null) row.manager = null;
+        const memRes = await pool.query(`
+          SELECT id, employee_id, first_name, last_name, email, designation, role, status, joining_date::text
+          FROM employees e
+          JOIN project_members pm ON e.id = pm.employee_id
+          WHERE pm.project_id = $1
+        `, [row.id]);
+        row.members = memRes.rows;
+      }
+      return res.rows;
+    }
+
+    let list = [...jsonDb.projects];
+    if (filters.status) {
+      list = list.filter(p => p.status === filters.status);
+    }
+    if (filters.employeeId) {
+      list = list.filter(p => p.manager_id === filters.employeeId || jsonDb.project_members.some(pm => pm.project_id === p.id && pm.employee_id === filters.employeeId));
+    }
+    return list.map(p => {
+      const mgr = jsonDb.employees.find(e => e.id === p.manager_id);
+      const memberIds = jsonDb.project_members.filter(pm => pm.project_id === p.id).map(pm => pm.employee_id);
+      const members = jsonDb.employees.filter(e => memberIds.includes(e.id)).map(e => {
+        const { password, ...rest } = e;
+        return rest;
+      });
+      return {
+        ...p,
+        manager: mgr ? (() => {
+          const { password, ...rest } = mgr;
+          return rest;
+        })() : null,
+        members
+      };
+    }).reverse();
+  },
+
+  async getProjectById(id: number): Promise<Project | null> {
+    if (this.isPostgres() && pool) {
+      const res = await pool.query(`
+        SELECT p.*,
+               json_build_object(
+                 'id', e.id, 'employee_id', e.employee_id, 'first_name', e.first_name, 'last_name', e.last_name, 'email', e.email, 'designation', e.designation, 'role', e.role, 'status', e.status, 'joining_date', e.joining_date::text
+               ) as manager
+        FROM projects p
+        LEFT JOIN employees e ON p.manager_id = e.id
+        WHERE p.id = $1
+      `, [id]);
+      const row = res.rows[0];
+      if (!row) return null;
+      if (row.manager && row.manager.id === null) row.manager = null;
+      const memRes = await pool.query(`
+        SELECT id, employee_id, first_name, last_name, email, designation, role, status, joining_date::text
+        FROM employees e
+        JOIN project_members pm ON e.id = pm.employee_id
+        WHERE pm.project_id = $1
+      `, [id]);
+      row.members = memRes.rows;
+      return row;
+    }
+
+    const p = jsonDb.projects.find(x => x.id === id);
+    if (!p) return null;
+    const mgr = jsonDb.employees.find(e => e.id === p.manager_id);
+    const memberIds = jsonDb.project_members.filter(pm => pm.project_id === p.id).map(pm => pm.employee_id);
+    const members = jsonDb.employees.filter(e => memberIds.includes(e.id)).map(e => {
+      const { password, ...rest } = e;
+      return rest;
+    });
+    return {
+      ...p,
+      manager: mgr ? (() => {
+        const { password, ...rest } = mgr;
+        return rest;
+      })() : null,
+      members
+    };
+  },
+
+  async createProject(name: string, description?: string, start_date?: string, deadline?: string | null, status?: ProjectStatus, manager_id?: number | null, memberIds?: number[]): Promise<Project> {
+    if (this.isPostgres() && pool) {
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        const insertRes = await client.query(`
+          INSERT INTO projects (name, description, start_date, deadline, status, manager_id)
+          VALUES ($1, $2, $3, $4, $5, $6)
+          RETURNING *
+        `, [name, description || null, start_date || getLocalDateStr(), deadline || null, status || 'Planning', manager_id || null]);
+        const newProj = insertRes.rows[0];
+        if (memberIds && memberIds.length > 0) {
+          for (const empId of memberIds) {
+            await client.query(`
+              INSERT INTO project_members (project_id, employee_id)
+              VALUES ($1, $2)
+            `, [newProj.id, empId]);
+          }
+        }
+        await client.query('COMMIT');
+        client.release();
+        return (await this.getProjectById(newProj.id))!;
+      } catch (err) {
+        await client.query('ROLLBACK');
+        client.release();
+        throw err;
+      }
+    }
+
+    const newId = jsonDb.projects.length > 0 ? Math.max(...jsonDb.projects.map(p => p.id)) + 1 : 1;
+    const newProj: Project = {
+      id: newId,
+      name,
+      description: description || undefined,
+      start_date: start_date || getLocalDateStr(),
+      deadline: deadline || null,
+      status: status || 'Planning',
+      manager_id: manager_id || null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    jsonDb.projects.push(newProj);
+    if (memberIds && memberIds.length > 0) {
+      for (const empId of memberIds) {
+        jsonDb.project_members.push({ project_id: newId, employee_id: empId });
+      }
+    }
+    saveJsonDb();
+    return (await this.getProjectById(newId))!;
+  },
+
+  async updateProject(id: number, data: Partial<Project>, memberIds?: number[]): Promise<Project | null> {
+    if (this.isPostgres() && pool) {
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        const updateData = { ...data, updated_at: new Date().toISOString() };
+        delete (updateData as any).manager;
+        delete (updateData as any).members;
+        const fields = Object.keys(updateData);
+        if (fields.length > 0) {
+          const setClause = fields.map((f, i) => `${f} = $${i + 2}`).join(', ');
+          const values = [id, ...Object.values(updateData)];
+          await client.query(`UPDATE projects SET ${setClause} WHERE id = $1`, values);
+        }
+        if (memberIds !== undefined) {
+          await client.query('DELETE FROM project_members WHERE project_id = $1', [id]);
+          for (const empId of memberIds) {
+            await client.query(`
+              INSERT INTO project_members (project_id, employee_id)
+              VALUES ($1, $2)
+            `, [id, empId]);
+          }
+        }
+        await client.query('COMMIT');
+        client.release();
+        return this.getProjectById(id);
+      } catch (err) {
+        await client.query('ROLLBACK');
+        client.release();
+        throw err;
+      }
+    }
+
+    const idx = jsonDb.projects.findIndex(p => p.id === id);
+    if (idx === -1) return null;
+    const updateData = { ...data, updated_at: new Date().toISOString() };
+    delete (updateData as any).manager;
+    delete (updateData as any).members;
+    jsonDb.projects[idx] = { ...jsonDb.projects[idx], ...updateData };
+    if (memberIds !== undefined) {
+      jsonDb.project_members = jsonDb.project_members.filter(pm => pm.project_id !== id);
+      for (const empId of memberIds) {
+        jsonDb.project_members.push({ project_id: id, employee_id: empId });
+      }
+    }
+    saveJsonDb();
+    return this.getProjectById(id);
+  },
+
+  async deleteProject(id: number): Promise<boolean> {
+    if (this.isPostgres() && pool) {
+      const res = await pool.query('DELETE FROM projects WHERE id = $1', [id]);
+      return (res.rowCount ?? 0) > 0;
+    }
+
+    const idx = jsonDb.projects.findIndex(p => p.id === id);
+    if (idx === -1) return false;
+    jsonDb.projects.splice(idx, 1);
+    jsonDb.project_members = jsonDb.project_members.filter(pm => pm.project_id !== id);
+    jsonDb.tasks.forEach(t => {
+      if (t.project_id === id) t.project_id = null;
+    });
+    saveJsonDb();
+    return true;
+  },
+
+  // --- TEAMS METHODS ---
+  async getTeams(filters: { departmentId?: number; employeeId?: number } = {}): Promise<Team[]> {
+    if (this.isPostgres() && pool) {
+      let query = `
+        SELECT t.*,
+               row_to_json(d) as department,
+               json_build_object(
+                 'id', e.id, 'employee_id', e.employee_id, 'first_name', e.first_name, 'last_name', e.last_name, 'email', e.email, 'designation', e.designation, 'role', e.role, 'status', e.status, 'joining_date', e.joining_date::text
+               ) as lead
+        FROM teams t
+        LEFT JOIN departments d ON t.department_id = d.id
+        LEFT JOIN employees e ON t.lead_id = e.id
+        WHERE 1=1
+      `;
+      const params: any[] = [];
+      let idx = 1;
+      if (filters.departmentId) {
+        query += ` AND t.department_id = $${idx++}`;
+        params.push(filters.departmentId);
+      }
+      if (filters.employeeId) {
+        query += ` AND (t.lead_id = $${idx} OR EXISTS (SELECT 1 FROM team_members tm WHERE tm.team_id = t.id AND tm.employee_id = $${idx}))`;
+        params.push(filters.employeeId);
+      }
+      query += ` ORDER BY t.id DESC`;
+      const res = await pool.query(query, params);
+      for (const row of res.rows) {
+        if (row.lead && row.lead.id === null) row.lead = null;
+        const memRes = await pool.query(`
+          SELECT id, employee_id, first_name, last_name, email, designation, role, status, joining_date::text
+          FROM employees e
+          JOIN team_members tm ON e.id = tm.employee_id
+          WHERE tm.team_id = $1
+        `, [row.id]);
+        row.members = memRes.rows;
+      }
+      return res.rows;
+    }
+
+    let list = [...jsonDb.teams];
+    if (filters.departmentId) {
+      list = list.filter(t => t.department_id === filters.departmentId);
+    }
+    if (filters.employeeId) {
+      list = list.filter(t => t.lead_id === filters.employeeId || jsonDb.team_members.some(tm => tm.team_id === t.id && tm.employee_id === filters.employeeId));
+    }
+    return list.map(t => {
+      const dept = jsonDb.departments.find(d => d.id === t.department_id);
+      const lead = jsonDb.employees.find(e => e.id === t.lead_id);
+      const memberIds = jsonDb.team_members.filter(tm => tm.team_id === t.id).map(tm => tm.employee_id);
+      const members = jsonDb.employees.filter(e => memberIds.includes(e.id)).map(e => {
+        const { password, ...rest } = e;
+        return rest;
+      });
+      return {
+        ...t,
+        department: dept || null,
+        lead: lead ? (() => {
+          const { password, ...rest } = lead;
+          return rest;
+        })() : null,
+        members
+      };
+    }).reverse();
+  },
+
+  async getTeamById(id: number): Promise<Team | null> {
+    if (this.isPostgres() && pool) {
+      const res = await pool.query(`
+        SELECT t.*,
+               row_to_json(d) as department,
+               json_build_object(
+                 'id', e.id, 'employee_id', e.employee_id, 'first_name', e.first_name, 'last_name', e.last_name, 'email', e.email, 'designation', e.designation, 'role', e.role, 'status', e.status, 'joining_date', e.joining_date::text
+               ) as lead
+        FROM teams t
+        LEFT JOIN departments d ON t.department_id = d.id
+        LEFT JOIN employees e ON t.lead_id = e.id
+        WHERE t.id = $1
+      `, [id]);
+      const row = res.rows[0];
+      if (!row) return null;
+      if (row.lead && row.lead.id === null) row.lead = null;
+      const memRes = await pool.query(`
+        SELECT id, employee_id, first_name, last_name, email, designation, role, status, joining_date::text
+        FROM employees e
+        JOIN team_members tm ON e.id = tm.employee_id
+        WHERE tm.team_id = $1
+      `, [id]);
+      row.members = memRes.rows;
+      return row;
+    }
+
+    const t = jsonDb.teams.find(x => x.id === id);
+    if (!t) return null;
+    const dept = jsonDb.departments.find(d => d.id === t.department_id);
+    const lead = jsonDb.employees.find(e => e.id === t.lead_id);
+    const memberIds = jsonDb.team_members.filter(tm => tm.team_id === t.id).map(tm => tm.employee_id);
+    const members = jsonDb.employees.filter(e => memberIds.includes(e.id)).map(e => {
+      const { password, ...rest } = e;
+      return rest;
+    });
+    return {
+      ...t,
+      department: dept || null,
+      lead: lead ? (() => {
+        const { password, ...rest } = lead;
+        return rest;
+      })() : null,
+      members
+    };
+  },
+
+  async createTeam(name: string, department_id?: number | null, lead_id?: number | null, memberIds?: number[]): Promise<Team> {
+    if (this.isPostgres() && pool) {
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        const insertRes = await client.query(`
+          INSERT INTO teams (name, department_id, lead_id)
+          VALUES ($1, $2, $3)
+          RETURNING *
+        `, [name, department_id || null, lead_id || null]);
+        const newTeam = insertRes.rows[0];
+        if (memberIds && memberIds.length > 0) {
+          for (const empId of memberIds) {
+            await client.query(`
+              INSERT INTO team_members (team_id, employee_id)
+              VALUES ($1, $2)
+            `, [newTeam.id, empId]);
+          }
+        }
+        await client.query('COMMIT');
+        client.release();
+        return (await this.getTeamById(newTeam.id))!;
+      } catch (err) {
+        await client.query('ROLLBACK');
+        client.release();
+        throw err;
+      }
+    }
+
+    const newId = jsonDb.teams.length > 0 ? Math.max(...jsonDb.teams.map(t => t.id)) + 1 : 1;
+    const newTeam: Team = {
+      id: newId,
+      name,
+      department_id: department_id || null,
+      lead_id: lead_id || null,
+      created_at: new Date().toISOString()
+    };
+    jsonDb.teams.push(newTeam);
+    if (memberIds && memberIds.length > 0) {
+      for (const empId of memberIds) {
+        jsonDb.team_members.push({ team_id: newId, employee_id: empId });
+      }
+    }
+    saveJsonDb();
+    return (await this.getTeamById(newId))!;
+  },
+
+  async updateTeam(id: number, data: Partial<Team>, memberIds?: number[]): Promise<Team | null> {
+    if (this.isPostgres() && pool) {
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        const updateData = { ...data };
+        delete (updateData as any).department;
+        delete (updateData as any).lead;
+        delete (updateData as any).members;
+        const fields = Object.keys(updateData);
+        if (fields.length > 0) {
+          const setClause = fields.map((f, i) => `${f} = $${i + 2}`).join(', ');
+          const values = [id, ...Object.values(updateData)];
+          await client.query(`UPDATE teams SET ${setClause} WHERE id = $1`, values);
+        }
+        if (memberIds !== undefined) {
+          await client.query('DELETE FROM team_members WHERE team_id = $1', [id]);
+          for (const empId of memberIds) {
+            await client.query(`
+              INSERT INTO team_members (team_id, employee_id)
+              VALUES ($1, $2)
+            `, [id, empId]);
+          }
+        }
+        await client.query('COMMIT');
+        client.release();
+        return this.getTeamById(id);
+      } catch (err) {
+        await client.query('ROLLBACK');
+        client.release();
+        throw err;
+      }
+    }
+
+    const idx = jsonDb.teams.findIndex(t => t.id === id);
+    if (idx === -1) return null;
+    const updateData = { ...data };
+    delete (updateData as any).department;
+    delete (updateData as any).lead;
+    delete (updateData as any).members;
+    jsonDb.teams[idx] = { ...jsonDb.teams[idx], ...updateData };
+    if (memberIds !== undefined) {
+      jsonDb.team_members = jsonDb.team_members.filter(tm => tm.team_id !== id);
+      for (const empId of memberIds) {
+        jsonDb.team_members.push({ team_id: id, employee_id: empId });
+      }
+    }
+    saveJsonDb();
+    return this.getTeamById(id);
+  },
+
+  async deleteTeam(id: number): Promise<boolean> {
+    if (this.isPostgres() && pool) {
+      const res = await pool.query('DELETE FROM teams WHERE id = $1', [id]);
+      return (res.rowCount ?? 0) > 0;
+    }
+
+    const idx = jsonDb.teams.findIndex(t => t.id === id);
+    if (idx === -1) return false;
+    jsonDb.teams.splice(idx, 1);
+    jsonDb.team_members = jsonDb.team_members.filter(tm => tm.team_id !== id);
+    jsonDb.tasks.forEach(t => {
+      if (t.team_id === id) t.team_id = null;
+    });
+    saveJsonDb();
+    return true;
+  },
+
+  // --- NOTIFICATIONS METHODS ---
+  async getNotifications(employeeId: number): Promise<Notification[]> {
+    if (this.isPostgres() && pool) {
+      const res = await pool.query('SELECT * FROM notifications WHERE employee_id = $1 ORDER BY id DESC', [employeeId]);
+      return res.rows;
+    }
+    return jsonDb.notifications.filter(n => n.employee_id === employeeId).sort((a, b) => b.id - a.id);
+  },
+
+  async createNotification(employeeId: number, title: string, message: string, type: NotificationType): Promise<Notification> {
+    if (this.isPostgres() && pool) {
+      const res = await pool.query(`
+        INSERT INTO notifications (employee_id, title, message, type, is_read)
+        VALUES ($1, $2, $3, $4, FALSE)
+        RETURNING *
+      `, [employeeId, title, message, type]);
+      return res.rows[0];
+    }
+
+    const newId = jsonDb.notifications.length > 0 ? Math.max(...jsonDb.notifications.map(n => n.id)) + 1 : 1;
+    const newNotif: Notification = {
+      id: newId,
+      employee_id: employeeId,
+      title,
+      message,
+      type,
+      is_read: false,
+      created_at: new Date().toISOString()
+    };
+    jsonDb.notifications.push(newNotif);
+    saveJsonDb();
+    return newNotif;
+  },
+
+  async markNotificationAsRead(id: number): Promise<boolean> {
+    if (this.isPostgres() && pool) {
+      const res = await pool.query('UPDATE notifications SET is_read = TRUE WHERE id = $1', [id]);
+      return (res.rowCount ?? 0) > 0;
+    }
+
+    const notif = jsonDb.notifications.find(n => n.id === id);
+    if (!notif) return false;
+    notif.is_read = true;
+    saveJsonDb();
+    return true;
+  },
+
+  async markAllNotificationsAsRead(employeeId: number): Promise<boolean> {
+    if (this.isPostgres() && pool) {
+      const res = await pool.query('UPDATE notifications SET is_read = TRUE WHERE employee_id = $1', [employeeId]);
+      return (res.rowCount ?? 0) > 0;
+    }
+
+    let updated = false;
+    jsonDb.notifications.forEach(n => {
+      if (n.employee_id === employeeId && !n.is_read) {
+        n.is_read = true;
+        updated = true;
+      }
+    });
+    if (updated) saveJsonDb();
+    return true;
+  },
+
+  // --- AUDIT LOGS METHODS ---
+  async logAuditEvent(actorId: number | null, actorName: string, action: string, module: AuditLogModule, oldValue?: string | null, newValue?: string | null): Promise<AuditLog> {
+    if (this.isPostgres() && pool) {
+      const res = await pool.query(`
+        INSERT INTO audit_logs (actor_id, actor_name, action, module, old_value, new_value)
+        VALUES ($1, $2, $3, $4, $5, $6)
+        RETURNING *
+      `, [actorId, actorName, action, module, oldValue || null, newValue || null]);
+      return res.rows[0];
+    }
+
+    const newId = jsonDb.audit_logs.length > 0 ? Math.max(...jsonDb.audit_logs.map(a => a.id)) + 1 : 1;
+    const newLog: AuditLog = {
+      id: newId,
+      actor_id: actorId,
+      actor_name: actorName,
+      action,
+      module,
+      old_value: oldValue || null,
+      new_value: newValue || null,
+      created_at: new Date().toISOString()
+    };
+    jsonDb.audit_logs.push(newLog);
+    saveJsonDb();
+    return newLog;
+  },
+
+  async getAuditLogs(filters: { module?: AuditLogModule; limit?: number } = {}): Promise<AuditLog[]> {
+    if (this.isPostgres() && pool) {
+      let query = 'SELECT * FROM audit_logs WHERE 1=1';
+      const params: any[] = [];
+      let idx = 1;
+      if (filters.module) {
+        query += ` AND module = $${idx++}`;
+        params.push(filters.module);
+      }
+      query += ` ORDER BY id DESC LIMIT $${idx}`;
+      params.push(filters.limit || 100);
+      const res = await pool.query(query, params);
+      return res.rows;
+    }
+
+    let list = [...jsonDb.audit_logs];
+    if (filters.module) {
+      list = list.filter(l => l.module === filters.module);
+    }
+    list.sort((a, b) => b.id - a.id);
+    return list.slice(0, filters.limit || 100);
+  },
+
+  async globalSearch(query: string) {
+    const q = `%${query}%`;
+    if (this.isPostgres() && pool) {
+      const emps = await pool.query(`
+        SELECT id, employee_id, first_name, last_name, email, designation 
+        FROM employees 
+        WHERE first_name ILIKE $1 OR last_name ILIKE $1 OR email ILIKE $1 OR designation ILIKE $1
+      `, [q]);
+
+      const depts = await pool.query(`
+        SELECT id, name, code 
+        FROM departments 
+        WHERE name ILIKE $1 OR code ILIKE $1
+      `, [q]);
+
+      const skills = await pool.query(`
+        SELECT id, name, category 
+        FROM skills 
+        WHERE name ILIKE $1 OR category ILIKE $1
+      `, [q]);
+
+      const projs = await pool.query(`
+        SELECT id, name, description, status, start_date::text, deadline::text 
+        FROM projects 
+        WHERE name ILIKE $1 OR description ILIKE $1
+      `, [q]);
+
+      const teams = await pool.query(`
+        SELECT id, name 
+        FROM teams 
+        WHERE name ILIKE $1
+      `, [q]);
+
+      const tasks = await pool.query(`
+        SELECT id, title, description, status, priority, due_date::text 
+        FROM tasks 
+        WHERE title ILIKE $1 OR description ILIKE $1
+      `, [q]);
+
+      const leaves = await pool.query(`
+        SELECT l.id, l.reason, l.status, l.start_date::text, l.end_date::text,
+               e.first_name, e.last_name
+        FROM leave_requests l
+        JOIN employees e ON l.employee_id = e.id
+        WHERE l.reason ILIKE $1 OR l.status ILIKE $1 OR e.first_name ILIKE $1 OR e.last_name ILIKE $1
+      `, [q]);
+
+      return {
+        employees: emps.rows,
+        departments: depts.rows,
+        skills: skills.rows,
+        projects: projs.rows,
+        teams: teams.rows,
+        tasks: tasks.rows,
+        leaves: leaves.rows
+      };
+    }
+
+    // JSON Fallback
+    const lowerQ = query.toLowerCase();
+    const emps = jsonDb.employees.filter(e => 
+      e.first_name.toLowerCase().includes(lowerQ) ||
+      e.last_name.toLowerCase().includes(lowerQ) ||
+      e.email.toLowerCase().includes(lowerQ) ||
+      e.designation.toLowerCase().includes(lowerQ)
+    ).map(({ password, ...rest }) => rest);
+
+    const depts = jsonDb.departments.filter(d => 
+      d.name.toLowerCase().includes(lowerQ) ||
+      (d.code && d.code.toLowerCase().includes(lowerQ))
+    );
+
+    const skills = jsonDb.skills.filter(s => 
+      s.name.toLowerCase().includes(lowerQ) ||
+      s.category.toLowerCase().includes(lowerQ)
+    );
+
+    const projs = jsonDb.projects.filter(p => 
+      p.name.toLowerCase().includes(lowerQ) ||
+      (p.description && p.description.toLowerCase().includes(lowerQ))
+    );
+
+    const teams = jsonDb.teams.filter(t => 
+      t.name.toLowerCase().includes(lowerQ)
+    );
+
+    const tasks = jsonDb.tasks.filter(t => 
+      t.title.toLowerCase().includes(lowerQ) ||
+      (t.description && t.description.toLowerCase().includes(lowerQ))
+    );
+
+    const leaves = jsonDb.leave_requests.filter(l => {
+      const emp = jsonDb.employees.find(e => e.id === l.employee_id);
+      const empName = emp ? `${emp.first_name} ${emp.last_name}`.toLowerCase() : '';
+      return (
+        (l.reason && l.reason.toLowerCase().includes(lowerQ)) ||
+        l.status.toLowerCase().includes(lowerQ) ||
+        empName.includes(lowerQ)
+      );
+    }).map(l => {
+      const emp = jsonDb.employees.find(e => e.id === l.employee_id);
+      return {
+        id: l.id,
+        reason: l.reason,
+        status: l.status,
+        start_date: l.start_date,
+        end_date: l.end_date,
+        first_name: emp ? emp.first_name : '',
+        last_name: emp ? emp.last_name : ''
+      };
+    });
+
+    return {
+      employees: emps,
+      departments: depts,
+      skills,
+      projects: projs,
+      teams,
+      tasks,
+      leaves
+    };
   }
 };
 export default db;

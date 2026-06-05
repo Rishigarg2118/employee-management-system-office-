@@ -48,6 +48,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setToken(data.token);
       setUser(data.user);
       localStorage.setItem('hrms_token', data.token);
+      localStorage.setItem('hrms_refresh_token', data.refreshToken);
       localStorage.setItem('hrms_user', JSON.stringify(data.user));
     } catch (err) {
       logout();
@@ -58,9 +59,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const logout = () => {
+    const refreshToken = localStorage.getItem('hrms_refresh_token');
+    if (refreshToken) {
+      api.logout({ refreshToken }).catch((err) => {
+        console.error('Logout error:', err);
+      });
+    }
     setToken(null);
     setUser(null);
     localStorage.removeItem('hrms_token');
+    localStorage.removeItem('hrms_refresh_token');
     localStorage.removeItem('hrms_user');
   };
 

@@ -5,7 +5,7 @@ import { TaskStatus, TaskPriority } from '../types';
 
 export async function getTasks(req: AuthenticatedRequest, res: Response): Promise<void> {
   try {
-    const filters: { status?: TaskStatus; assigneeId?: number; departmentId?: number; priority?: TaskPriority } = {};
+    const filters: { status?: TaskStatus; assigneeId?: number; departmentId?: number; priority?: TaskPriority; projectId?: number; teamId?: number } = {};
 
     if (req.query.status) {
       filters.status = req.query.status as TaskStatus;
@@ -18,6 +18,12 @@ export async function getTasks(req: AuthenticatedRequest, res: Response): Promis
     }
     if (req.query.priority) {
       filters.priority = req.query.priority as TaskPriority;
+    }
+    if (req.query.projectId) {
+      filters.projectId = parseInt(req.query.projectId as string);
+    }
+    if (req.query.teamId) {
+      filters.teamId = parseInt(req.query.teamId as string);
     }
 
     const tasks = await db.getTasks(filters);
@@ -63,7 +69,7 @@ export async function createTask(req: AuthenticatedRequest, res: Response): Prom
     return;
   }
 
-  const { title, description, priority, due_date, assignee_id, department_id } = req.body;
+  const { title, description, priority, due_date, assignee_id, department_id, project_id, team_id } = req.body;
 
   if (!title) {
     res.status(400).json({ message: 'Task title is required.' });
@@ -80,7 +86,9 @@ export async function createTask(req: AuthenticatedRequest, res: Response): Prom
       due_date: due_date || null,
       assignee_id: assignee_id ? parseInt(assignee_id) : null,
       creator_id: creatorId,
-      department_id: department_id ? parseInt(department_id) : null
+      department_id: department_id ? parseInt(department_id) : null,
+      project_id: project_id ? parseInt(project_id) : null,
+      team_id: team_id ? parseInt(team_id) : null
     });
 
     const userEmp = await db.getEmployeeById(creatorId);
@@ -127,7 +135,7 @@ export async function updateTask(req: AuthenticatedRequest, res: Response): Prom
       return;
     }
 
-    const { title, description, status, priority, due_date, assignee_id, department_id } = req.body;
+    const { title, description, status, priority, due_date, assignee_id, department_id, project_id, team_id } = req.body;
     const updateFields: any = {};
     const actorId = req.user.id;
 
@@ -178,6 +186,26 @@ export async function updateTask(req: AuthenticatedRequest, res: Response): Prom
         const dept = parsedDept ? await db.getDepartmentById(parsedDept) : null;
         const deptName = dept ? dept.name : 'No Department';
         await db.logTaskActivity(id, actorId, 'DEPARTMENT_CHANGE', `Mapped to "${deptName}" department by ${actorName}.`);
+      }
+    }
+
+    if (project_id !== undefined) {
+      const parsedProj = project_id ? parseInt(project_id) : null;
+      if (parsedProj !== existingTask.project_id) {
+        updateFields.project_id = parsedProj;
+        const proj = parsedProj ? await db.getProjectById(parsedProj) : null;
+        const projName = proj ? proj.name : 'No Project';
+        await db.logTaskActivity(id, actorId, 'PROJECT_CHANGE', `Mapped to project "${projName}" by ${actorName}.`);
+      }
+    }
+
+    if (team_id !== undefined) {
+      const parsedTeam = team_id ? parseInt(team_id) : null;
+      if (parsedTeam !== existingTask.team_id) {
+        updateFields.team_id = parsedTeam;
+        const team = parsedTeam ? await db.getTeamById(parsedTeam) : null;
+        const teamName = team ? team.name : 'No Team';
+        await db.logTaskActivity(id, actorId, 'TEAM_CHANGE', `Mapped to team "${teamName}" by ${actorName}.`);
       }
     }
 

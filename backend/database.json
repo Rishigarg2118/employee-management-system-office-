@@ -326,6 +326,59 @@
       "role": "Employee",
       "created_at": "2026-06-04T20:11:51.237Z",
       "updated_at": "2026-06-05T12:13:08.558Z"
+    },
+    {
+      "id": 17,
+      "employee_id": "EMP-111",
+      "first_name": "vinay ",
+      "last_name": "singh ",
+      "email": "vps2004@gmail.com",
+      "password": "$2b$10$/0i.NiiwGB0OebGLbCIz3u7GjB9noYbRW5lSsyXESco1/6V1eCmkS",
+      "phone": "9926254000",
+      "department_id": 5,
+      "designation": "backend developer",
+      "status": "Active",
+      "joining_date": "2026-06-03",
+      "address": "symbiosis university of applied sciences",
+      "role": "Employee",
+      "created_at": "2026-06-05T18:51:19.528Z",
+      "updated_at": "2026-06-05T18:51:19.528Z"
+    },
+    {
+      "id": 18,
+      "employee_id": "EMP-013",
+      "first_name": "Toby",
+      "last_name": "Flenderson",
+      "email": "toby.f@enterprise.io",
+      "designation": "HR Specialist",
+      "status": "Active",
+      "joining_date": "2024-05-01",
+      "role": "HR",
+      "bio": "Talent management, compliance, and employee relations coordinator.",
+      "phone": "+1 (555) 111-2222",
+      "address": "Scranton, PA",
+      "password": "$2b$10$Kp9Nl4.D4iI/H3HPJasoE..8YMWurBMEPO.rb3FcSOgQP5hMT1AxC",
+      "department_id": 4,
+      "created_at": "2024-05-01T00:00:00.000Z",
+      "updated_at": "2024-05-01T00:00:00.000Z"
+    },
+    {
+      "id": 19,
+      "employee_id": "EMP-014",
+      "first_name": "Pam",
+      "last_name": "Beesly",
+      "email": "pam.b@enterprise.io",
+      "designation": "Operations Intern",
+      "status": "Active",
+      "joining_date": "2026-05-01",
+      "role": "Intern",
+      "bio": "Supporting administrative workflows, scheduling, and general office operations.",
+      "phone": "+1 (555) 333-4444",
+      "address": "Scranton, PA",
+      "password": "$2b$10$Kp9Nl4.D4iI/H3HPJasoE..8YMWurBMEPO.rb3FcSOgQP5hMT1AxC",
+      "department_id": 1,
+      "created_at": "2026-05-01T00:00:00.000Z",
+      "updated_at": "2026-05-01T00:00:00.000Z"
     }
   ],
   "skills": [
@@ -510,6 +563,11 @@
       "employee_id": 16,
       "skill_id": 10,
       "proficiency_level": "Intermediate"
+    },
+    {
+      "employee_id": 17,
+      "skill_id": 6,
+      "proficiency_level": "Intermediate"
     }
   ],
   "documents": [
@@ -548,6 +606,15 @@
       "file_size": 64351,
       "file_type": "application/pdf",
       "uploaded_at": "2026-06-04T20:11:51.251Z"
+    },
+    {
+      "id": 5,
+      "employee_id": 17,
+      "name": "harshibar_s_resume (4).pdf",
+      "file_path": "uploads/document-1780685479540-448114256.pdf",
+      "file_size": 60812,
+      "file_type": "application/pdf",
+      "uploaded_at": "2026-06-05T18:51:19.544Z"
     }
   ],
   "activities": [
@@ -669,6 +736,34 @@
       "activity_type": "STATUS_CHANGE",
       "description": "Employee status bulk-updated to On Leave.",
       "created_at": "2026-06-05T12:13:08.559Z"
+    },
+    {
+      "id": 18,
+      "employee_id": 1,
+      "activity_type": "ATTENDANCE_CHECK_IN",
+      "description": "Checked in today as Work From Home.",
+      "created_at": "2026-06-05T18:43:09.389Z"
+    },
+    {
+      "id": 19,
+      "employee_id": 1,
+      "activity_type": "ATTENDANCE_CHECK_OUT",
+      "description": "Checked out today. Total hours worked: 0.02 hours.",
+      "created_at": "2026-06-05T18:44:04.270Z"
+    },
+    {
+      "id": 20,
+      "employee_id": 17,
+      "activity_type": "EMPLOYEE_CREATED",
+      "description": "Employee account for vinay  singh  was created by sarah.j@enterprise.io.",
+      "created_at": "2026-06-05T18:51:19.531Z"
+    },
+    {
+      "id": 21,
+      "employee_id": 17,
+      "activity_type": "DOCUMENT_UPLOADED",
+      "description": "Document \"harshibar_s_resume (4).pdf\" was uploaded by sarah.j@enterprise.io.",
+      "created_at": "2026-06-05T18:51:19.545Z"
     }
   ],
   "leave_types": [
@@ -2667,6 +2762,17 @@
       "working_hours": 0,
       "remarks": "Testing check-in script",
       "created_at": "2026-06-04T20:08:02.089Z"
+    },
+    {
+      "id": 135,
+      "employee_id": 1,
+      "date": "2026-06-06",
+      "check_in": "2026-06-05T18:43:09.389Z",
+      "check_out": "2026-06-05T18:44:04.270Z",
+      "status": "Work From Home",
+      "working_hours": 0.02,
+      "remarks": null,
+      "created_at": "2026-06-05T18:43:09.389Z"
     }
   ],
   "tasks": [
@@ -2815,6 +2921,362 @@
       "activity_type": "STATUS_CHANGE",
       "description": "Changed status from In Progress to Done.",
       "created_at": "2026-05-28T16:30:00.000Z"
+    }
+  ],
+  "projects": [
+    {
+      "id": 1,
+      "name": "Event Management 360",
+      "description": "Design and rollout of the global corporate events scheduling platform.",
+      "start_date": "2026-06-01",
+      "deadline": "2026-07-31",
+      "status": "Active",
+      "manager_id": 7,
+      "created_at": "2026-06-01T09:00:00.000Z",
+      "updated_at": "2026-06-01T09:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "name": "i-SOFTZONE Redesign S3",
+      "description": "Visual identity and modular layout design system upgrades.",
+      "start_date": "2026-06-06",
+      "deadline": "2026-08-30",
+      "status": "Planning",
+      "manager_id": 1,
+      "created_at": "2026-06-05T18:30:54.902Z",
+      "updated_at": "2026-06-05T18:30:54.902Z"
+    }
+  ],
+  "project_members": [
+    {
+      "project_id": 1,
+      "employee_id": 7
+    },
+    {
+      "project_id": 1,
+      "employee_id": 4
+    },
+    {
+      "project_id": 1,
+      "employee_id": 2
+    },
+    {
+      "project_id": 2,
+      "employee_id": 1
+    },
+    {
+      "project_id": 2,
+      "employee_id": 2
+    },
+    {
+      "project_id": 2,
+      "employee_id": 4
+    }
+  ],
+  "teams": [
+    {
+      "id": 1,
+      "name": "Core Platform",
+      "department_id": 1,
+      "lead_id": 2,
+      "created_at": "2026-05-01T09:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "name": "Design Tigers",
+      "department_id": 2,
+      "lead_id": 3,
+      "created_at": "2026-06-05T18:30:54.916Z"
+    }
+  ],
+  "team_members": [
+    {
+      "team_id": 1,
+      "employee_id": 2
+    },
+    {
+      "team_id": 1,
+      "employee_id": 4
+    },
+    {
+      "team_id": 1,
+      "employee_id": 8
+    },
+    {
+      "team_id": 2,
+      "employee_id": 3
+    },
+    {
+      "team_id": 2,
+      "employee_id": 4
+    }
+  ],
+  "notifications": [
+    {
+      "id": 1,
+      "employee_id": 4,
+      "title": "New Task Assigned",
+      "message": "You have been assigned the task \"Implement Phase 1 Attendance module\"",
+      "type": "TASK",
+      "is_read": false,
+      "created_at": "2026-05-20T09:05:00.000Z"
+    },
+    {
+      "id": 2,
+      "employee_id": 1,
+      "title": "Assigned as Project Manager",
+      "message": "You have been assigned as the manager for the project \"i-SOFTZONE Redesign S3\".",
+      "type": "PROJECT",
+      "is_read": true,
+      "created_at": "2026-06-05T18:30:54.904Z"
+    },
+    {
+      "id": 3,
+      "employee_id": 2,
+      "title": "Added to Project Members",
+      "message": "You have been added as a member of the project \"i-SOFTZONE Redesign S3\".",
+      "type": "PROJECT",
+      "is_read": false,
+      "created_at": "2026-06-05T18:30:54.906Z"
+    },
+    {
+      "id": 4,
+      "employee_id": 4,
+      "title": "Added to Project Members",
+      "message": "You have been added as a member of the project \"i-SOFTZONE Redesign S3\".",
+      "type": "PROJECT",
+      "is_read": false,
+      "created_at": "2026-06-05T18:30:54.908Z"
+    },
+    {
+      "id": 5,
+      "employee_id": 3,
+      "title": "Assigned as Team Lead",
+      "message": "You have been assigned as the lead for team \"Design Tigers\".",
+      "type": "SYSTEM",
+      "is_read": false,
+      "created_at": "2026-06-05T18:30:54.917Z"
+    },
+    {
+      "id": 6,
+      "employee_id": 4,
+      "title": "Added to Team",
+      "message": "You have been added to the team \"Design Tigers\".",
+      "type": "SYSTEM",
+      "is_read": false,
+      "created_at": "2026-06-05T18:30:54.918Z"
+    }
+  ],
+  "audit_logs": [
+    {
+      "id": 1,
+      "actor_id": null,
+      "actor_name": "System",
+      "action": "User Login",
+      "module": "AUTH",
+      "old_value": null,
+      "new_value": "{\"email\":\"sarah.j@enterprise.io\",\"password\":\"******\"}",
+      "created_at": "2026-06-05T18:30:54.892Z"
+    },
+    {
+      "id": 2,
+      "actor_id": 1,
+      "actor_name": "Sarah Jenkins",
+      "action": "Created project",
+      "module": "PROJECTS",
+      "old_value": null,
+      "new_value": "{\"name\":\"i-SOFTZONE Redesign S3\",\"description\":\"Visual identity and modular layout design system upgrades.\",\"start_date\":\"2026-06-06\",\"deadline\":\"2026-08-30\",\"status\":\"Planning\",\"manager_id\":1,\"memberIds\":[1,2,4]}",
+      "created_at": "2026-06-05T18:30:54.910Z"
+    },
+    {
+      "id": 3,
+      "actor_id": 1,
+      "actor_name": "Sarah Jenkins",
+      "action": "Created team",
+      "module": "TEAMS",
+      "old_value": null,
+      "new_value": "{\"name\":\"Design Tigers\",\"department_id\":2,\"lead_id\":3,\"memberIds\":[3,4]}",
+      "created_at": "2026-06-05T18:30:54.920Z"
+    },
+    {
+      "id": 4,
+      "actor_id": 1,
+      "actor_name": "Sarah Jenkins",
+      "action": "Updated system",
+      "module": "SYSTEM",
+      "old_value": null,
+      "new_value": null,
+      "created_at": "2026-06-05T18:30:54.927Z"
+    },
+    {
+      "id": 5,
+      "actor_id": 1,
+      "actor_name": "Sarah Jenkins",
+      "action": "Created system",
+      "module": "SYSTEM",
+      "old_value": null,
+      "new_value": null,
+      "created_at": "2026-06-05T18:30:54.930Z"
+    },
+    {
+      "id": 6,
+      "actor_id": null,
+      "actor_name": "System",
+      "action": "User Login",
+      "module": "AUTH",
+      "old_value": null,
+      "new_value": "{\"email\":\"sarah.j@enterprise.io\",\"password\":\"******\"}",
+      "created_at": "2026-06-05T18:32:36.032Z"
+    },
+    {
+      "id": 7,
+      "actor_id": 1,
+      "actor_name": "Sarah Jenkins",
+      "action": "Created attendance",
+      "module": "ATTENDANCE",
+      "old_value": null,
+      "new_value": "{\"status\":\"Work From Home\"}",
+      "created_at": "2026-06-05T18:43:09.390Z"
+    },
+    {
+      "id": 8,
+      "actor_id": 1,
+      "actor_name": "Sarah Jenkins",
+      "action": "Created attendance",
+      "module": "ATTENDANCE",
+      "old_value": null,
+      "new_value": null,
+      "created_at": "2026-06-05T18:44:04.271Z"
+    },
+    {
+      "id": 9,
+      "actor_id": null,
+      "actor_name": "System",
+      "action": "User Login",
+      "module": "AUTH",
+      "old_value": null,
+      "new_value": "{\"email\":\"sarah.j@enterprise.io\",\"password\":\"******\"}",
+      "created_at": "2026-06-05T18:48:01.455Z"
+    },
+    {
+      "id": 10,
+      "actor_id": 1,
+      "actor_name": "Sarah Jenkins",
+      "action": "Created employee",
+      "module": "EMPLOYEES",
+      "old_value": null,
+      "new_value": "{\"first_name\":\"vinay \",\"last_name\":\"singh \",\"email\":\"vps2004@gmail.com\",\"phone\":\"9926254000\",\"address\":\"symbiosis university of applied sciences\",\"employee_id\":\"EMP-111\",\"designation\":\"backend developer\",\"joining_date\":\"2026-06-03\",\"role\":\"Employee\",\"status\":\"Active\",\"department_id\":\"5\",\"skills\":\"[{\\\"skill_id\\\":6,\\\"proficiency_level\\\":\\\"Intermediate\\\"}]\"}",
+      "created_at": "2026-06-05T18:51:19.533Z"
+    },
+    {
+      "id": 11,
+      "actor_id": 1,
+      "actor_name": "Sarah Jenkins",
+      "action": "Created system",
+      "module": "SYSTEM",
+      "old_value": null,
+      "new_value": "{\"employee_id\":\"17\"}",
+      "created_at": "2026-06-05T18:51:19.548Z"
+    },
+    {
+      "id": 12,
+      "actor_id": null,
+      "actor_name": "System",
+      "action": "User Login",
+      "module": "AUTH",
+      "old_value": null,
+      "new_value": "{\"email\":\"sarah.j@enterprise.io\",\"password\":\"******\"}",
+      "created_at": "2026-06-05T19:23:41.267Z"
+    },
+    {
+      "id": 13,
+      "actor_id": null,
+      "actor_name": "System",
+      "action": "User Login",
+      "module": "AUTH",
+      "old_value": null,
+      "new_value": "{\"email\":\"sarah.j@enterprise.io\",\"password\":\"******\"}",
+      "created_at": "2026-06-05T19:56:03.503Z"
+    },
+    {
+      "id": 14,
+      "actor_id": null,
+      "actor_name": "System",
+      "action": "Created auth",
+      "module": "AUTH",
+      "old_value": null,
+      "new_value": "{\"refreshToken\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJzYXJhaC5qQGVudGVycHJpc2UuaW8iLCJyb2xlIjoiQWRtaW4iLCJpYXQiOjE3ODA2ODkzNjMsImV4cCI6MTc4MTI5NDE2M30.xyzT9m3YyPtEX8uLocZCGcB6mKa5zKBODHtu6yzo2Lg\"}",
+      "created_at": "2026-06-05T20:07:57.019Z"
+    },
+    {
+      "id": 15,
+      "actor_id": null,
+      "actor_name": "System",
+      "action": "User Login",
+      "module": "AUTH",
+      "old_value": null,
+      "new_value": "{\"email\":\"pam.b@enterprise.io\",\"password\":\"******\"}",
+      "created_at": "2026-06-05T20:12:08.300Z"
+    },
+    {
+      "id": 16,
+      "actor_id": null,
+      "actor_name": "System",
+      "action": "User Login",
+      "module": "AUTH",
+      "old_value": null,
+      "new_value": "{\"email\":\"pam.b@enterprise.io\",\"password\":\"******\"}",
+      "created_at": "2026-06-05T20:13:04.822Z"
+    },
+    {
+      "id": 17,
+      "actor_id": null,
+      "actor_name": "System",
+      "action": "User Login",
+      "module": "AUTH",
+      "old_value": null,
+      "new_value": "{\"email\":\"pam.b@enterprise.io\",\"password\":\"******\"}",
+      "created_at": "2026-06-05T20:15:59.136Z"
+    },
+    {
+      "id": 18,
+      "actor_id": null,
+      "actor_name": "System",
+      "action": "User Login",
+      "module": "AUTH",
+      "old_value": null,
+      "new_value": "{\"email\":\"pam.b@enterprise.io\",\"password\":\"******\"}",
+      "created_at": "2026-06-05T20:17:48.410Z"
+    },
+    {
+      "id": 19,
+      "actor_id": null,
+      "actor_name": "System",
+      "action": "Created auth",
+      "module": "AUTH",
+      "old_value": null,
+      "new_value": "{\"refreshToken\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTksImVtYWlsIjoicGFtLmJAZW50ZXJwcmlzZS5pbyIsInJvbGUiOiJJbnRlcm4iLCJpYXQiOjE3ODA2OTA2NjgsImV4cCI6MTc4MTI5NTQ2OH0.0oNN9acIXIDusBFiC7UpCqRY9i01Txt0ydMWezYdUbM\"}",
+      "created_at": "2026-06-05T20:18:07.625Z"
+    },
+    {
+      "id": 20,
+      "actor_id": null,
+      "actor_name": "System",
+      "action": "User Login",
+      "module": "AUTH",
+      "old_value": null,
+      "new_value": "{\"email\":\"toby.f@enterprise.io\",\"password\":\"******\"}",
+      "created_at": "2026-06-05T20:27:08.538Z"
+    },
+    {
+      "id": 21,
+      "actor_id": null,
+      "actor_name": "System",
+      "action": "User Login",
+      "module": "AUTH",
+      "old_value": null,
+      "new_value": "{\"email\":\"pam.b@enterprise.io\",\"password\":\"******\"}",
+      "created_at": "2026-06-05T20:35:22.559Z"
     }
   ]
 }

@@ -28,16 +28,84 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response Interceptor: Redirect or handle token expiration
+let isRefreshing = false;
+let failedQueue: any[] = [];
+
+const processQueue = (error: any, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
+// Response Interceptor: Redirect or handle token expiration with automatic refresh
 apiClient.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response && error.response.status === 401) {
-      localStorage.removeItem('hrms_token');
-      localStorage.removeItem('hrms_user');
-      // If we are not on the login page, redirect to login
-      if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/setup')) {
-        window.location.href = '/login';
+  async (error) => {
+    const originalRequest = error.config;
+
+    if (error.response && error.response.status === 401 && !originalRequest._retry) {
+      if (originalRequest.url.includes('/auth/login') || originalRequest.url.includes('/auth/refresh')) {
+        return Promise.reject(error);
+      }
+
+      originalRequest._retry = true;
+      const refreshToken = localStorage.getItem('hrms_refresh_token');
+
+      if (!refreshToken) {
+        localStorage.removeItem('hrms_token');
+        localStorage.removeItem('hrms_refresh_token');
+        localStorage.removeItem('hrms_user');
+        if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/setup')) {
+          window.location.href = '/login';
+        }
+        return Promise.reject(error);
+      }
+
+      if (isRefreshing) {
+        return new Promise(function(resolve, reject) {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((token) => {
+            originalRequest.headers.Authorization = 'Bearer ' + token;
+            return apiClient(originalRequest);
+          })
+          .catch((err) => {
+            return Promise.reject(err);
+          });
+      }
+
+      isRefreshing = true;
+
+      try {
+        const response = await axios.post(`${API_URL}/auth/refresh`, { refreshToken });
+        const { token: newAccessToken, refreshToken: newRefreshToken } = response.data;
+
+        localStorage.setItem('hrms_token', newAccessToken);
+        localStorage.setItem('hrms_refresh_token', newRefreshToken);
+
+        apiClient.defaults.headers.common['Authorization'] = 'Bearer ' + newAccessToken;
+        originalRequest.headers.Authorization = 'Bearer ' + newAccessToken;
+
+        processQueue(null, newAccessToken);
+        isRefreshing = false;
+        return apiClient(originalRequest);
+      } catch (refreshError) {
+        processQueue(refreshError, null);
+        isRefreshing = false;
+
+        localStorage.removeItem('hrms_token');
+        localStorage.removeItem('hrms_refresh_token');
+        localStorage.removeItem('hrms_user');
+
+        if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/setup')) {
+          window.location.href = '/login';
+        }
+        return Promise.reject(refreshError);
       }
     }
     return Promise.reject(error);
@@ -49,7 +117,7 @@ export const api = {
   // Auth
   async login(payload: any) {
     const res = await apiClient.post('/auth/login', payload);
-    return res.data; // returns { token, user }
+    return res.data; // returns { token, refreshToken, user }
   },
   async setup(payload: any) {
     const res = await apiClient.post('/auth/setup', payload);
@@ -57,6 +125,14 @@ export const api = {
   },
   async getMe() {
     const res = await apiClient.get('/auth/me');
+    return res.data;
+  },
+  async logout(payload: { refreshToken: string }) {
+    const res = await apiClient.post('/auth/logout', payload);
+    return res.data;
+  },
+  async getSystemStatus() {
+    const res = await apiClient.get('/auth/status');
     return res.data;
   },
 
@@ -241,7 +317,7 @@ export const api = {
   },
 
   // Task Management (Phase 2)
-  async getTasks(params?: { status?: string; assigneeId?: number; departmentId?: number; priority?: string }): Promise<Task[]> {
+  async getTasks(params?: { status?: string; assigneeId?: number; departmentId?: number; priority?: string; projectId?: number; teamId?: number }): Promise<Task[]> {
     const res = await apiClient.get('/tasks', { params });
     return res.data;
   },
@@ -271,6 +347,76 @@ export const api = {
   },
   async getTaskActivities(id: number): Promise<TaskActivity[]> {
     const res = await apiClient.get(`/tasks/${id}/activities`);
+    return res.data;
+  },
+
+  // Projects
+  async getProjects(params?: any) {
+    const res = await apiClient.get('/projects', { params });
+    return res.data;
+  },
+  async getProjectById(id: number) {
+    const res = await apiClient.get(`/projects/${id}`);
+    return res.data;
+  },
+  async createProject(payload: any) {
+    const res = await apiClient.post('/projects', payload);
+    return res.data;
+  },
+  async updateProject(id: number, payload: any) {
+    const res = await apiClient.put(`/projects/${id}`, payload);
+    return res.data;
+  },
+  async deleteProject(id: number) {
+    const res = await apiClient.delete(`/projects/${id}`);
+    return res.data;
+  },
+
+  // Teams
+  async getTeams(params?: any) {
+    const res = await apiClient.get('/teams', { params });
+    return res.data;
+  },
+  async getTeamById(id: number) {
+    const res = await apiClient.get(`/teams/${id}`);
+    return res.data;
+  },
+  async createTeam(payload: any) {
+    const res = await apiClient.post('/teams', payload);
+    return res.data;
+  },
+  async updateTeam(id: number, payload: any) {
+    const res = await apiClient.put(`/teams/${id}`, payload);
+    return res.data;
+  },
+  async deleteTeam(id: number) {
+    const res = await apiClient.delete(`/teams/${id}`);
+    return res.data;
+  },
+
+  // Notifications
+  async getNotifications() {
+    const res = await apiClient.get('/notifications');
+    return res.data;
+  },
+  async markNotificationAsRead(id: number) {
+    const res = await apiClient.put(`/notifications/${id}/read`, {});
+    return res.data;
+  },
+  async markAllNotificationsAsRead() {
+    const res = await apiClient.post('/notifications/read-all', {});
+    return res.data;
+  },
+
+  // Audit Logs
+  async getAuditLogs(params?: any) {
+    const res = await apiClient.get('/audit-logs', { params });
+    return res.data;
+  },
+
+  // Global Search
+  async search(query: string) {
+    const res = await apiClient.get('/search', { params: { q: query } });
     return res.data;
   }
 };

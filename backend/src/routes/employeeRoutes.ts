@@ -10,14 +10,14 @@ router.get('/:id', authenticateToken as any, getEmployeeById as any);
 
 router.post('/', 
   authenticateToken as any, 
-  requireRole(['Super Admin', 'Admin', 'HR', 'Manager']) as any,
+  requireRole(['Super Admin', 'Admin', 'HR']) as any,
   upload.single('avatar'), 
   createEmployee as any
 );
 
 router.put('/:id', 
   authenticateToken as any, 
-  requireRole(['Super Admin', 'Admin', 'HR', 'Manager']) as any,
+  requireRole(['Super Admin', 'Admin', 'HR']) as any,
   upload.single('avatar'), 
   updateEmployee as any
 );
