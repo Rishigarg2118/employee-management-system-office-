@@ -10,27 +10,27 @@ router.get('/:id', authenticateToken as any, getEmployeeById as any);
 
 router.post('/', 
   authenticateToken as any, 
-  requireRole(['Admin', 'Manager']) as any,
+  requireRole(['Super Admin', 'Admin', 'HR', 'Manager']) as any,
   upload.single('avatar'), 
   createEmployee as any
 );
 
 router.put('/:id', 
   authenticateToken as any, 
-  requireRole(['Admin', 'Manager']) as any,
+  requireRole(['Super Admin', 'Admin', 'HR', 'Manager']) as any,
   upload.single('avatar'), 
   updateEmployee as any
 );
 
 router.delete('/:id', 
   authenticateToken as any, 
-  requireRole(['Admin']) as any, 
+  requireRole(['Super Admin', 'Admin']) as any, 
   deleteEmployee as any
 );
 
 router.post('/bulk', 
   authenticateToken as any, 
-  requireRole(['Admin']) as any, 
+  requireRole(['Super Admin', 'Admin']) as any, 
   bulkActions as any
 );
 

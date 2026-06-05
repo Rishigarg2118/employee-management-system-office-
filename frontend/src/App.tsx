@@ -17,6 +17,9 @@ import { Departments } from './pages/Departments';
 import { Skills } from './pages/Skills';
 import { Documents } from './pages/Documents';
 import { Settings } from './pages/Settings';
+import { LeavesWorkspace } from './pages/leaves/LeavesWorkspace';
+import { AttendanceWorkspace } from './pages/attendance/AttendanceWorkspace';
+import { TaskWorkspace } from './pages/tasks/TaskWorkspace';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -27,9 +30,13 @@ const queryClient = new QueryClient({
   }
 });
 
-// Protected Route Shielding Helper
-const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAuthenticated, isLoading } = useAuth();
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+  allowedRoles?: string[];
+}
+
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
+  const { isAuthenticated, isLoading, user } = useAuth();
 
   if (isLoading) {
     return (
@@ -41,6 +48,10 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (allowedRoles && user && !allowedRoles.includes(user.role)) {
+    return <Navigate to="/" replace />;
   }
 
   return <AppLayout>{children}</AppLayout>;
@@ -71,20 +82,39 @@ const App: React.FC = () => {
       theme={{
         token: {
           fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-          colorPrimary: '#0070F3', // Accent Vercel blue
-          colorSuccess: '#16A34A', // Success green
-          colorWarning: '#D97706', // Warning gold
-          colorError: '#DC2626',   // Danger red
-          colorTextBase: '#000000', // Primary black text
-          colorBgBase: '#FFFFFF',   // Clean background
-          colorBorder: '#EAEAEA',   // Clean card borders
-          borderRadius: 6,          // Minimal border corners
+          colorPrimary: '#10B981', // Emerald accent
+          colorSuccess: '#22C55E', // Success green
+          colorWarning: '#F59E0B', // Warning gold
+          colorError: '#EF4444',   // Danger red
+          colorTextBase: '#0F172A', // Primary Slate-900 text
+          colorBgBase: '#FFFFFF',   // Card background
+          colorBorder: '#E2E8F0',   // Border slate-200
+          borderRadius: 12,         // Modern larger border radius
           wireframe: false
         },
         components: {
           Table: {
             headerBg: '#F8FAFC',
-            headerColor: '#666666'
+            headerColor: '#64748B',
+            rowHoverBg: '#F8FAFC',
+            cellPaddingBlock: 14,
+            cellPaddingInline: 16
+          },
+          Card: {
+            headerBg: '#FFFFFF',
+            colorBorderSecondary: '#E2E8F0'
+          },
+          Button: {
+            borderRadius: 8,
+            controlHeight: 38
+          },
+          Menu: {
+            darkItemBg: '#0F172A',
+            darkItemColor: '#94A3B8',
+            darkItemSelectedBg: 'rgba(16, 185, 129, 0.15)',
+            darkItemSelectedColor: '#10B981',
+            darkItemHoverBg: 'rgba(255, 255, 255, 0.05)',
+            darkItemHoverColor: '#FFFFFF'
           }
         }
       }}
@@ -100,13 +130,16 @@ const App: React.FC = () => {
               {/* Protected System Pathways */}
               <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/employees" element={<ProtectedRoute><EmployeeList /></ProtectedRoute>} />
-              <Route path="/employees/new" element={<ProtectedRoute><EmployeeWizard /></ProtectedRoute>} />
+              <Route path="/employees/new" element={<ProtectedRoute allowedRoles={['Super Admin', 'Admin', 'HR', 'Manager']}><EmployeeWizard /></ProtectedRoute>} />
               <Route path="/employees/:id" element={<ProtectedRoute><EmployeeProfile /></ProtectedRoute>} />
-              <Route path="/employees/:id/edit" element={<ProtectedRoute><EmployeeWizard /></ProtectedRoute>} />
-              <Route path="/departments" element={<ProtectedRoute><Departments /></ProtectedRoute>} />
-              <Route path="/skills" element={<ProtectedRoute><Skills /></ProtectedRoute>} />
-              <Route path="/documents" element={<ProtectedRoute><Documents /></ProtectedRoute>} />
-              <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+              <Route path="/employees/:id/edit" element={<ProtectedRoute allowedRoles={['Super Admin', 'Admin', 'HR', 'Manager']}><EmployeeWizard /></ProtectedRoute>} />
+              <Route path="/departments" element={<ProtectedRoute allowedRoles={['Super Admin', 'Admin']}><Departments /></ProtectedRoute>} />
+              <Route path="/skills" element={<ProtectedRoute allowedRoles={['Super Admin', 'Admin', 'HR']}><Skills /></ProtectedRoute>} />
+              <Route path="/documents" element={<ProtectedRoute allowedRoles={['Super Admin', 'Admin', 'HR']}><Documents /></ProtectedRoute>} />
+              <Route path="/settings" element={<ProtectedRoute allowedRoles={['Super Admin', 'Admin']}><Settings /></ProtectedRoute>} />
+              <Route path="/leaves" element={<ProtectedRoute><LeavesWorkspace /></ProtectedRoute>} />
+              <Route path="/attendance" element={<ProtectedRoute><AttendanceWorkspace /></ProtectedRoute>} />
+              <Route path="/tasks" element={<ProtectedRoute allowedRoles={['Super Admin', 'Admin', 'HR', 'Manager', 'Employee']}><TaskWorkspace /></ProtectedRoute>} />
 
               {/* Catch-all Redirect */}
               <Route path="*" element={<Navigate to="/" replace />} />

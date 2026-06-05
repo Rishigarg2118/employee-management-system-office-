@@ -13,7 +13,7 @@ import { api } from '../services/api';
 import { StatCard } from '../components/StatCard';
 import { DashboardStats, DepartmentDistributionItem, GrowthTrendItem, Employee } from '../types';
 
-const COLORS = ['#0070F3', '#16A34A', '#8B5CF6', '#F59E0B', '#EC4899', '#06B6D4'];
+const COLORS = ['#10B981', '#64748B', '#22C55E', '#F59E0B', '#EF4444', '#3B82F6', '#6366F1'];
 
 export const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
@@ -101,9 +101,9 @@ export const Dashboard: React.FC = () => {
       <div>
         <h1 style={{ 
           fontSize: '32px', 
-          fontWeight: 600, 
-          letterSpacing: '-0.03em', 
-          color: '#000000',
+          fontWeight: 700, 
+          letterSpacing: '-0.04em', 
+          color: '#0F172A',
           marginBottom: '4px'
         }}>
           Dashboard
@@ -177,21 +177,21 @@ export const Dashboard: React.FC = () => {
                         <stop offset="95%" stopColor="var(--accent-color)" stopOpacity={0}/>
                       </linearGradient>
                       <linearGradient id="colorActive" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#16A34A" stopOpacity={0.1}/>
-                        <stop offset="95%" stopColor="#16A34A" stopOpacity={0}/>
+                        <stop offset="5%" stopColor="#22C55E" stopOpacity={0.1}/>
+                        <stop offset="95%" stopColor="#22C55E" stopOpacity={0}/>
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F1F1" />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-color)" />
                     <XAxis 
                       dataKey="name" 
                       axisLine={false} 
                       tickLine={false} 
-                      tick={{ fill: '#8C8C8C', fontSize: 12 }} 
+                      tick={{ fill: 'var(--text-secondary)', fontSize: 12 }} 
                     />
                     <YAxis 
                       axisLine={false} 
                       tickLine={false} 
-                      tick={{ fill: '#8C8C8C', fontSize: 12 }} 
+                      tick={{ fill: 'var(--text-secondary)', fontSize: 12 }} 
                     />
                     <Tooltip 
                       contentStyle={{
@@ -214,7 +214,7 @@ export const Dashboard: React.FC = () => {
                     <Area 
                       type="monotone" 
                       dataKey="Active" 
-                      stroke="#16A34A" 
+                      stroke="#22C55E" 
                       strokeWidth={2}
                       fillOpacity={1} 
                       fill="url(#colorActive)" 

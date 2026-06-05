@@ -240,7 +240,7 @@ export const EmployeeList: React.FC = () => {
       title: '',
       key: 'actions',
       render: (_: any, record: Employee) => {
-        const isAdminOrManager = currentUser?.role === 'Admin' || currentUser?.role === 'Manager';
+        const canEdit = ['Super Admin', 'Admin', 'HR', 'Manager'].includes(currentUser?.role || '');
         const isSelf = currentUser?.id === record.id;
         
         const actionMenuItems = {
@@ -250,14 +250,14 @@ export const EmployeeList: React.FC = () => {
               label: <Link to={`/employees/${record.id}`}>View Profile</Link>,
               icon: <EyeOutlined />
             },
-            ...(isAdminOrManager ? [
+            ...(canEdit ? [
               {
                 key: 'edit',
                 label: <Link to={`/employees/${record.id}/edit`}>Edit Details</Link>,
                 icon: <EditOutlined />
               }
             ] : []),
-            ...(currentUser?.role === 'Admin' && !isSelf ? [
+            ...((currentUser?.role === 'Super Admin' || currentUser?.role === 'Admin') && !isSelf ? [
               {
                 type: 'divider' as const
               },
@@ -296,20 +296,14 @@ export const EmployeeList: React.FC = () => {
       {/* HEADER SECTION */}
       <div style={{ display: 'flex', justifyContent: 'between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <div style={{ flex: 1 }}>
-          <h1 style={{ 
-            fontSize: '32px', 
-            fontWeight: 600, 
-            letterSpacing: '-0.03em', 
-            color: '#000000',
-            marginBottom: '4px'
-          }}>
+          <h1 className="page-title">
             Employee Registry
           </h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>
             Search, filter, and audit company roles, departments, and onboarding timelines.
           </p>
         </div>
-        {(currentUser?.role === 'Admin' || currentUser?.role === 'Manager') && (
+        {['Super Admin', 'Admin', 'HR', 'Manager'].includes(currentUser?.role || '') && (
           <Button 
             type="primary" 
             icon={<PlusOutlined />} 
@@ -372,7 +366,7 @@ export const EmployeeList: React.FC = () => {
       {/* TABLE WORKSPACE */}
       <Card bodyStyle={{ padding: 0 }} style={{ overflow: 'hidden' }}>
         <Table
-          rowSelection={currentUser?.role === 'Admin' ? rowSelection : undefined}
+          rowSelection={(currentUser?.role === 'Super Admin' || currentUser?.role === 'Admin') ? rowSelection : undefined}
           columns={columns}
           dataSource={employees}
           rowKey="id"

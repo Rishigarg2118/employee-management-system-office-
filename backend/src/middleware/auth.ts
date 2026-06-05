@@ -7,7 +7,7 @@ export interface AuthenticatedRequest extends Request {
   user?: {
     id: number;
     email: string;
-    role: 'Admin' | 'Manager' | 'Employee';
+    role: 'Super Admin' | 'Admin' | 'HR' | 'Manager' | 'Employee' | 'Intern';
   };
 }
 
@@ -30,7 +30,7 @@ export function authenticateToken(req: AuthenticatedRequest, res: Response, next
   }
 }
 
-export function requireRole(roles: ('Admin' | 'Manager' | 'Employee')[]) {
+export function requireRole(roles: ('Super Admin' | 'Admin' | 'HR' | 'Manager' | 'Employee' | 'Intern')[]) {
   return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
     if (!req.user) {
       res.status(401).json({ message: 'Authentication required.' });

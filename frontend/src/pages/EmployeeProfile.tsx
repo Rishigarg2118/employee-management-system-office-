@@ -179,7 +179,7 @@ export const EmployeeProfile: React.FC = () => {
     );
   };
 
-  const isEditable = currentUser?.role === 'Admin' || currentUser?.role === 'Manager' || currentUser?.id === employee.id;
+  const isEditable = ['Super Admin', 'Admin', 'HR', 'Manager'].includes(currentUser?.role || '') || currentUser?.id === employee.id;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
@@ -207,7 +207,7 @@ export const EmployeeProfile: React.FC = () => {
             />
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-                <h1 style={{ fontSize: '28px', fontWeight: 600, letterSpacing: '-0.02em', color: '#000000', marginBottom: 0 }}>
+                <h1 style={{ fontSize: '28px', fontWeight: 600, letterSpacing: '-0.02em', color: 'var(--text-primary)', marginBottom: 0 }}>
                   {fullName}
                 </h1>
                 <span className={`status-badge status-badge-${employee.status.toLowerCase().replace(' ', '')}`}>

@@ -5,7 +5,7 @@
       "name": "Engineering",
       "code": "ENG",
       "description": "Software engineering, DevOps, and QA operations.",
-      "created_at": "2026-02-23T09:39:45.330Z",
+      "created_at": "2026-02-24T06:39:32.416Z",
       "manager_id": 1
     },
     {
@@ -13,7 +13,7 @@
       "name": "Product Design",
       "code": "DES",
       "description": "UI/UX design, visual design, user research, and branding.",
-      "created_at": "2026-02-24T09:39:45.331Z",
+      "created_at": "2026-02-25T06:39:32.417Z",
       "manager_id": 3
     },
     {
@@ -21,7 +21,7 @@
       "name": "Product Management",
       "code": "PM",
       "description": "Product strategy, planning, roadmaps, and execution.",
-      "created_at": "2026-02-25T09:39:45.331Z",
+      "created_at": "2026-02-26T06:39:32.417Z",
       "manager_id": 7
     },
     {
@@ -29,7 +29,7 @@
       "name": "Human Resources",
       "code": "HR",
       "description": "Talent acquisition, employee success, and culture.",
-      "created_at": "2026-02-26T09:39:45.331Z",
+      "created_at": "2026-02-27T06:39:32.417Z",
       "manager_id": 5
     },
     {
@@ -37,8 +37,15 @@
       "name": "Finance & Ops",
       "code": "FIN",
       "description": "Financial planning, accounting, and general operations.",
-      "created_at": "2026-02-27T09:39:45.331Z",
+      "created_at": "2026-02-28T06:39:32.417Z",
       "manager_id": 11
+    },
+    {
+      "id": 6,
+      "name": "digital marketing ",
+      "code": "dmm",
+      "manager_id": 6,
+      "created_at": "2026-06-04T12:04:15.756Z"
     }
   ],
   "employees": [
@@ -55,7 +62,7 @@
       "bio": "Veteran tech leader focused on scaling teams, building robust architectures, and promoting developer happiness.",
       "phone": "+1 (555) 123-4567",
       "address": "San Francisco, CA",
-      "password": "$2b$10$S5EQWymInYMSdwokZBjYvuZv4hHa65QSCbdYH/4SPQiaNPv6uPNPq",
+      "password": "$2b$10$CJcZrEz9OYF5HTWtvhh4Gu7BehzQ3e/aIjbmUiK6I7IWMT/t5BbCK",
       "department_id": 1,
       "created_at": "2022-01-15T00:00:00.000Z",
       "updated_at": "2022-01-15T00:00:00.000Z"
@@ -73,7 +80,7 @@
       "bio": "Passionate builder of microservices, distributed systems, and real-time data pipelines.",
       "phone": "+1 (555) 234-5678",
       "address": "Seattle, WA",
-      "password": "$2b$10$S5EQWymInYMSdwokZBjYvuZv4hHa65QSCbdYH/4SPQiaNPv6uPNPq",
+      "password": "$2b$10$CJcZrEz9OYF5HTWtvhh4Gu7BehzQ3e/aIjbmUiK6I7IWMT/t5BbCK",
       "department_id": 1,
       "created_at": "2022-04-10T00:00:00.000Z",
       "updated_at": "2022-04-10T00:00:00.000Z"
@@ -91,7 +98,7 @@
       "bio": "Creating beautiful, user-centered digital interfaces that simplify complex B2B enterprise workflows.",
       "phone": "+1 (555) 345-6789",
       "address": "New York, NY",
-      "password": "$2b$10$S5EQWymInYMSdwokZBjYvuZv4hHa65QSCbdYH/4SPQiaNPv6uPNPq",
+      "password": "$2b$10$CJcZrEz9OYF5HTWtvhh4Gu7BehzQ3e/aIjbmUiK6I7IWMT/t5BbCK",
       "department_id": 2,
       "created_at": "2023-02-01T00:00:00.000Z",
       "updated_at": "2023-02-01T00:00:00.000Z"
@@ -109,7 +116,7 @@
       "bio": "Component-driven development advocate. Loves CSS-in-JS, animation, and performance optimization.",
       "phone": "+1 (555) 456-7890",
       "address": "Austin, TX",
-      "password": "$2b$10$S5EQWymInYMSdwokZBjYvuZv4hHa65QSCbdYH/4SPQiaNPv6uPNPq",
+      "password": "$2b$10$CJcZrEz9OYF5HTWtvhh4Gu7BehzQ3e/aIjbmUiK6I7IWMT/t5BbCK",
       "department_id": 1,
       "created_at": "2023-06-15T00:00:00.000Z",
       "updated_at": "2023-06-15T00:00:00.000Z"
@@ -127,7 +134,7 @@
       "bio": "Dedicated to cultivating positive corporate culture, managing talent development, and HR compliance.",
       "phone": "+1 (555) 567-8901",
       "address": "Chicago, IL",
-      "password": "$2b$10$S5EQWymInYMSdwokZBjYvuZv4hHa65QSCbdYH/4SPQiaNPv6uPNPq",
+      "password": "$2b$10$CJcZrEz9OYF5HTWtvhh4Gu7BehzQ3e/aIjbmUiK6I7IWMT/t5BbCK",
       "department_id": 4,
       "created_at": "2021-09-01T00:00:00.000Z",
       "updated_at": "2021-09-01T00:00:00.000Z"
@@ -145,7 +152,7 @@
       "bio": "Passionate about building responsive, accessible web interfaces.",
       "phone": "+1 (555) 678-9012",
       "address": "Boston, MA",
-      "password": "$2b$10$S5EQWymInYMSdwokZBjYvuZv4hHa65QSCbdYH/4SPQiaNPv6uPNPq",
+      "password": "$2b$10$CJcZrEz9OYF5HTWtvhh4Gu7BehzQ3e/aIjbmUiK6I7IWMT/t5BbCK",
       "department_id": 1,
       "created_at": "2024-01-10T00:00:00.000Z",
       "updated_at": "2024-01-10T00:00:00.000Z"
@@ -163,7 +170,7 @@
       "bio": "Driving product strategy, defining roadmaps, and collaborating across engineering and design.",
       "phone": "+1 (555) 789-0123",
       "address": "Los Angeles, CA",
-      "password": "$2b$10$S5EQWymInYMSdwokZBjYvuZv4hHa65QSCbdYH/4SPQiaNPv6uPNPq",
+      "password": "$2b$10$CJcZrEz9OYF5HTWtvhh4Gu7BehzQ3e/aIjbmUiK6I7IWMT/t5BbCK",
       "department_id": 3,
       "created_at": "2023-08-20T00:00:00.000Z",
       "updated_at": "2023-08-20T00:00:00.000Z"
@@ -181,7 +188,7 @@
       "bio": "Automating cloud infrastructure, managing CI/CD pipelines, and ensuring system uptime.",
       "phone": "+1 (555) 890-1234",
       "address": "Denver, CO",
-      "password": "$2b$10$S5EQWymInYMSdwokZBjYvuZv4hHa65QSCbdYH/4SPQiaNPv6uPNPq",
+      "password": "$2b$10$CJcZrEz9OYF5HTWtvhh4Gu7BehzQ3e/aIjbmUiK6I7IWMT/t5BbCK",
       "department_id": 1,
       "created_at": "2024-03-01T00:00:00.000Z",
       "updated_at": "2024-03-01T00:00:00.000Z"
@@ -193,16 +200,16 @@
       "last_name": "Tan",
       "email": "chloe.tan@enterprise.io",
       "designation": "UI Designer",
-      "status": "On Leave",
+      "status": "Probation",
       "joining_date": "2026-03-15",
       "role": "Employee",
       "bio": "Junior designer obsessed with typography, grids, and design systems.",
       "phone": "+1 (555) 901-2345",
       "address": "San Francisco, CA",
-      "password": "$2b$10$S5EQWymInYMSdwokZBjYvuZv4hHa65QSCbdYH/4SPQiaNPv6uPNPq",
+      "password": "$2b$10$CJcZrEz9OYF5HTWtvhh4Gu7BehzQ3e/aIjbmUiK6I7IWMT/t5BbCK",
       "department_id": 2,
       "created_at": "2026-03-15T00:00:00.000Z",
-      "updated_at": "2026-06-03T10:20:39.771Z"
+      "updated_at": "2026-03-15T00:00:00.000Z"
     },
     {
       "id": 10,
@@ -217,7 +224,7 @@
       "bio": "API developer who writes clean, modular code in Node.js and Go.",
       "phone": "+1 (555) 012-3456",
       "address": "Washington, DC",
-      "password": "$2b$10$S5EQWymInYMSdwokZBjYvuZv4hHa65QSCbdYH/4SPQiaNPv6uPNPq",
+      "password": "$2b$10$CJcZrEz9OYF5HTWtvhh4Gu7BehzQ3e/aIjbmUiK6I7IWMT/t5BbCK",
       "department_id": 1,
       "created_at": "2022-11-10T00:00:00.000Z",
       "updated_at": "2022-11-10T00:00:00.000Z"
@@ -229,16 +236,16 @@
       "last_name": "Martinez",
       "email": "sophia.m@enterprise.io",
       "designation": "Finance Lead",
-      "status": "Inactive",
+      "status": "Active",
       "joining_date": "2022-03-01",
       "role": "Manager",
       "bio": "Overseeing financial health, modeling growth, and optimizing tax strategies.",
       "phone": "+1 (555) 123-7890",
       "address": "Miami, FL",
-      "password": "$2b$10$S5EQWymInYMSdwokZBjYvuZv4hHa65QSCbdYH/4SPQiaNPv6uPNPq",
+      "password": "$2b$10$CJcZrEz9OYF5HTWtvhh4Gu7BehzQ3e/aIjbmUiK6I7IWMT/t5BbCK",
       "department_id": 5,
       "created_at": "2022-03-01T00:00:00.000Z",
-      "updated_at": "2026-06-03T09:52:17.703Z"
+      "updated_at": "2022-03-01T00:00:00.000Z"
     },
     {
       "id": 12,
@@ -253,10 +260,72 @@
       "bio": "Breaking software so customers don't. Specialized in automated browser testing.",
       "phone": "+1 (555) 234-8901",
       "address": "Portland, OR",
-      "password": "$2b$10$S5EQWymInYMSdwokZBjYvuZv4hHa65QSCbdYH/4SPQiaNPv6uPNPq",
+      "password": "$2b$10$CJcZrEz9OYF5HTWtvhh4Gu7BehzQ3e/aIjbmUiK6I7IWMT/t5BbCK",
       "department_id": 1,
       "created_at": "2023-10-15T00:00:00.000Z",
       "updated_at": "2023-10-15T00:00:00.000Z"
+    },
+    {
+      "id": 13,
+      "employee_id": "EMP-020",
+      "first_name": "Test",
+      "last_name": "Employee",
+      "email": "test.emp@enterprise.io",
+      "password": "$2b$10$Q1GPj/a8evDO5zmqbOCEDuwmUFtlIUeW8sQtVknTabBV7s6QNO4Ym",
+      "department_id": 1,
+      "designation": "Software Intern",
+      "status": "Active",
+      "joining_date": "2026-06-04",
+      "role": "Employee",
+      "created_at": "2026-06-04T17:27:41.589Z",
+      "updated_at": "2026-06-04T17:27:41.589Z"
+    },
+    {
+      "id": 14,
+      "employee_id": "EMP-021",
+      "first_name": "Multipart",
+      "last_name": "Test",
+      "email": "multi.test@enterprise.io",
+      "password": "$2b$10$0MCPQwBeVa66Ry6IPqmyx.B1E5ujWwDFxFC7mxuekE1FXjSmSpoiO",
+      "department_id": 1,
+      "designation": "Software Intern",
+      "status": "Active",
+      "joining_date": "2026-06-04",
+      "role": "Employee",
+      "created_at": "2026-06-04T17:28:23.351Z",
+      "updated_at": "2026-06-04T17:28:23.351Z"
+    },
+    {
+      "id": 15,
+      "employee_id": "EMP-029",
+      "first_name": "Multipart",
+      "last_name": "Test",
+      "email": "multi.test9@enterprise.io",
+      "password": "$2b$10$ocrs4JgRuufWRIVUd56p5eYvKgW3AHyDuzFzL0KGgO5D.nw2gofR6",
+      "department_id": 1,
+      "designation": "Software Intern",
+      "status": "Active",
+      "joining_date": "2026-06-04",
+      "role": "Employee",
+      "created_at": "2026-06-04T20:05:56.408Z",
+      "updated_at": "2026-06-04T20:05:56.408Z"
+    },
+    {
+      "id": 16,
+      "employee_id": "EMP-089",
+      "first_name": "Sandarbh",
+      "last_name": "Bhasin",
+      "email": "sandarbhbhasin@gmail.com",
+      "password": "$2b$10$Bg.GAcehgp1hsL6WxUpwue3ghAdrxqJoFfAjJ2LrFIfWd3Bbrmuwq",
+      "phone": "+918128929323",
+      "department_id": 1,
+      "designation": "mobile app developer ",
+      "status": "On Leave",
+      "joining_date": "2026-06-01",
+      "address": "symbiosis university of applied sciences",
+      "role": "Employee",
+      "created_at": "2026-06-04T20:11:51.237Z",
+      "updated_at": "2026-06-05T12:13:08.558Z"
     }
   ],
   "skills": [
@@ -431,6 +500,16 @@
       "employee_id": 12,
       "skill_id": 13,
       "proficiency_level": "Expert"
+    },
+    {
+      "employee_id": 15,
+      "skill_id": 1,
+      "proficiency_level": "Intermediate"
+    },
+    {
+      "employee_id": 16,
+      "skill_id": 10,
+      "proficiency_level": "Intermediate"
     }
   ],
   "documents": [
@@ -460,6 +539,15 @@
       "file_size": 489000,
       "file_type": "application/pdf",
       "uploaded_at": "2023-06-12T00:00:00.000Z"
+    },
+    {
+      "id": 4,
+      "employee_id": 16,
+      "name": "sandarbh_bhasin_resume (2).pdf",
+      "file_path": "uploads/document-1780603911247-936875618.pdf",
+      "file_size": 64351,
+      "file_type": "application/pdf",
+      "uploaded_at": "2026-06-04T20:11:51.251Z"
     }
   ],
   "activities": [
@@ -507,17 +595,2226 @@
     },
     {
       "id": 7,
-      "employee_id": 11,
-      "activity_type": "STATUS_CHANGE",
-      "description": "Employee status bulk-updated to Inactive.",
-      "created_at": "2026-06-03T09:52:17.704Z"
+      "employee_id": 1,
+      "activity_type": "ATTENDANCE_CHECK_IN",
+      "description": "Checked in today as Half Day.",
+      "created_at": "2026-06-04T11:08:17.116Z"
     },
     {
       "id": 8,
-      "employee_id": 9,
+      "employee_id": 1,
+      "activity_type": "ATTENDANCE_CHECK_OUT",
+      "description": "Checked out today. Total hours worked: 0 hours.",
+      "created_at": "2026-06-04T11:08:21.061Z"
+    },
+    {
+      "id": 9,
+      "employee_id": null,
+      "activity_type": "DEPARTMENT_CREATED",
+      "description": "Department \"digital marketing \" (dmm) was created by sarah.j@enterprise.io.",
+      "created_at": "2026-06-04T12:04:15.758Z"
+    },
+    {
+      "id": 10,
+      "employee_id": 13,
+      "activity_type": "EMPLOYEE_CREATED",
+      "description": "Employee account for Test Employee was created by sarah.j@enterprise.io.",
+      "created_at": "2026-06-04T17:27:41.591Z"
+    },
+    {
+      "id": 11,
+      "employee_id": 14,
+      "activity_type": "EMPLOYEE_CREATED",
+      "description": "Employee account for Multipart Test was created by sarah.j@enterprise.io.",
+      "created_at": "2026-06-04T17:28:23.353Z"
+    },
+    {
+      "id": 12,
+      "employee_id": 15,
+      "activity_type": "EMPLOYEE_CREATED",
+      "description": "Employee account for Multipart Test was created by sarah.j@enterprise.io.",
+      "created_at": "2026-06-04T20:05:56.411Z"
+    },
+    {
+      "id": 13,
+      "employee_id": 1,
+      "activity_type": "ATTENDANCE_CHECK_IN",
+      "description": "Checked in today as Present. Remarks: Testing check-in script",
+      "created_at": "2026-06-04T20:08:02.090Z"
+    },
+    {
+      "id": 14,
+      "employee_id": 1,
+      "activity_type": "ATTENDANCE_CHECK_OUT",
+      "description": "Checked out today. Total hours worked: 0 hours.",
+      "created_at": "2026-06-04T20:08:12.800Z"
+    },
+    {
+      "id": 15,
+      "employee_id": 16,
+      "activity_type": "EMPLOYEE_CREATED",
+      "description": "Employee account for Sandarbh Bhasin was created by sarah.j@enterprise.io.",
+      "created_at": "2026-06-04T20:11:51.239Z"
+    },
+    {
+      "id": 16,
+      "employee_id": 16,
+      "activity_type": "DOCUMENT_UPLOADED",
+      "description": "Document \"sandarbh_bhasin_resume (2).pdf\" was uploaded by sarah.j@enterprise.io.",
+      "created_at": "2026-06-04T20:11:51.252Z"
+    },
+    {
+      "id": 17,
+      "employee_id": 16,
       "activity_type": "STATUS_CHANGE",
       "description": "Employee status bulk-updated to On Leave.",
-      "created_at": "2026-06-03T10:20:39.773Z"
+      "created_at": "2026-06-05T12:13:08.559Z"
+    }
+  ],
+  "leave_types": [
+    {
+      "id": 1,
+      "name": "Casual Leave",
+      "code": "CL",
+      "description": "Used for casual personal reasons, vacation, or short breaks.",
+      "default_days": 12
+    },
+    {
+      "id": 2,
+      "name": "Sick Leave",
+      "code": "SL",
+      "description": "Used for medical emergencies, illness, or medical consultations.",
+      "default_days": 10
+    },
+    {
+      "id": 3,
+      "name": "Earned Leave",
+      "code": "EL",
+      "description": "Accrued vacation time based on service duration.",
+      "default_days": 15
+    },
+    {
+      "id": 4,
+      "name": "Maternity Leave",
+      "code": "ML",
+      "description": "Paid maternity leave for female employees.",
+      "default_days": 90
+    }
+  ],
+  "leave_balances": [
+    {
+      "employee_id": 1,
+      "leave_type_id": 1,
+      "total_days": 12,
+      "used_days": 0,
+      "remaining_days": 12
+    },
+    {
+      "employee_id": 1,
+      "leave_type_id": 2,
+      "total_days": 10,
+      "used_days": 0,
+      "remaining_days": 10
+    },
+    {
+      "employee_id": 1,
+      "leave_type_id": 3,
+      "total_days": 15,
+      "used_days": 0,
+      "remaining_days": 15
+    },
+    {
+      "employee_id": 1,
+      "leave_type_id": 4,
+      "total_days": 90,
+      "used_days": 0,
+      "remaining_days": 90
+    },
+    {
+      "employee_id": 2,
+      "leave_type_id": 1,
+      "total_days": 12,
+      "used_days": 0,
+      "remaining_days": 12
+    },
+    {
+      "employee_id": 2,
+      "leave_type_id": 2,
+      "total_days": 10,
+      "used_days": 0,
+      "remaining_days": 10
+    },
+    {
+      "employee_id": 2,
+      "leave_type_id": 3,
+      "total_days": 15,
+      "used_days": 0,
+      "remaining_days": 15
+    },
+    {
+      "employee_id": 2,
+      "leave_type_id": 4,
+      "total_days": 90,
+      "used_days": 0,
+      "remaining_days": 90
+    },
+    {
+      "employee_id": 3,
+      "leave_type_id": 1,
+      "total_days": 12,
+      "used_days": 0,
+      "remaining_days": 12
+    },
+    {
+      "employee_id": 3,
+      "leave_type_id": 2,
+      "total_days": 10,
+      "used_days": 0,
+      "remaining_days": 10
+    },
+    {
+      "employee_id": 3,
+      "leave_type_id": 3,
+      "total_days": 15,
+      "used_days": 0,
+      "remaining_days": 15
+    },
+    {
+      "employee_id": 3,
+      "leave_type_id": 4,
+      "total_days": 90,
+      "used_days": 0,
+      "remaining_days": 90
+    },
+    {
+      "employee_id": 4,
+      "leave_type_id": 1,
+      "total_days": 12,
+      "used_days": 2,
+      "remaining_days": 10
+    },
+    {
+      "employee_id": 4,
+      "leave_type_id": 2,
+      "total_days": 10,
+      "used_days": 1,
+      "remaining_days": 9
+    },
+    {
+      "employee_id": 4,
+      "leave_type_id": 3,
+      "total_days": 15,
+      "used_days": 0,
+      "remaining_days": 15
+    },
+    {
+      "employee_id": 4,
+      "leave_type_id": 4,
+      "total_days": 90,
+      "used_days": 0,
+      "remaining_days": 90
+    },
+    {
+      "employee_id": 5,
+      "leave_type_id": 1,
+      "total_days": 12,
+      "used_days": 0,
+      "remaining_days": 12
+    },
+    {
+      "employee_id": 5,
+      "leave_type_id": 2,
+      "total_days": 10,
+      "used_days": 0,
+      "remaining_days": 10
+    },
+    {
+      "employee_id": 5,
+      "leave_type_id": 3,
+      "total_days": 15,
+      "used_days": 0,
+      "remaining_days": 15
+    },
+    {
+      "employee_id": 5,
+      "leave_type_id": 4,
+      "total_days": 90,
+      "used_days": 0,
+      "remaining_days": 90
+    },
+    {
+      "employee_id": 6,
+      "leave_type_id": 1,
+      "total_days": 12,
+      "used_days": 0,
+      "remaining_days": 12
+    },
+    {
+      "employee_id": 6,
+      "leave_type_id": 2,
+      "total_days": 10,
+      "used_days": 0,
+      "remaining_days": 10
+    },
+    {
+      "employee_id": 6,
+      "leave_type_id": 3,
+      "total_days": 15,
+      "used_days": 4,
+      "remaining_days": 11
+    },
+    {
+      "employee_id": 6,
+      "leave_type_id": 4,
+      "total_days": 90,
+      "used_days": 0,
+      "remaining_days": 90
+    },
+    {
+      "employee_id": 7,
+      "leave_type_id": 1,
+      "total_days": 12,
+      "used_days": 0,
+      "remaining_days": 12
+    },
+    {
+      "employee_id": 7,
+      "leave_type_id": 2,
+      "total_days": 10,
+      "used_days": 0,
+      "remaining_days": 10
+    },
+    {
+      "employee_id": 7,
+      "leave_type_id": 3,
+      "total_days": 15,
+      "used_days": 0,
+      "remaining_days": 15
+    },
+    {
+      "employee_id": 7,
+      "leave_type_id": 4,
+      "total_days": 90,
+      "used_days": 0,
+      "remaining_days": 90
+    },
+    {
+      "employee_id": 8,
+      "leave_type_id": 1,
+      "total_days": 12,
+      "used_days": 0,
+      "remaining_days": 12
+    },
+    {
+      "employee_id": 8,
+      "leave_type_id": 2,
+      "total_days": 10,
+      "used_days": 0,
+      "remaining_days": 10
+    },
+    {
+      "employee_id": 8,
+      "leave_type_id": 3,
+      "total_days": 15,
+      "used_days": 0,
+      "remaining_days": 15
+    },
+    {
+      "employee_id": 8,
+      "leave_type_id": 4,
+      "total_days": 90,
+      "used_days": 0,
+      "remaining_days": 90
+    },
+    {
+      "employee_id": 9,
+      "leave_type_id": 1,
+      "total_days": 12,
+      "used_days": 0,
+      "remaining_days": 12
+    },
+    {
+      "employee_id": 9,
+      "leave_type_id": 2,
+      "total_days": 10,
+      "used_days": 0,
+      "remaining_days": 10
+    },
+    {
+      "employee_id": 9,
+      "leave_type_id": 3,
+      "total_days": 15,
+      "used_days": 0,
+      "remaining_days": 15
+    },
+    {
+      "employee_id": 9,
+      "leave_type_id": 4,
+      "total_days": 90,
+      "used_days": 0,
+      "remaining_days": 90
+    },
+    {
+      "employee_id": 10,
+      "leave_type_id": 1,
+      "total_days": 12,
+      "used_days": 0,
+      "remaining_days": 12
+    },
+    {
+      "employee_id": 10,
+      "leave_type_id": 2,
+      "total_days": 10,
+      "used_days": 0,
+      "remaining_days": 10
+    },
+    {
+      "employee_id": 10,
+      "leave_type_id": 3,
+      "total_days": 15,
+      "used_days": 0,
+      "remaining_days": 15
+    },
+    {
+      "employee_id": 10,
+      "leave_type_id": 4,
+      "total_days": 90,
+      "used_days": 0,
+      "remaining_days": 90
+    },
+    {
+      "employee_id": 11,
+      "leave_type_id": 1,
+      "total_days": 12,
+      "used_days": 0,
+      "remaining_days": 12
+    },
+    {
+      "employee_id": 11,
+      "leave_type_id": 2,
+      "total_days": 10,
+      "used_days": 0,
+      "remaining_days": 10
+    },
+    {
+      "employee_id": 11,
+      "leave_type_id": 3,
+      "total_days": 15,
+      "used_days": 0,
+      "remaining_days": 15
+    },
+    {
+      "employee_id": 11,
+      "leave_type_id": 4,
+      "total_days": 90,
+      "used_days": 0,
+      "remaining_days": 90
+    },
+    {
+      "employee_id": 12,
+      "leave_type_id": 1,
+      "total_days": 12,
+      "used_days": 0,
+      "remaining_days": 12
+    },
+    {
+      "employee_id": 12,
+      "leave_type_id": 2,
+      "total_days": 10,
+      "used_days": 0,
+      "remaining_days": 10
+    },
+    {
+      "employee_id": 12,
+      "leave_type_id": 3,
+      "total_days": 15,
+      "used_days": 0,
+      "remaining_days": 15
+    },
+    {
+      "employee_id": 12,
+      "leave_type_id": 4,
+      "total_days": 90,
+      "used_days": 0,
+      "remaining_days": 90
+    }
+  ],
+  "leave_requests": [
+    {
+      "id": 1,
+      "employee_id": 4,
+      "leave_type_id": 1,
+      "start_date": "2026-05-10",
+      "end_date": "2026-05-11",
+      "total_days": 2,
+      "reason": "Family event and short vacation.",
+      "status": "Approved",
+      "attachment_path": null,
+      "created_at": "2026-05-01T09:00:00.000Z",
+      "updated_at": "2026-05-02T14:30:00.000Z"
+    },
+    {
+      "id": 2,
+      "employee_id": 4,
+      "leave_type_id": 2,
+      "start_date": "2026-05-25",
+      "end_date": "2026-05-25",
+      "total_days": 1,
+      "reason": "Sudden high fever and dental consultation.",
+      "status": "Approved",
+      "attachment_path": null,
+      "created_at": "2026-05-25T07:15:00.000Z",
+      "updated_at": "2026-05-25T11:00:00.000Z"
+    },
+    {
+      "id": 3,
+      "employee_id": 4,
+      "leave_type_id": 1,
+      "start_date": "2026-06-10",
+      "end_date": "2026-06-12",
+      "total_days": 3,
+      "reason": "Attending cousin wedding and travel.",
+      "status": "Pending",
+      "attachment_path": null,
+      "created_at": "2026-06-03T10:00:00.000Z",
+      "updated_at": "2026-06-03T10:00:00.000Z"
+    },
+    {
+      "id": 4,
+      "employee_id": 9,
+      "leave_type_id": 3,
+      "start_date": "2026-06-15",
+      "end_date": "2026-06-19",
+      "total_days": 5,
+      "reason": "Annual family road trip.",
+      "status": "Manager Approved",
+      "attachment_path": null,
+      "created_at": "2026-06-02T15:20:00.000Z",
+      "updated_at": "2026-06-03T11:45:00.000Z"
+    },
+    {
+      "id": 5,
+      "employee_id": 10,
+      "leave_type_id": 2,
+      "start_date": "2026-04-12",
+      "end_date": "2026-04-13",
+      "total_days": 2,
+      "reason": "Recovery from minor surgery.",
+      "status": "Rejected",
+      "attachment_path": null,
+      "created_at": "2026-04-10T08:30:00.000Z",
+      "updated_at": "2026-04-11T13:00:00.000Z"
+    },
+    {
+      "id": 6,
+      "employee_id": 6,
+      "leave_type_id": 3,
+      "start_date": "2026-06-02",
+      "end_date": "2026-06-05",
+      "total_days": 4,
+      "reason": "Personal relocation and home setup.",
+      "status": "Approved",
+      "attachment_path": null,
+      "created_at": "2026-05-28T09:10:00.000Z",
+      "updated_at": "2026-05-29T16:20:00.000Z"
+    }
+  ],
+  "leave_approvals": [
+    {
+      "id": 1,
+      "leave_request_id": 1,
+      "approver_id": 2,
+      "stage": "Manager Review",
+      "status": "Approved",
+      "remarks": "Approved. Team schedule allows it.",
+      "created_at": "2026-05-02T10:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "leave_request_id": 1,
+      "approver_id": 5,
+      "stage": "HR Review",
+      "status": "Approved",
+      "remarks": "Final HR Approval. Balance verified.",
+      "created_at": "2026-05-02T14:30:00.000Z"
+    },
+    {
+      "id": 3,
+      "leave_request_id": 2,
+      "approver_id": 2,
+      "stage": "Manager Review",
+      "status": "Approved",
+      "remarks": "Approved. Take care.",
+      "created_at": "2026-05-25T09:00:00.000Z"
+    },
+    {
+      "id": 4,
+      "leave_request_id": 2,
+      "approver_id": 5,
+      "stage": "HR Review",
+      "status": "Approved",
+      "remarks": "Processed. Medical certificate requested if extended.",
+      "created_at": "2026-05-25T11:00:00.000Z"
+    },
+    {
+      "id": 5,
+      "leave_request_id": 4,
+      "approver_id": 3,
+      "stage": "Manager Review",
+      "status": "Approved",
+      "remarks": "Recommended. Design schedule looks good.",
+      "created_at": "2026-06-03T11:45:00.000Z"
+    },
+    {
+      "id": 6,
+      "leave_request_id": 5,
+      "approver_id": 1,
+      "stage": "Manager Review",
+      "status": "Rejected",
+      "remarks": "Client delivery deadline on these dates. Please reschedule if possible.",
+      "created_at": "2026-04-11T13:00:00.000Z"
+    },
+    {
+      "id": 7,
+      "leave_request_id": 6,
+      "approver_id": 1,
+      "stage": "Manager Review",
+      "status": "Approved",
+      "remarks": "Approved.",
+      "created_at": "2026-05-29T10:00:00.000Z"
+    },
+    {
+      "id": 8,
+      "leave_request_id": 6,
+      "approver_id": 5,
+      "stage": "HR Review",
+      "status": "Approved",
+      "remarks": "Approved.",
+      "created_at": "2026-05-29T16:20:00.000Z"
+    }
+  ],
+  "attendance": [
+    {
+      "id": 1,
+      "employee_id": 1,
+      "date": "2026-05-19",
+      "check_in": "2026-05-19T09:37:00.000Z",
+      "check_out": "2026-05-19T18:52:00.000Z",
+      "status": "Late",
+      "working_hours": 9.25,
+      "remarks": "Delayed due to traffic/transit delay.",
+      "created_at": "2026-05-19T08:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "employee_id": 2,
+      "date": "2026-05-19",
+      "check_in": null,
+      "check_out": null,
+      "status": "Absent",
+      "working_hours": null,
+      "remarks": "Personal emergency absence.",
+      "created_at": "2026-05-19T08:00:00.000Z"
+    },
+    {
+      "id": 3,
+      "employee_id": 3,
+      "date": "2026-05-19",
+      "check_in": "2026-05-19T08:31:00.000Z",
+      "check_out": "2026-05-19T17:46:00.000Z",
+      "status": "Present",
+      "working_hours": 9.25,
+      "remarks": null,
+      "created_at": "2026-05-19T08:00:00.000Z"
+    },
+    {
+      "id": 4,
+      "employee_id": 4,
+      "date": "2026-05-19",
+      "check_in": "2026-05-19T08:33:00.000Z",
+      "check_out": "2026-05-19T17:33:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-05-19T08:00:00.000Z"
+    },
+    {
+      "id": 5,
+      "employee_id": 5,
+      "date": "2026-05-19",
+      "check_in": "2026-05-19T08:35:00.000Z",
+      "check_out": "2026-05-19T17:50:00.000Z",
+      "status": "Present",
+      "working_hours": 9.25,
+      "remarks": null,
+      "created_at": "2026-05-19T08:00:00.000Z"
+    },
+    {
+      "id": 6,
+      "employee_id": 6,
+      "date": "2026-05-19",
+      "check_in": "2026-05-19T08:37:00.000Z",
+      "check_out": "2026-05-19T17:37:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-05-19T08:00:00.000Z"
+    },
+    {
+      "id": 7,
+      "employee_id": 7,
+      "date": "2026-05-19",
+      "check_in": "2026-05-19T09:39:00.000Z",
+      "check_out": "2026-05-19T18:54:00.000Z",
+      "status": "Late",
+      "working_hours": 9.25,
+      "remarks": "Delayed due to traffic/transit delay.",
+      "created_at": "2026-05-19T08:00:00.000Z"
+    },
+    {
+      "id": 8,
+      "employee_id": 8,
+      "date": "2026-05-19",
+      "check_in": "2026-05-19T08:31:00.000Z",
+      "check_out": "2026-05-19T17:31:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-05-19T08:00:00.000Z"
+    },
+    {
+      "id": 9,
+      "employee_id": 9,
+      "date": "2026-05-19",
+      "check_in": "2026-05-19T08:33:00.000Z",
+      "check_out": "2026-05-19T17:48:00.000Z",
+      "status": "Present",
+      "working_hours": 9.25,
+      "remarks": null,
+      "created_at": "2026-05-19T08:00:00.000Z"
+    },
+    {
+      "id": 10,
+      "employee_id": 10,
+      "date": "2026-05-19",
+      "check_in": "2026-05-19T08:35:00.000Z",
+      "check_out": "2026-05-19T17:35:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-05-19T08:00:00.000Z"
+    },
+    {
+      "id": 11,
+      "employee_id": 11,
+      "date": "2026-05-19",
+      "check_in": "2026-05-19T08:37:00.000Z",
+      "check_out": "2026-05-19T17:52:00.000Z",
+      "status": "Present",
+      "working_hours": 9.25,
+      "remarks": null,
+      "created_at": "2026-05-19T08:00:00.000Z"
+    },
+    {
+      "id": 12,
+      "employee_id": 12,
+      "date": "2026-05-19",
+      "check_in": "2026-05-19T08:39:00.000Z",
+      "check_out": "2026-05-19T17:39:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-05-19T08:00:00.000Z"
+    },
+    {
+      "id": 13,
+      "employee_id": 1,
+      "date": "2026-05-20",
+      "check_in": "2026-05-20T08:36:00.000Z",
+      "check_out": "2026-05-20T17:51:00.000Z",
+      "status": "Present",
+      "working_hours": 9.25,
+      "remarks": null,
+      "created_at": "2026-05-20T08:00:00.000Z"
+    },
+    {
+      "id": 14,
+      "employee_id": 2,
+      "date": "2026-05-20",
+      "check_in": "2026-05-20T08:38:00.000Z",
+      "check_out": "2026-05-20T17:38:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-05-20T08:00:00.000Z"
+    },
+    {
+      "id": 15,
+      "employee_id": 3,
+      "date": "2026-05-20",
+      "check_in": "2026-05-20T09:40:00.000Z",
+      "check_out": "2026-05-20T18:55:00.000Z",
+      "status": "Late",
+      "working_hours": 9.25,
+      "remarks": "Delayed due to traffic/transit delay.",
+      "created_at": "2026-05-20T08:00:00.000Z"
+    },
+    {
+      "id": 16,
+      "employee_id": 4,
+      "date": "2026-05-20",
+      "check_in": "2026-05-20T08:32:00.000Z",
+      "check_out": "2026-05-20T17:32:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-05-20T08:00:00.000Z"
+    },
+    {
+      "id": 17,
+      "employee_id": 5,
+      "date": "2026-05-20",
+      "check_in": "2026-05-20T08:34:00.000Z",
+      "check_out": "2026-05-20T17:49:00.000Z",
+      "status": "Present",
+      "working_hours": 9.25,
+      "remarks": null,
+      "created_at": "2026-05-20T08:00:00.000Z"
+    },
+    {
+      "id": 18,
+      "employee_id": 6,
+      "date": "2026-05-20",
+      "check_in": "2026-05-20T08:36:00.000Z",
+      "check_out": "2026-05-20T17:36:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-05-20T08:00:00.000Z"
+    },
+    {
+      "id": 19,
+      "employee_id": 7,
+      "date": "2026-05-20",
+      "check_in": "2026-05-20T08:38:00.000Z",
+      "check_out": "2026-05-20T17:53:00.000Z",
+      "status": "Present",
+      "working_hours": 9.25,
+      "remarks": null,
+      "created_at": "2026-05-20T08:00:00.000Z"
+    },
+    {
+      "id": 20,
+      "employee_id": 8,
+      "date": "2026-05-20",
+      "check_in": "2026-05-20T08:40:00.000Z",
+      "check_out": "2026-05-20T17:40:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-05-20T08:00:00.000Z"
+    },
+    {
+      "id": 21,
+      "employee_id": 9,
+      "date": "2026-05-20",
+      "check_in": "2026-05-20T09:42:00.000Z",
+      "check_out": "2026-05-20T18:57:00.000Z",
+      "status": "Late",
+      "working_hours": 9.25,
+      "remarks": "Delayed due to traffic/transit delay.",
+      "created_at": "2026-05-20T08:00:00.000Z"
+    },
+    {
+      "id": 22,
+      "employee_id": 10,
+      "date": "2026-05-20",
+      "check_in": "2026-05-20T08:34:00.000Z",
+      "check_out": "2026-05-20T17:34:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-05-20T08:00:00.000Z"
+    },
+    {
+      "id": 23,
+      "employee_id": 11,
+      "date": "2026-05-20",
+      "check_in": "2026-05-20T08:36:00.000Z",
+      "check_out": "2026-05-20T17:51:00.000Z",
+      "status": "Present",
+      "working_hours": 9.25,
+      "remarks": null,
+      "created_at": "2026-05-20T08:00:00.000Z"
+    },
+    {
+      "id": 24,
+      "employee_id": 12,
+      "date": "2026-05-20",
+      "check_in": "2026-05-20T08:38:00.000Z",
+      "check_out": "2026-05-20T17:38:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-05-20T08:00:00.000Z"
+    },
+    {
+      "id": 25,
+      "employee_id": 1,
+      "date": "2026-05-21",
+      "check_in": "2026-05-21T08:35:00.000Z",
+      "check_out": "2026-05-21T17:50:00.000Z",
+      "status": "Present",
+      "working_hours": 9.25,
+      "remarks": null,
+      "created_at": "2026-05-21T08:00:00.000Z"
+    },
+    {
+      "id": 26,
+      "employee_id": 2,
+      "date": "2026-05-21",
+      "check_in": "2026-05-21T08:37:00.000Z",
+      "check_out": "2026-05-21T17:37:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-05-21T08:00:00.000Z"
+    },
+    {
+      "id": 27,
+      "employee_id": 3,
+      "date": "2026-05-21",
+      "check_in": "2026-05-21T08:39:00.000Z",
+      "check_out": "2026-05-21T17:54:00.000Z",
+      "status": "Present",
+      "working_hours": 9.25,
+      "remarks": null,
+      "created_at": "2026-05-21T08:00:00.000Z"
+    },
+    {
+      "id": 28,
+      "employee_id": 4,
+      "date": "2026-05-21",
+      "check_in": "2026-05-21T08:41:00.000Z",
+      "check_out": "2026-05-21T17:41:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-05-21T08:00:00.000Z"
+    },
+    {
+      "id": 29,
+      "employee_id": 5,
+      "date": "2026-05-21",
+      "check_in": "2026-05-21T09:43:00.000Z",
+      "check_out": "2026-05-21T18:58:00.000Z",
+      "status": "Late",
+      "working_hours": 9.25,
+      "remarks": "Delayed due to traffic/transit delay.",
+      "created_at": "2026-05-21T08:00:00.000Z"
+    },
+    {
+      "id": 30,
+      "employee_id": 6,
+      "date": "2026-05-21",
+      "check_in": "2026-05-21T08:35:00.000Z",
+      "check_out": "2026-05-21T17:35:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-05-21T08:00:00.000Z"
+    },
+    {
+      "id": 31,
+      "employee_id": 7,
+      "date": "2026-05-21",
+      "check_in": "2026-05-21T08:37:00.000Z",
+      "check_out": "2026-05-21T17:52:00.000Z",
+      "status": "Present",
+      "working_hours": 9.25,
+      "remarks": null,
+      "created_at": "2026-05-21T08:00:00.000Z"
+    },
+    {
+      "id": 32,
+      "employee_id": 8,
+      "date": "2026-05-21",
+      "check_in": "2026-05-21T08:39:00.000Z",
+      "check_out": "2026-05-21T17:39:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-05-21T08:00:00.000Z"
+    },
+    {
+      "id": 33,
+      "employee_id": 9,
+      "date": "2026-05-21",
+      "check_in": "2026-05-21T08:41:00.000Z",
+      "check_out": "2026-05-21T17:56:00.000Z",
+      "status": "Present",
+      "working_hours": 9.25,
+      "remarks": null,
+      "created_at": "2026-05-21T08:00:00.000Z"
+    },
+    {
+      "id": 34,
+      "employee_id": 10,
+      "date": "2026-05-21",
+      "check_in": "2026-05-21T08:43:00.000Z",
+      "check_out": "2026-05-21T17:43:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-05-21T08:00:00.000Z"
+    },
+    {
+      "id": 35,
+      "employee_id": 11,
+      "date": "2026-05-21",
+      "check_in": "2026-05-21T08:50:00.000Z",
+      "check_out": "2026-05-21T17:00:00.000Z",
+      "status": "Work From Home",
+      "working_hours": 8.17,
+      "remarks": "Remote work pre-approved.",
+      "created_at": "2026-05-21T08:00:00.000Z"
+    },
+    {
+      "id": 36,
+      "employee_id": 12,
+      "date": "2026-05-21",
+      "check_in": "2026-05-21T08:37:00.000Z",
+      "check_out": "2026-05-21T17:37:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-05-21T08:00:00.000Z"
+    },
+    {
+      "id": 37,
+      "employee_id": 1,
+      "date": "2026-05-24",
+      "check_in": "2026-05-24T08:42:00.000Z",
+      "check_out": "2026-05-24T17:57:00.000Z",
+      "status": "Present",
+      "working_hours": 9.25,
+      "remarks": null,
+      "created_at": "2026-05-24T08:00:00.000Z"
+    },
+    {
+      "id": 38,
+      "employee_id": 2,
+      "date": "2026-05-24",
+      "check_in": "2026-05-24T08:44:00.000Z",
+      "check_out": "2026-05-24T17:44:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-05-24T08:00:00.000Z"
+    },
+    {
+      "id": 39,
+      "employee_id": 3,
+      "date": "2026-05-24",
+      "check_in": "2026-05-24T08:31:00.000Z",
+      "check_out": "2026-05-24T17:31:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-05-24T08:00:00.000Z"
+    },
+    {
+      "id": 40,
+      "employee_id": 4,
+      "date": "2026-05-24",
+      "check_in": "2026-05-24T08:33:00.000Z",
+      "check_out": "2026-05-24T17:48:00.000Z",
+      "status": "Present",
+      "working_hours": 9.25,
+      "remarks": null,
+      "created_at": "2026-05-24T08:00:00.000Z"
+    },
+    {
+      "id": 41,
+      "employee_id": 5,
+      "date": "2026-05-24",
+      "check_in": "2026-05-24T09:00:00.000Z",
+      "check_out": "2026-05-24T13:00:00.000Z",
+      "status": "Half Day",
+      "working_hours": 4,
+      "remarks": "Doctor appointment in the afternoon.",
+      "created_at": "2026-05-24T08:00:00.000Z"
+    },
+    {
+      "id": 42,
+      "employee_id": 6,
+      "date": "2026-05-24",
+      "check_in": "2026-05-24T08:42:00.000Z",
+      "check_out": "2026-05-24T17:42:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-05-24T08:00:00.000Z"
+    },
+    {
+      "id": 43,
+      "employee_id": 7,
+      "date": "2026-05-24",
+      "check_in": "2026-05-24T08:44:00.000Z",
+      "check_out": "2026-05-24T17:59:00.000Z",
+      "status": "Present",
+      "working_hours": 9.25,
+      "remarks": null,
+      "created_at": "2026-05-24T08:00:00.000Z"
+    },
+    {
+      "id": 44,
+      "employee_id": 8,
+      "date": "2026-05-24",
+      "check_in": "2026-05-24T08:31:00.000Z",
+      "check_out": "2026-05-24T17:46:00.000Z",
+      "status": "Present",
+      "working_hours": 9.25,
+      "remarks": null,
+      "created_at": "2026-05-24T08:00:00.000Z"
+    },
+    {
+      "id": 45,
+      "employee_id": 9,
+      "date": "2026-05-24",
+      "check_in": "2026-05-24T08:33:00.000Z",
+      "check_out": "2026-05-24T17:33:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-05-24T08:00:00.000Z"
+    },
+    {
+      "id": 46,
+      "employee_id": 10,
+      "date": "2026-05-24",
+      "check_in": "2026-05-24T09:35:00.000Z",
+      "check_out": "2026-05-24T18:50:00.000Z",
+      "status": "Late",
+      "working_hours": 9.25,
+      "remarks": "Delayed due to traffic/transit delay.",
+      "created_at": "2026-05-24T08:00:00.000Z"
+    },
+    {
+      "id": 47,
+      "employee_id": 11,
+      "date": "2026-05-24",
+      "check_in": "2026-05-24T09:00:00.000Z",
+      "check_out": "2026-05-24T13:00:00.000Z",
+      "status": "Half Day",
+      "working_hours": 4,
+      "remarks": "Doctor appointment in the afternoon.",
+      "created_at": "2026-05-24T08:00:00.000Z"
+    },
+    {
+      "id": 48,
+      "employee_id": 12,
+      "date": "2026-05-24",
+      "check_in": "2026-05-24T08:44:00.000Z",
+      "check_out": "2026-05-24T17:44:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-05-24T08:00:00.000Z"
+    },
+    {
+      "id": 49,
+      "employee_id": 1,
+      "date": "2026-05-25",
+      "check_in": "2026-05-25T09:00:00.000Z",
+      "check_out": "2026-05-25T13:00:00.000Z",
+      "status": "Half Day",
+      "working_hours": 4,
+      "remarks": "Doctor appointment in the afternoon.",
+      "created_at": "2026-05-25T08:00:00.000Z"
+    },
+    {
+      "id": 50,
+      "employee_id": 2,
+      "date": "2026-05-25",
+      "check_in": "2026-05-25T08:43:00.000Z",
+      "check_out": "2026-05-25T17:43:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-05-25T08:00:00.000Z"
+    },
+    {
+      "id": 51,
+      "employee_id": 3,
+      "date": "2026-05-25",
+      "check_in": "2026-05-25T08:30:00.000Z",
+      "check_out": "2026-05-25T17:30:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-05-25T08:00:00.000Z"
+    },
+    {
+      "id": 52,
+      "employee_id": 4,
+      "date": "2026-05-25",
+      "check_in": "2026-05-25T08:32:00.000Z",
+      "check_out": "2026-05-25T17:47:00.000Z",
+      "status": "Present",
+      "working_hours": 9.25,
+      "remarks": null,
+      "created_at": "2026-05-25T08:00:00.000Z"
+    },
+    {
+      "id": 53,
+      "employee_id": 5,
+      "date": "2026-05-25",
+      "check_in": "2026-05-25T08:34:00.000Z",
+      "check_out": "2026-05-25T17:34:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-05-25T08:00:00.000Z"
+    },
+    {
+      "id": 54,
+      "employee_id": 6,
+      "date": "2026-05-25",
+      "check_in": "2026-05-25T09:36:00.000Z",
+      "check_out": "2026-05-25T18:51:00.000Z",
+      "status": "Late",
+      "working_hours": 9.25,
+      "remarks": "Delayed due to traffic/transit delay.",
+      "created_at": "2026-05-25T08:00:00.000Z"
+    },
+    {
+      "id": 55,
+      "employee_id": 7,
+      "date": "2026-05-25",
+      "check_in": null,
+      "check_out": null,
+      "status": "Absent",
+      "working_hours": null,
+      "remarks": "Personal emergency absence.",
+      "created_at": "2026-05-25T08:00:00.000Z"
+    },
+    {
+      "id": 56,
+      "employee_id": 8,
+      "date": "2026-05-25",
+      "check_in": "2026-05-25T08:30:00.000Z",
+      "check_out": "2026-05-25T17:45:00.000Z",
+      "status": "Present",
+      "working_hours": 9.25,
+      "remarks": null,
+      "created_at": "2026-05-25T08:00:00.000Z"
+    },
+    {
+      "id": 57,
+      "employee_id": 9,
+      "date": "2026-05-25",
+      "check_in": "2026-05-25T08:32:00.000Z",
+      "check_out": "2026-05-25T17:32:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-05-25T08:00:00.000Z"
+    },
+    {
+      "id": 58,
+      "employee_id": 10,
+      "date": "2026-05-25",
+      "check_in": "2026-05-25T08:34:00.000Z",
+      "check_out": "2026-05-25T17:49:00.000Z",
+      "status": "Present",
+      "working_hours": 9.25,
+      "remarks": null,
+      "created_at": "2026-05-25T08:00:00.000Z"
+    },
+    {
+      "id": 59,
+      "employee_id": 11,
+      "date": "2026-05-25",
+      "check_in": "2026-05-25T08:36:00.000Z",
+      "check_out": "2026-05-25T17:36:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-05-25T08:00:00.000Z"
+    },
+    {
+      "id": 60,
+      "employee_id": 12,
+      "date": "2026-05-25",
+      "check_in": "2026-05-25T09:38:00.000Z",
+      "check_out": "2026-05-25T18:53:00.000Z",
+      "status": "Late",
+      "working_hours": 9.25,
+      "remarks": "Delayed due to traffic/transit delay.",
+      "created_at": "2026-05-25T08:00:00.000Z"
+    },
+    {
+      "id": 61,
+      "employee_id": 1,
+      "date": "2026-05-26",
+      "check_in": "2026-05-26T08:35:00.000Z",
+      "check_out": "2026-05-26T17:35:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-05-26T08:00:00.000Z"
+    },
+    {
+      "id": 62,
+      "employee_id": 2,
+      "date": "2026-05-26",
+      "check_in": "2026-05-26T09:37:00.000Z",
+      "check_out": "2026-05-26T18:52:00.000Z",
+      "status": "Late",
+      "working_hours": 9.25,
+      "remarks": "Delayed due to traffic/transit delay.",
+      "created_at": "2026-05-26T08:00:00.000Z"
+    },
+    {
+      "id": 63,
+      "employee_id": 3,
+      "date": "2026-05-26",
+      "check_in": null,
+      "check_out": null,
+      "status": "Absent",
+      "working_hours": null,
+      "remarks": "Personal emergency absence.",
+      "created_at": "2026-05-26T08:00:00.000Z"
+    },
+    {
+      "id": 64,
+      "employee_id": 4,
+      "date": "2026-05-26",
+      "check_in": "2026-05-26T08:31:00.000Z",
+      "check_out": "2026-05-26T17:46:00.000Z",
+      "status": "Present",
+      "working_hours": 9.25,
+      "remarks": null,
+      "created_at": "2026-05-26T08:00:00.000Z"
+    },
+    {
+      "id": 65,
+      "employee_id": 5,
+      "date": "2026-05-26",
+      "check_in": "2026-05-26T08:33:00.000Z",
+      "check_out": "2026-05-26T17:33:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-05-26T08:00:00.000Z"
+    },
+    {
+      "id": 66,
+      "employee_id": 6,
+      "date": "2026-05-26",
+      "check_in": "2026-05-26T08:35:00.000Z",
+      "check_out": "2026-05-26T17:50:00.000Z",
+      "status": "Present",
+      "working_hours": 9.25,
+      "remarks": null,
+      "created_at": "2026-05-26T08:00:00.000Z"
+    },
+    {
+      "id": 67,
+      "employee_id": 7,
+      "date": "2026-05-26",
+      "check_in": "2026-05-26T08:37:00.000Z",
+      "check_out": "2026-05-26T17:37:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-05-26T08:00:00.000Z"
+    },
+    {
+      "id": 68,
+      "employee_id": 8,
+      "date": "2026-05-26",
+      "check_in": "2026-05-26T09:39:00.000Z",
+      "check_out": "2026-05-26T18:54:00.000Z",
+      "status": "Late",
+      "working_hours": 9.25,
+      "remarks": "Delayed due to traffic/transit delay.",
+      "created_at": "2026-05-26T08:00:00.000Z"
+    },
+    {
+      "id": 69,
+      "employee_id": 9,
+      "date": "2026-05-26",
+      "check_in": "2026-05-26T08:31:00.000Z",
+      "check_out": "2026-05-26T17:31:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-05-26T08:00:00.000Z"
+    },
+    {
+      "id": 70,
+      "employee_id": 10,
+      "date": "2026-05-26",
+      "check_in": "2026-05-26T08:33:00.000Z",
+      "check_out": "2026-05-26T17:48:00.000Z",
+      "status": "Present",
+      "working_hours": 9.25,
+      "remarks": null,
+      "created_at": "2026-05-26T08:00:00.000Z"
+    },
+    {
+      "id": 71,
+      "employee_id": 11,
+      "date": "2026-05-26",
+      "check_in": "2026-05-26T08:35:00.000Z",
+      "check_out": "2026-05-26T17:35:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-05-26T08:00:00.000Z"
+    },
+    {
+      "id": 72,
+      "employee_id": 12,
+      "date": "2026-05-26",
+      "check_in": "2026-05-26T08:37:00.000Z",
+      "check_out": "2026-05-26T17:52:00.000Z",
+      "status": "Present",
+      "working_hours": 9.25,
+      "remarks": null,
+      "created_at": "2026-05-26T08:00:00.000Z"
+    },
+    {
+      "id": 73,
+      "employee_id": 1,
+      "date": "2026-05-27",
+      "check_in": "2026-05-27T08:34:00.000Z",
+      "check_out": "2026-05-27T17:34:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-05-27T08:00:00.000Z"
+    },
+    {
+      "id": 74,
+      "employee_id": 2,
+      "date": "2026-05-27",
+      "check_in": "2026-05-27T08:36:00.000Z",
+      "check_out": "2026-05-27T17:51:00.000Z",
+      "status": "Present",
+      "working_hours": 9.25,
+      "remarks": null,
+      "created_at": "2026-05-27T08:00:00.000Z"
+    },
+    {
+      "id": 75,
+      "employee_id": 3,
+      "date": "2026-05-27",
+      "check_in": "2026-05-27T08:38:00.000Z",
+      "check_out": "2026-05-27T17:38:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-05-27T08:00:00.000Z"
+    },
+    {
+      "id": 76,
+      "employee_id": 4,
+      "date": "2026-05-27",
+      "check_in": "2026-05-27T09:40:00.000Z",
+      "check_out": "2026-05-27T18:55:00.000Z",
+      "status": "Late",
+      "working_hours": 9.25,
+      "remarks": "Delayed due to traffic/transit delay.",
+      "created_at": "2026-05-27T08:00:00.000Z"
+    },
+    {
+      "id": 77,
+      "employee_id": 5,
+      "date": "2026-05-27",
+      "check_in": "2026-05-27T08:32:00.000Z",
+      "check_out": "2026-05-27T17:32:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-05-27T08:00:00.000Z"
+    },
+    {
+      "id": 78,
+      "employee_id": 6,
+      "date": "2026-05-27",
+      "check_in": "2026-05-27T08:34:00.000Z",
+      "check_out": "2026-05-27T17:49:00.000Z",
+      "status": "Present",
+      "working_hours": 9.25,
+      "remarks": null,
+      "created_at": "2026-05-27T08:00:00.000Z"
+    },
+    {
+      "id": 79,
+      "employee_id": 7,
+      "date": "2026-05-27",
+      "check_in": "2026-05-27T08:36:00.000Z",
+      "check_out": "2026-05-27T17:36:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-05-27T08:00:00.000Z"
+    },
+    {
+      "id": 80,
+      "employee_id": 8,
+      "date": "2026-05-27",
+      "check_in": "2026-05-27T08:38:00.000Z",
+      "check_out": "2026-05-27T17:53:00.000Z",
+      "status": "Present",
+      "working_hours": 9.25,
+      "remarks": null,
+      "created_at": "2026-05-27T08:00:00.000Z"
+    },
+    {
+      "id": 81,
+      "employee_id": 9,
+      "date": "2026-05-27",
+      "check_in": "2026-05-27T08:40:00.000Z",
+      "check_out": "2026-05-27T17:40:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-05-27T08:00:00.000Z"
+    },
+    {
+      "id": 82,
+      "employee_id": 10,
+      "date": "2026-05-27",
+      "check_in": "2026-05-27T09:42:00.000Z",
+      "check_out": "2026-05-27T18:57:00.000Z",
+      "status": "Late",
+      "working_hours": 9.25,
+      "remarks": "Delayed due to traffic/transit delay.",
+      "created_at": "2026-05-27T08:00:00.000Z"
+    },
+    {
+      "id": 83,
+      "employee_id": 11,
+      "date": "2026-05-27",
+      "check_in": "2026-05-27T08:34:00.000Z",
+      "check_out": "2026-05-27T17:34:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-05-27T08:00:00.000Z"
+    },
+    {
+      "id": 84,
+      "employee_id": 12,
+      "date": "2026-05-27",
+      "check_in": "2026-05-27T08:36:00.000Z",
+      "check_out": "2026-05-27T17:51:00.000Z",
+      "status": "Present",
+      "working_hours": 9.25,
+      "remarks": null,
+      "created_at": "2026-05-27T08:00:00.000Z"
+    },
+    {
+      "id": 85,
+      "employee_id": 1,
+      "date": "2026-05-28",
+      "check_in": "2026-05-28T08:33:00.000Z",
+      "check_out": "2026-05-28T17:33:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-05-28T08:00:00.000Z"
+    },
+    {
+      "id": 86,
+      "employee_id": 2,
+      "date": "2026-05-28",
+      "check_in": "2026-05-28T08:35:00.000Z",
+      "check_out": "2026-05-28T17:50:00.000Z",
+      "status": "Present",
+      "working_hours": 9.25,
+      "remarks": null,
+      "created_at": "2026-05-28T08:00:00.000Z"
+    },
+    {
+      "id": 87,
+      "employee_id": 3,
+      "date": "2026-05-28",
+      "check_in": "2026-05-28T08:37:00.000Z",
+      "check_out": "2026-05-28T17:37:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-05-28T08:00:00.000Z"
+    },
+    {
+      "id": 88,
+      "employee_id": 4,
+      "date": "2026-05-28",
+      "check_in": "2026-05-28T08:39:00.000Z",
+      "check_out": "2026-05-28T17:54:00.000Z",
+      "status": "Present",
+      "working_hours": 9.25,
+      "remarks": null,
+      "created_at": "2026-05-28T08:00:00.000Z"
+    },
+    {
+      "id": 89,
+      "employee_id": 5,
+      "date": "2026-05-28",
+      "check_in": "2026-05-28T08:41:00.000Z",
+      "check_out": "2026-05-28T17:41:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-05-28T08:00:00.000Z"
+    },
+    {
+      "id": 90,
+      "employee_id": 6,
+      "date": "2026-05-28",
+      "check_in": "2026-05-28T09:43:00.000Z",
+      "check_out": "2026-05-28T18:58:00.000Z",
+      "status": "Late",
+      "working_hours": 9.25,
+      "remarks": "Delayed due to traffic/transit delay.",
+      "created_at": "2026-05-28T08:00:00.000Z"
+    },
+    {
+      "id": 91,
+      "employee_id": 7,
+      "date": "2026-05-28",
+      "check_in": "2026-05-28T08:35:00.000Z",
+      "check_out": "2026-05-28T17:35:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-05-28T08:00:00.000Z"
+    },
+    {
+      "id": 92,
+      "employee_id": 8,
+      "date": "2026-05-28",
+      "check_in": "2026-05-28T08:37:00.000Z",
+      "check_out": "2026-05-28T17:52:00.000Z",
+      "status": "Present",
+      "working_hours": 9.25,
+      "remarks": null,
+      "created_at": "2026-05-28T08:00:00.000Z"
+    },
+    {
+      "id": 93,
+      "employee_id": 9,
+      "date": "2026-05-28",
+      "check_in": "2026-05-28T08:39:00.000Z",
+      "check_out": "2026-05-28T17:39:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-05-28T08:00:00.000Z"
+    },
+    {
+      "id": 94,
+      "employee_id": 10,
+      "date": "2026-05-28",
+      "check_in": "2026-05-28T08:41:00.000Z",
+      "check_out": "2026-05-28T17:56:00.000Z",
+      "status": "Present",
+      "working_hours": 9.25,
+      "remarks": null,
+      "created_at": "2026-05-28T08:00:00.000Z"
+    },
+    {
+      "id": 95,
+      "employee_id": 11,
+      "date": "2026-05-28",
+      "check_in": "2026-05-28T08:43:00.000Z",
+      "check_out": "2026-05-28T17:43:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-05-28T08:00:00.000Z"
+    },
+    {
+      "id": 96,
+      "employee_id": 12,
+      "date": "2026-05-28",
+      "check_in": "2026-05-28T08:50:00.000Z",
+      "check_out": "2026-05-28T17:00:00.000Z",
+      "status": "Work From Home",
+      "working_hours": 8.17,
+      "remarks": "Remote work pre-approved.",
+      "created_at": "2026-05-28T08:00:00.000Z"
+    },
+    {
+      "id": 97,
+      "employee_id": 1,
+      "date": "2026-05-31",
+      "check_in": "2026-05-31T08:40:00.000Z",
+      "check_out": "2026-05-31T17:40:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-05-31T08:00:00.000Z"
+    },
+    {
+      "id": 98,
+      "employee_id": 2,
+      "date": "2026-05-31",
+      "check_in": "2026-05-31T08:42:00.000Z",
+      "check_out": "2026-05-31T17:57:00.000Z",
+      "status": "Present",
+      "working_hours": 9.25,
+      "remarks": null,
+      "created_at": "2026-05-31T08:00:00.000Z"
+    },
+    {
+      "id": 99,
+      "employee_id": 3,
+      "date": "2026-05-31",
+      "check_in": "2026-05-31T08:44:00.000Z",
+      "check_out": "2026-05-31T17:44:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-05-31T08:00:00.000Z"
+    },
+    {
+      "id": 100,
+      "employee_id": 4,
+      "date": "2026-05-31",
+      "check_in": "2026-05-31T08:31:00.000Z",
+      "check_out": "2026-05-31T17:31:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-05-31T08:00:00.000Z"
+    },
+    {
+      "id": 101,
+      "employee_id": 5,
+      "date": "2026-05-31",
+      "check_in": "2026-05-31T08:33:00.000Z",
+      "check_out": "2026-05-31T17:48:00.000Z",
+      "status": "Present",
+      "working_hours": 9.25,
+      "remarks": null,
+      "created_at": "2026-05-31T08:00:00.000Z"
+    },
+    {
+      "id": 102,
+      "employee_id": 6,
+      "date": "2026-05-31",
+      "check_in": "2026-05-31T09:00:00.000Z",
+      "check_out": "2026-05-31T13:00:00.000Z",
+      "status": "Half Day",
+      "working_hours": 4,
+      "remarks": "Doctor appointment in the afternoon.",
+      "created_at": "2026-05-31T08:00:00.000Z"
+    },
+    {
+      "id": 103,
+      "employee_id": 7,
+      "date": "2026-05-31",
+      "check_in": "2026-05-31T08:42:00.000Z",
+      "check_out": "2026-05-31T17:42:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-05-31T08:00:00.000Z"
+    },
+    {
+      "id": 104,
+      "employee_id": 8,
+      "date": "2026-05-31",
+      "check_in": "2026-05-31T08:44:00.000Z",
+      "check_out": "2026-05-31T17:59:00.000Z",
+      "status": "Present",
+      "working_hours": 9.25,
+      "remarks": null,
+      "created_at": "2026-05-31T08:00:00.000Z"
+    },
+    {
+      "id": 105,
+      "employee_id": 9,
+      "date": "2026-05-31",
+      "check_in": "2026-05-31T08:31:00.000Z",
+      "check_out": "2026-05-31T17:46:00.000Z",
+      "status": "Present",
+      "working_hours": 9.25,
+      "remarks": null,
+      "created_at": "2026-05-31T08:00:00.000Z"
+    },
+    {
+      "id": 106,
+      "employee_id": 10,
+      "date": "2026-05-31",
+      "check_in": "2026-05-31T08:33:00.000Z",
+      "check_out": "2026-05-31T17:33:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-05-31T08:00:00.000Z"
+    },
+    {
+      "id": 107,
+      "employee_id": 11,
+      "date": "2026-05-31",
+      "check_in": "2026-05-31T09:35:00.000Z",
+      "check_out": "2026-05-31T18:50:00.000Z",
+      "status": "Late",
+      "working_hours": 9.25,
+      "remarks": "Delayed due to traffic/transit delay.",
+      "created_at": "2026-05-31T08:00:00.000Z"
+    },
+    {
+      "id": 108,
+      "employee_id": 12,
+      "date": "2026-05-31",
+      "check_in": "2026-05-31T09:00:00.000Z",
+      "check_out": "2026-05-31T13:00:00.000Z",
+      "status": "Half Day",
+      "working_hours": 4,
+      "remarks": "Doctor appointment in the afternoon.",
+      "created_at": "2026-05-31T08:00:00.000Z"
+    },
+    {
+      "id": 109,
+      "employee_id": 1,
+      "date": "2026-06-01",
+      "check_in": "2026-06-01T08:34:00.000Z",
+      "check_out": "2026-06-01T17:49:00.000Z",
+      "status": "Present",
+      "working_hours": 9.25,
+      "remarks": null,
+      "created_at": "2026-06-01T08:00:00.000Z"
+    },
+    {
+      "id": 110,
+      "employee_id": 2,
+      "date": "2026-06-01",
+      "check_in": "2026-06-01T09:00:00.000Z",
+      "check_out": "2026-06-01T13:00:00.000Z",
+      "status": "Half Day",
+      "working_hours": 4,
+      "remarks": "Doctor appointment in the afternoon.",
+      "created_at": "2026-06-01T08:00:00.000Z"
+    },
+    {
+      "id": 111,
+      "employee_id": 3,
+      "date": "2026-06-01",
+      "check_in": "2026-06-01T08:43:00.000Z",
+      "check_out": "2026-06-01T17:43:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-06-01T08:00:00.000Z"
+    },
+    {
+      "id": 112,
+      "employee_id": 4,
+      "date": "2026-06-01",
+      "check_in": "2026-06-01T08:30:00.000Z",
+      "check_out": "2026-06-01T17:30:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-06-01T08:00:00.000Z"
+    },
+    {
+      "id": 113,
+      "employee_id": 5,
+      "date": "2026-06-01",
+      "check_in": "2026-06-01T08:32:00.000Z",
+      "check_out": "2026-06-01T17:47:00.000Z",
+      "status": "Present",
+      "working_hours": 9.25,
+      "remarks": null,
+      "created_at": "2026-06-01T08:00:00.000Z"
+    },
+    {
+      "id": 114,
+      "employee_id": 6,
+      "date": "2026-06-01",
+      "check_in": "2026-06-01T08:34:00.000Z",
+      "check_out": "2026-06-01T17:34:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-06-01T08:00:00.000Z"
+    },
+    {
+      "id": 115,
+      "employee_id": 7,
+      "date": "2026-06-01",
+      "check_in": "2026-06-01T09:36:00.000Z",
+      "check_out": "2026-06-01T18:51:00.000Z",
+      "status": "Late",
+      "working_hours": 9.25,
+      "remarks": "Delayed due to traffic/transit delay.",
+      "created_at": "2026-06-01T08:00:00.000Z"
+    },
+    {
+      "id": 116,
+      "employee_id": 8,
+      "date": "2026-06-01",
+      "check_in": null,
+      "check_out": null,
+      "status": "Absent",
+      "working_hours": null,
+      "remarks": "Personal emergency absence.",
+      "created_at": "2026-06-01T08:00:00.000Z"
+    },
+    {
+      "id": 117,
+      "employee_id": 9,
+      "date": "2026-06-01",
+      "check_in": "2026-06-01T08:30:00.000Z",
+      "check_out": "2026-06-01T17:45:00.000Z",
+      "status": "Present",
+      "working_hours": 9.25,
+      "remarks": null,
+      "created_at": "2026-06-01T08:00:00.000Z"
+    },
+    {
+      "id": 118,
+      "employee_id": 10,
+      "date": "2026-06-01",
+      "check_in": "2026-06-01T08:32:00.000Z",
+      "check_out": "2026-06-01T17:32:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-06-01T08:00:00.000Z"
+    },
+    {
+      "id": 119,
+      "employee_id": 11,
+      "date": "2026-06-01",
+      "check_in": "2026-06-01T08:34:00.000Z",
+      "check_out": "2026-06-01T17:49:00.000Z",
+      "status": "Present",
+      "working_hours": 9.25,
+      "remarks": null,
+      "created_at": "2026-06-01T08:00:00.000Z"
+    },
+    {
+      "id": 120,
+      "employee_id": 12,
+      "date": "2026-06-01",
+      "check_in": "2026-06-01T08:36:00.000Z",
+      "check_out": "2026-06-01T17:36:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-06-01T08:00:00.000Z"
+    },
+    {
+      "id": 121,
+      "employee_id": 1,
+      "date": "2026-06-02",
+      "check_in": "2026-06-02T08:33:00.000Z",
+      "check_out": "2026-06-02T17:48:00.000Z",
+      "status": "Present",
+      "working_hours": 9.25,
+      "remarks": null,
+      "created_at": "2026-06-02T08:00:00.000Z"
+    },
+    {
+      "id": 122,
+      "employee_id": 2,
+      "date": "2026-06-02",
+      "check_in": "2026-06-02T08:35:00.000Z",
+      "check_out": "2026-06-02T17:35:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-06-02T08:00:00.000Z"
+    },
+    {
+      "id": 123,
+      "employee_id": 3,
+      "date": "2026-06-02",
+      "check_in": "2026-06-02T09:37:00.000Z",
+      "check_out": "2026-06-02T18:52:00.000Z",
+      "status": "Late",
+      "working_hours": 9.25,
+      "remarks": "Delayed due to traffic/transit delay.",
+      "created_at": "2026-06-02T08:00:00.000Z"
+    },
+    {
+      "id": 124,
+      "employee_id": 4,
+      "date": "2026-06-02",
+      "check_in": null,
+      "check_out": null,
+      "status": "Absent",
+      "working_hours": null,
+      "remarks": "Personal emergency absence.",
+      "created_at": "2026-06-02T08:00:00.000Z"
+    },
+    {
+      "id": 125,
+      "employee_id": 5,
+      "date": "2026-06-02",
+      "check_in": "2026-06-02T08:31:00.000Z",
+      "check_out": "2026-06-02T17:46:00.000Z",
+      "status": "Present",
+      "working_hours": 9.25,
+      "remarks": null,
+      "created_at": "2026-06-02T08:00:00.000Z"
+    },
+    {
+      "id": 126,
+      "employee_id": 6,
+      "date": "2026-06-02",
+      "check_in": "2026-06-02T08:33:00.000Z",
+      "check_out": "2026-06-02T17:33:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-06-02T08:00:00.000Z"
+    },
+    {
+      "id": 127,
+      "employee_id": 7,
+      "date": "2026-06-02",
+      "check_in": "2026-06-02T08:35:00.000Z",
+      "check_out": "2026-06-02T17:50:00.000Z",
+      "status": "Present",
+      "working_hours": 9.25,
+      "remarks": null,
+      "created_at": "2026-06-02T08:00:00.000Z"
+    },
+    {
+      "id": 128,
+      "employee_id": 8,
+      "date": "2026-06-02",
+      "check_in": "2026-06-02T08:37:00.000Z",
+      "check_out": "2026-06-02T17:37:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-06-02T08:00:00.000Z"
+    },
+    {
+      "id": 129,
+      "employee_id": 9,
+      "date": "2026-06-02",
+      "check_in": "2026-06-02T09:39:00.000Z",
+      "check_out": "2026-06-02T18:54:00.000Z",
+      "status": "Late",
+      "working_hours": 9.25,
+      "remarks": "Delayed due to traffic/transit delay.",
+      "created_at": "2026-06-02T08:00:00.000Z"
+    },
+    {
+      "id": 130,
+      "employee_id": 10,
+      "date": "2026-06-02",
+      "check_in": "2026-06-02T08:31:00.000Z",
+      "check_out": "2026-06-02T17:31:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-06-02T08:00:00.000Z"
+    },
+    {
+      "id": 131,
+      "employee_id": 11,
+      "date": "2026-06-02",
+      "check_in": "2026-06-02T08:33:00.000Z",
+      "check_out": "2026-06-02T17:48:00.000Z",
+      "status": "Present",
+      "working_hours": 9.25,
+      "remarks": null,
+      "created_at": "2026-06-02T08:00:00.000Z"
+    },
+    {
+      "id": 132,
+      "employee_id": 12,
+      "date": "2026-06-02",
+      "check_in": "2026-06-02T08:35:00.000Z",
+      "check_out": "2026-06-02T17:35:00.000Z",
+      "status": "Present",
+      "working_hours": 9,
+      "remarks": null,
+      "created_at": "2026-06-02T08:00:00.000Z"
+    },
+    {
+      "id": 133,
+      "employee_id": 1,
+      "date": "2026-06-04",
+      "check_in": "2026-06-04T11:08:17.112Z",
+      "check_out": "2026-06-04T11:08:21.058Z",
+      "status": "Half Day",
+      "working_hours": 0,
+      "remarks": null,
+      "created_at": "2026-06-04T11:08:17.112Z"
+    },
+    {
+      "id": 134,
+      "employee_id": 1,
+      "date": "2026-06-05",
+      "check_in": "2026-06-04T20:08:02.089Z",
+      "check_out": "2026-06-04T20:08:12.799Z",
+      "status": "Present",
+      "working_hours": 0,
+      "remarks": "Testing check-in script",
+      "created_at": "2026-06-04T20:08:02.089Z"
+    }
+  ],
+  "tasks": [
+    {
+      "id": 1,
+      "title": "Implement Phase 1 Attendance module",
+      "description": "Develop checking in, checking out, history, and manager corrections panel.",
+      "status": "Done",
+      "priority": "High",
+      "due_date": "2026-06-03",
+      "assignee_id": 4,
+      "creator_id": 2,
+      "department_id": 1,
+      "created_at": "2026-05-20T09:00:00.000Z",
+      "updated_at": "2026-06-03T17:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "title": "Design HRMS System Identity",
+      "description": "Define branding, corporate palette, typography, and premium component guides.",
+      "status": "Done",
+      "priority": "Urgent",
+      "due_date": "2026-05-30",
+      "assignee_id": 3,
+      "creator_id": 1,
+      "department_id": 2,
+      "created_at": "2026-05-15T10:00:00.000Z",
+      "updated_at": "2026-05-28T16:30:00.000Z"
+    },
+    {
+      "id": 3,
+      "title": "Setup PostgreSQL staging server",
+      "description": "Configure PG database replica, index buffers, and backup routines.",
+      "status": "In Progress",
+      "priority": "Medium",
+      "due_date": "2026-06-15",
+      "assignee_id": 8,
+      "creator_id": 2,
+      "department_id": 1,
+      "created_at": "2026-06-01T09:00:00.000Z",
+      "updated_at": "2026-06-02T11:00:00.000Z"
+    },
+    {
+      "id": 4,
+      "title": "Draft Employee Offboarding policy",
+      "description": "Establish standard checkout documents list, hardware returns, and transition reviews.",
+      "status": "Todo",
+      "priority": "Low",
+      "due_date": "2026-06-20",
+      "assignee_id": 5,
+      "creator_id": 1,
+      "department_id": 4,
+      "created_at": "2026-06-03T14:00:00.000Z",
+      "updated_at": "2026-06-03T14:00:00.000Z"
+    },
+    {
+      "id": 5,
+      "title": "Review quarterly financial budgets",
+      "description": "Verify project spending sheets, licensing costs, and headcount reserves.",
+      "status": "In Review",
+      "priority": "High",
+      "due_date": "2026-06-10",
+      "assignee_id": 11,
+      "creator_id": 1,
+      "department_id": 5,
+      "created_at": "2026-06-02T10:00:00.000Z",
+      "updated_at": "2026-06-03T15:00:00.000Z"
+    }
+  ],
+  "task_comments": [
+    {
+      "id": 1,
+      "task_id": 1,
+      "author_id": 2,
+      "content": "Looking good, Marcus. Make sure PG indexes are correct.",
+      "created_at": "2026-05-25T11:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "task_id": 1,
+      "author_id": 4,
+      "content": "Thanks David, I've added the unique constraints and performance indexes.",
+      "created_at": "2026-05-26T14:30:00.000Z"
+    },
+    {
+      "id": 3,
+      "task_id": 2,
+      "author_id": 1,
+      "content": "Identity looks great! Let's go with the Emerald palette.",
+      "created_at": "2026-05-20T16:00:00.000Z"
+    }
+  ],
+  "task_activities": [
+    {
+      "id": 1,
+      "task_id": 1,
+      "employee_id": 2,
+      "activity_type": "CREATED",
+      "description": "Task was created by David Chen.",
+      "created_at": "2026-05-20T09:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "task_id": 1,
+      "employee_id": 2,
+      "activity_type": "REASSIGNED",
+      "description": "Assigned task to Marcus Vance.",
+      "created_at": "2026-05-20T09:05:00.000Z"
+    },
+    {
+      "id": 3,
+      "task_id": 1,
+      "employee_id": 4,
+      "activity_type": "STATUS_CHANGE",
+      "description": "Changed status from Todo to In Progress.",
+      "created_at": "2026-05-21T10:00:00.000Z"
+    },
+    {
+      "id": 4,
+      "task_id": 1,
+      "employee_id": 4,
+      "activity_type": "STATUS_CHANGE",
+      "description": "Changed status from In Progress to In Review.",
+      "created_at": "2026-06-02T15:00:00.000Z"
+    },
+    {
+      "id": 5,
+      "task_id": 1,
+      "employee_id": 5,
+      "activity_type": "STATUS_CHANGE",
+      "description": "Changed status from In Review to Done.",
+      "created_at": "2026-06-03T17:00:00.000Z"
+    },
+    {
+      "id": 6,
+      "task_id": 2,
+      "employee_id": 1,
+      "activity_type": "CREATED",
+      "description": "Task was created by Sarah Jenkins.",
+      "created_at": "2026-05-15T10:00:00.000Z"
+    },
+    {
+      "id": 7,
+      "task_id": 2,
+      "employee_id": 3,
+      "activity_type": "STATUS_CHANGE",
+      "description": "Changed status from In Progress to Done.",
+      "created_at": "2026-05-28T16:30:00.000Z"
     }
   ]
 }

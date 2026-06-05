@@ -17,13 +17,13 @@ export const StatCard: React.FC<StatCardProps> = ({ title, value, icon, trend, p
       case 'up':
         return (
           <span style={{ 
-            color: 'var(--success-color)', 
-            background: '#F0FDF4', 
+            color: '#15803D', 
+            background: '#DCFCE7', 
             border: '1px solid #DCFCE7',
-            padding: '2px 6px',
-            borderRadius: '4px',
+            padding: '2px 8px',
+            borderRadius: '9999px',
             fontSize: '11px',
-            fontWeight: 500,
+            fontWeight: 600,
             display: 'inline-flex',
             alignItems: 'center',
             gap: '2px'
@@ -35,13 +35,13 @@ export const StatCard: React.FC<StatCardProps> = ({ title, value, icon, trend, p
       case 'down':
         return (
           <span style={{ 
-            color: 'var(--danger-color)', 
-            background: '#FEF2F2', 
+            color: '#B91C1C', 
+            background: '#FEE2E2', 
             border: '1px solid #FEE2E2',
-            padding: '2px 6px',
-            borderRadius: '4px',
+            padding: '2px 8px',
+            borderRadius: '9999px',
             fontSize: '11px',
-            fontWeight: 500,
+            fontWeight: 600,
             display: 'inline-flex',
             alignItems: 'center',
             gap: '2px'
@@ -54,13 +54,13 @@ export const StatCard: React.FC<StatCardProps> = ({ title, value, icon, trend, p
       default:
         return (
           <span style={{ 
-            color: 'var(--text-secondary)', 
-            background: 'var(--hover-color)', 
-            border: '1px solid var(--border-color)',
-            padding: '2px 6px',
-            borderRadius: '4px',
+            color: '#64748B', 
+            background: '#F1F5F9', 
+            border: '1px solid #E2E8F0',
+            padding: '2px 8px',
+            borderRadius: '9999px',
             fontSize: '11px',
-            fontWeight: 500,
+            fontWeight: 600,
             display: 'inline-flex',
             alignItems: 'center',
             gap: '2px'
@@ -73,13 +73,13 @@ export const StatCard: React.FC<StatCardProps> = ({ title, value, icon, trend, p
   };
 
   return (
-    <Card style={{ flex: 1, border: '1px solid var(--border-color)', borderRadius: '8px' }} bodyStyle={{ padding: '24px' }}>
-      <div style={{ display: 'flex', justifyContent: 'between', alignItems: 'center', width: '100%' }}>
+    <Card style={{ flex: 1 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
         <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
           <span style={{ 
             fontSize: '12px', 
-            fontWeight: 500, 
-            color: 'var(--text-secondary)', 
+            fontWeight: 600, 
+            color: '#64748B', 
             textTransform: 'uppercase',
             letterSpacing: '0.05em',
             marginBottom: '8px'
@@ -88,17 +88,17 @@ export const StatCard: React.FC<StatCardProps> = ({ title, value, icon, trend, p
           </span>
           <span style={{ 
             fontSize: '32px', 
-            fontWeight: 600, 
-            color: 'var(--text-primary)',
+            fontWeight: 700, 
+            color: '#0F172A',
             letterSpacing: '-0.03em',
             lineHeight: 1.1,
             marginBottom: '12px'
           }}>
             {value}
           </span>
-          <Space size={6} style={{ display: 'flex', alignItems: 'center' }}>
+          <Space size={8} style={{ display: 'flex', alignItems: 'center' }}>
             {getTrendElement()}
-            <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+            <span style={{ fontSize: '12px', color: '#64748B' }}>
               {label}
             </span>
           </Space>
@@ -107,12 +107,12 @@ export const StatCard: React.FC<StatCardProps> = ({ title, value, icon, trend, p
           width: '40px', 
           height: '40px', 
           borderRadius: '8px', 
-          background: 'var(--hover-color)', 
-          border: '1px solid var(--border-color)',
+          background: '#F1F5F9', 
+          border: '1px solid #E2E8F0',
           display: 'flex', 
           alignItems: 'center', 
           justifyContent: 'center',
-          color: 'var(--text-secondary)',
+          color: '#64748B',
           fontSize: '18px'
         }}>
           {icon}

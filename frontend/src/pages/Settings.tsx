@@ -44,7 +44,13 @@ export const Settings: React.FC = () => {
             {user?.designation}
           </Descriptions.Item>
           <Descriptions.Item label="Authorized Role">
-            <Tag color={user?.role === 'Admin' ? 'red' : user?.role === 'Manager' ? 'orange' : 'blue'}>
+            <Tag color={
+              user?.role === 'Super Admin' ? 'purple' :
+              user?.role === 'Admin' ? 'red' :
+              user?.role === 'HR' ? 'magenta' :
+              user?.role === 'Manager' ? 'orange' :
+              user?.role === 'Employee' ? 'blue' : 'green'
+            }>
               {user?.role} Access
             </Tag>
           </Descriptions.Item>

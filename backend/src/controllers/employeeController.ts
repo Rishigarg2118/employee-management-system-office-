@@ -238,8 +238,16 @@ export async function createEmployee(req: AuthenticatedRequest, res: Response): 
     });
 
     // Assign skills if provided
-    if (skills && Array.isArray(skills)) {
-      for (const s of skills) {
+    let skillsList = skills;
+    if (skills && typeof skills === 'string') {
+      try {
+        skillsList = JSON.parse(skills);
+      } catch (e) {
+        console.error('Failed to parse skills JSON:', e);
+      }
+    }
+    if (skillsList && Array.isArray(skillsList)) {
+      for (const s of skillsList) {
         if (s.skill_id) {
           await db.assignSkill(newEmp.id, parseInt(s.skill_id), s.proficiency_level || 'Intermediate');
         }
@@ -298,13 +306,21 @@ export async function updateEmployee(req: AuthenticatedRequest, res: Response): 
     const updated = await db.updateEmployee(id, data);
 
     // Skills adjustment (if supplied during edit profile)
-    if (data.skills && Array.isArray(data.skills)) {
+    let skillsListUpdate = data.skills;
+    if (data.skills && typeof data.skills === 'string') {
+      try {
+        skillsListUpdate = JSON.parse(data.skills);
+      } catch (e) {
+        console.error('Failed to parse skills JSON:', e);
+      }
+    }
+    if (skillsListUpdate && Array.isArray(skillsListUpdate)) {
       // Clear old skills first in JSON or it will override
       const currentSkills = await db.getEmployeeSkills(id);
       for (const cs of currentSkills) {
         await db.removeSkill(id, cs.id);
       }
-      for (const s of data.skills) {
+      for (const s of skillsListUpdate) {
         if (s.skill_id) {
           await db.assignSkill(id, parseInt(s.skill_id), s.proficiency_level || 'Intermediate');
         }

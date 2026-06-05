@@ -76,20 +76,14 @@ export const Departments: React.FC = () => {
     );
   }
 
-  const isAdmin = currentUser?.role === 'Admin';
+  const isAdmin = currentUser?.role === 'Super Admin' || currentUser?.role === 'Admin';
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
       {/* HEADER SECTION */}
       <div style={{ display: 'flex', justifyContent: 'between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <div style={{ flex: 1 }}>
-          <h1 style={{ 
-            fontSize: '32px', 
-            fontWeight: 600, 
-            letterSpacing: '-0.03em', 
-            color: '#000000',
-            marginBottom: '4px'
-          }}>
+          <h1 className="page-title">
             Departments
           </h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>
@@ -118,7 +112,7 @@ export const Departments: React.FC = () => {
             return (
               <Col xs={24} md={12} xl={8} key={dept.id}>
                 <Card 
-                  style={{ height: '100%', border: '1px solid var(--border-color)', borderRadius: '8px' }}
+                  style={{ height: '100%' }}
                   bodyStyle={{ padding: '24px', display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'between' }}
                 >
                   <div>
@@ -151,7 +145,7 @@ export const Departments: React.FC = () => {
                     </div>
 
                     {/* Department Title */}
-                    <h3 style={{ fontSize: '18px', fontWeight: 600, color: '#000000', marginBottom: '8px' }}>
+                    <h3 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px' }}>
                       {dept.name}
                     </h3>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '13px', minHeight: '40px', marginBottom: '24px', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>

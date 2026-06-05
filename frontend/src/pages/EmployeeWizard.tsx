@@ -246,7 +246,7 @@ export const EmployeeWizard: React.FC = () => {
         >
           Cancel and return
         </Button>
-        <h1 style={{ fontSize: '32px', fontWeight: 600, letterSpacing: '-0.03em', marginTop: '12px', color: '#000000' }}>
+        <h1 className="page-title" style={{ marginTop: '12px' }}>
           {isEditMode ? 'Edit Employee Profile' : 'Onboard Employee'}
         </h1>
       </div>
@@ -258,8 +258,8 @@ export const EmployeeWizard: React.FC = () => {
       <Card bodyStyle={{ padding: '32px' }}>
         
         {/* STEP 1: PERSONAL INFORMATION */}
-        {currentStep === 0 && (
-          <Form form={personalForm} layout="vertical" requiredMark={false} className="fade-in">
+        <div style={{ display: currentStep === 0 ? 'block' : 'none' }} className="fade-in">
+          <Form form={personalForm} layout="vertical" requiredMark={false} preserve={true}>
             <h3 style={{ fontSize: '18px', fontWeight: 500, marginBottom: '24px' }}>Personal Details</h3>
             
             {/* Avatar Upload */}
@@ -324,11 +324,11 @@ export const EmployeeWizard: React.FC = () => {
               <Input.TextArea placeholder="Street, City, State, ZIP..." rows={2} />
             </Form.Item>
           </Form>
-        )}
+        </div>
 
         {/* STEP 2: EMPLOYMENT INFORMATION */}
-        {currentStep === 1 && (
-          <Form form={employmentForm} layout="vertical" requiredMark={false} className="fade-in">
+        <div style={{ display: currentStep === 1 ? 'block' : 'none' }} className="fade-in">
+          <Form form={employmentForm} layout="vertical" requiredMark={false} preserve={true}>
             <h3 style={{ fontSize: '18px', fontWeight: 500, marginBottom: '24px' }}>Employment Profile</h3>
 
             <Row gutter={16}>
@@ -372,9 +372,12 @@ export const EmployeeWizard: React.FC = () => {
                   <Select
                     style={{ height: '40px' }}
                     options={[
+                      { label: 'Super Admin Access', value: 'Super Admin' },
                       { label: 'Administrator Access', value: 'Admin' },
+                      { label: 'HR Access', value: 'HR' },
                       { label: 'Manager Access', value: 'Manager' },
-                      { label: 'Employee Access', value: 'Employee' }
+                      { label: 'Employee Access', value: 'Employee' },
+                      { label: 'Intern Access', value: 'Intern' }
                     ]}
                   />
                 </Form.Item>
@@ -398,11 +401,11 @@ export const EmployeeWizard: React.FC = () => {
               />
             </Form.Item>
           </Form>
-        )}
+        </div>
 
         {/* STEP 3: DEPARTMENT ASSIGNMENT */}
-        {currentStep === 2 && (
-          <Form form={deptForm} layout="vertical" requiredMark={false} className="fade-in">
+        <div style={{ display: currentStep === 2 ? 'block' : 'none' }} className="fade-in">
+          <Form form={deptForm} layout="vertical" requiredMark={false} preserve={true}>
             <h3 style={{ fontSize: '18px', fontWeight: 500, marginBottom: '24px' }}>Department Assignment</h3>
             
             <Form.Item
@@ -417,11 +420,10 @@ export const EmployeeWizard: React.FC = () => {
               />
             </Form.Item>
           </Form>
-        )}
+        </div>
 
         {/* STEP 4: SKILLS ASSIGNMENT */}
-        {currentStep === 3 && (
-          <div className="fade-in">
+        <div style={{ display: currentStep === 3 ? 'block' : 'none' }} className="fade-in">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <h3 style={{ fontSize: '18px', fontWeight: 500, margin: 0 }}>Endorse Technical Core Competencies</h3>
               <Button type="dashed" icon={<PlusOutlined />} onClick={addSkillSelection}>Add Skill</Button>
@@ -467,12 +469,10 @@ export const EmployeeWizard: React.FC = () => {
             ) : (
               <Empty description="No skill endorsements assigned yet. Click Add Skill to configure." />
             )}
-          </div>
-        )}
+        </div>
 
         {/* STEP 5: DOCUMENTS UPLOAD */}
-        {currentStep === 4 && (
-          <div className="fade-in">
+        <div style={{ display: currentStep === 4 ? 'block' : 'none' }} className="fade-in">
             <h3 style={{ fontSize: '18px', fontWeight: 500, marginBottom: '24px' }}>Documents and Certifications Upload</h3>
 
             <Dragger
@@ -518,8 +518,7 @@ export const EmployeeWizard: React.FC = () => {
                 )}
               />
             )}
-          </div>
-        )}
+        </div>
 
         {/* WIZARD ACTIONS BAR */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '40px', borderTop: '1px solid var(--border-color)', paddingTop: '24px' }}>

@@ -12,7 +12,10 @@ import {
   BellOutlined,
   PlusOutlined,
   LogoutOutlined,
-  SearchOutlined
+  SearchOutlined,
+  CalendarOutlined,
+  ClockCircleOutlined,
+  CheckSquareOutlined
 } from '@ant-design/icons';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -42,8 +45,28 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
     if (path.startsWith('/departments')) return '/departments';
     if (path.startsWith('/skills')) return '/skills';
     if (path.startsWith('/documents')) return '/documents';
+    if (path.startsWith('/leaves')) return '/leaves';
+    if (path.startsWith('/attendance')) return '/attendance';
+    if (path.startsWith('/tasks')) return '/tasks';
     if (path.startsWith('/settings')) return '/settings';
     return '/';
+  };
+
+  const isTabAllowed = (key: string, role?: string): boolean => {
+    if (!role) return false;
+    if (role === 'Super Admin' || role === 'Admin') {
+      return true;
+    }
+    if (role === 'HR') {
+      return ['/', '/employees', '/skills', '/documents', '/leaves', '/attendance', '/tasks'].includes(key);
+    }
+    if (role === 'Manager' || role === 'Employee') {
+      return ['/', '/employees', '/leaves', '/attendance', '/tasks'].includes(key);
+    }
+    if (role === 'Intern') {
+      return ['/', '/employees', '/leaves', '/attendance'].includes(key);
+    }
+    return false;
   };
 
   // Build menu items
@@ -53,8 +76,13 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
     { key: '/departments', icon: <AppstoreOutlined />, label: 'Departments' },
     { key: '/skills', icon: <BulbOutlined />, label: 'Skills' },
     { key: '/documents', icon: <FileTextOutlined />, label: 'Documents' },
+    { key: '/leaves', icon: <CalendarOutlined />, label: 'Leaves' },
+    { key: '/attendance', icon: <ClockCircleOutlined />, label: 'Attendance' },
+    { key: '/tasks', icon: <CheckSquareOutlined />, label: 'Tasks' },
     { key: '/settings', icon: <SettingOutlined />, label: 'Settings' }
   ];
+
+  const filteredMenuItems = menuItems.filter(item => isTabAllowed(item.key, user?.role));
 
   // User profile dropdown actions
   const profileMenu = {
@@ -83,36 +111,45 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
       {
         key: 'new-employee',
         label: <Link to="/employees/new">Add Employee</Link>,
-        icon: <UserOutlined />
+        icon: <UserOutlined />,
+        roles: ['Super Admin', 'Admin', 'HR', 'Manager']
       },
       {
         key: 'new-dept',
         label: <span onClick={() => navigate('/departments?openCreate=true')}>Add Department</span>,
-        icon: <AppstoreOutlined />
+        icon: <AppstoreOutlined />,
+        roles: ['Super Admin', 'Admin']
+      },
+      {
+        key: 'apply-leave',
+        label: <Link to="/leaves?tab=apply">Apply for Leave</Link>,
+        icon: <CalendarOutlined />,
+        roles: ['Super Admin', 'Admin', 'HR', 'Manager', 'Employee', 'Intern']
       }
-    ]
+    ].filter(action => action.roles.includes(user?.role || ''))
   };
 
   const avatarUrl = user?.avatar_url ? `${API_URL.replace('/api', '')}/${user.avatar_url}` : undefined;
   const userFullName = user ? `${user.first_name} ${user.last_name}` : 'Enterprise User';
 
   return (
-    <Layout style={{ minHeight: '100vh', background: '#FFFFFF' }}>
+    <Layout style={{ minHeight: '100vh', background: '#F8FAFC' }}>
       {/* LEFT SIDEBAR */}
       <Sider
         trigger={null}
         collapsible
         collapsed={collapsed}
         width={240}
-        theme="light"
+        theme="dark"
         style={{
-          borderRight: '1px solid #EAEAEA',
+          borderRight: '1px solid #1E293B',
           position: 'fixed',
           left: 0,
           top: 0,
           bottom: 0,
           zIndex: 100,
-          height: '100vh'
+          height: '100vh',
+          background: '#0F172A'
         }}
       >
         <div style={{
@@ -120,14 +157,14 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
           display: 'flex',
           alignItems: 'center',
           padding: '0 24px',
-          borderBottom: '1px solid #EAEAEA',
+          borderBottom: '1px solid #1E293B',
           gap: 12
         }}>
           <div style={{
             width: 24,
             height: 24,
             borderRadius: 6,
-            background: 'var(--accent-color)',
+            background: '#10B981',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -142,7 +179,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
               fontWeight: 600,
               fontSize: 16,
               letterSpacing: '-0.02em',
-              color: '#000000',
+              color: '#FFFFFF',
               fontFamily: 'var(--font-sans)'
             }}>
               Social Connect
@@ -151,24 +188,25 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
         </div>
         
         <Menu
+          theme="dark"
           mode="inline"
           selectedKeys={[getActiveKey()]}
           onClick={({ key }) => navigate(key)}
-          style={{ borderRight: 0, marginTop: 16 }}
-          items={menuItems}
+          style={{ borderRight: 0, marginTop: 16, background: 'transparent' }}
+          items={filteredMenuItems}
         />
       </Sider>
 
       <Layout style={{ 
         marginLeft: collapsed ? 80 : 240, 
         transition: 'all 0.2s',
-        background: '#FFFFFF'
+        background: '#F8FAFC'
       }}>
         {/* TOP HEADER */}
         <Header style={{
           padding: '0 24px',
           background: '#FFFFFF',
-          borderBottom: '1px solid #EAEAEA',
+          borderBottom: '1px solid #E2E8F0',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -208,8 +246,8 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
                   height: 36, 
                   display: 'flex', 
                   alignItems: 'center',
-                  background: '#000000',
-                  borderColor: '#000000',
+                  background: '#10B981',
+                  borderColor: '#10B981',
                   borderRadius: 6
                 }}
               >
@@ -218,7 +256,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
             </Dropdown>
 
             {/* Notifications */}
-            <Badge dot color="var(--accent-color)">
+            <Badge dot color="#10B981">
               <Button
                 type="text"
                 icon={<BellOutlined style={{ fontSize: 18 }} />}
@@ -232,13 +270,13 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
                 <Avatar 
                   src={avatarUrl} 
                   icon={!avatarUrl && <UserOutlined />} 
-                  style={{ backgroundColor: 'var(--accent-color)' }}
+                  style={{ backgroundColor: '#10B981' }}
                 />
                 <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left', lineHeight: 1.2 }}>
-                  <span style={{ fontSize: 13, fontWeight: 500, color: '#000000' }}>
+                  <span style={{ fontSize: 13, fontWeight: 500, color: '#0F172A' }}>
                     {userFullName}
                   </span>
-                  <span style={{ fontSize: 11, color: '#666666' }}>
+                  <span style={{ fontSize: 11, color: '#64748B' }}>
                     {user?.role}
                   </span>
                 </div>
@@ -250,7 +288,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
         {/* CONTENT CANVAS */}
         <Content style={{
           padding: '32px 40px',
-          background: '#FFFFFF',
+          background: '#F8FAFC',
           minHeight: 'calc(100vh - 64px)'
         }}>
           <div className="fade-in">

@@ -146,7 +146,7 @@ export const Documents: React.FC = () => {
       title: '',
       key: 'actions',
       render: (_: any, record: any) => {
-        const isEditable = currentUser?.role === 'Admin' || currentUser?.role === 'Manager' || currentUser?.id === record.owner.id;
+        const isEditable = ['Super Admin', 'Admin', 'HR', 'Manager'].includes(currentUser?.role || '') || currentUser?.id === record.owner.id;
         
         return (
           <Space size={8}>
@@ -180,13 +180,7 @@ export const Documents: React.FC = () => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
       {/* HEADER SECTION */}
       <div>
-        <h1 style={{ 
-          fontSize: '32px', 
-          fontWeight: 600, 
-          letterSpacing: '-0.03em', 
-          color: '#000000',
-          marginBottom: '4px'
-        }}>
+        <h1 className="page-title">
           File Cabinet
         </h1>
         <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>

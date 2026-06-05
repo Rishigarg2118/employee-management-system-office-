@@ -10,6 +10,11 @@ import departmentRouter from './routes/departmentRoutes';
 import skillRouter from './routes/skillRoutes';
 import documentRouter from './routes/documentRoutes';
 import dashboardRouter from './routes/dashboardRoutes';
+import leaveRouter from './routes/leaveRoutes';
+import attendanceRouter from './routes/attendanceRoutes';
+import taskRouter from './routes/taskRoutes';
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './config/swagger';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -28,6 +33,9 @@ app.use(express.urlencoded({ extended: true }));
 // Serve file uploads statically
 app.use('/uploads', express.static(path.resolve(__dirname, '../uploads')));
 
+// Swagger API Documentation Route
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
 // Routes mounting
 app.use('/api/auth', authRouter);
 app.use('/api/employees', employeeRouter);
@@ -35,6 +43,9 @@ app.use('/api/departments', departmentRouter);
 app.use('/api/skills', skillRouter);
 app.use('/api/documents', documentRouter);
 app.use('/api/dashboard', dashboardRouter);
+app.use('/api/leaves', leaveRouter);
+app.use('/api/attendance', attendanceRouter);
+app.use('/api/tasks', taskRouter);
 
 // Basic status check
 app.get('/health', (req: Request, res: Response) => {

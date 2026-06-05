@@ -63,20 +63,14 @@ export const Skills: React.FC = () => {
   // Group skills by category
   const categories = Array.from(new Set(skills.map(s => s.category)));
 
-  const isEditable = currentUser?.role === 'Admin' || currentUser?.role === 'Manager';
+  const isEditable = ['Super Admin', 'Admin', 'HR', 'Manager'].includes(currentUser?.role || '');
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
       {/* HEADER SECTION */}
       <div style={{ display: 'flex', justifyContent: 'between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <div style={{ flex: 1 }}>
-          <h1 style={{ 
-            fontSize: '32px', 
-            fontWeight: 600, 
-            letterSpacing: '-0.03em', 
-            color: '#000000',
-            marginBottom: '4px'
-          }}>
+          <h1 className="page-title">
             Skills Repository
           </h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>
