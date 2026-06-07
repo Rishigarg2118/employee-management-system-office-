@@ -120,18 +120,28 @@ export const LeaveApply: React.FC = () => {
   };
 
   const handleSubmit = () => {
-    const values = form.getFieldsValue();
-    const formData = new FormData();
-    formData.append('leave_type_id', values.leave_type_id.toString());
-    formData.append('start_date', values.date_range[0].format('YYYY-MM-DD'));
-    formData.append('end_date', values.date_range[1].format('YYYY-MM-DD'));
-    formData.append('reason', values.reason);
-    
-    if (fileList.length > 0 && fileList[0].originFileObj) {
-      formData.append('attachment', fileList[0].originFileObj);
-    }
+    try {
+      const values = form.getFieldsValue(true);
+      if (!values.leave_type_id || !values.date_range || !values.date_range[0] || !values.date_range[1] || !values.reason) {
+        message.error('Please complete all form fields before submitting.');
+        return;
+      }
 
-    applyLeaveMutation.mutate(formData);
+      const formData = new FormData();
+      formData.append('leave_type_id', values.leave_type_id.toString());
+      formData.append('start_date', values.date_range[0].format('YYYY-MM-DD'));
+      formData.append('end_date', values.date_range[1].format('YYYY-MM-DD'));
+      formData.append('reason', values.reason);
+      
+      if (fileList.length > 0 && fileList[0].originFileObj) {
+        formData.append('attachment', fileList[0].originFileObj);
+      }
+
+      applyLeaveMutation.mutate(formData);
+    } catch (err: any) {
+      console.error('Submit error:', err);
+      message.error(err.message || 'An error occurred while preparing your application.');
+    }
   };
 
   const resetWizard = () => {
