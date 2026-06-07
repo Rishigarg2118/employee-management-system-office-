@@ -3657,7 +3657,7 @@ export const db = {
       if (!row) return null;
       if (row.manager && row.manager.id === null) row.manager = null;
       const memRes = await pool.query(`
-        SELECT id, employee_id, first_name, last_name, email, designation, role, status, joining_date::text
+        SELECT e.id, e.employee_id, e.first_name, e.last_name, e.email, e.designation, e.role, e.status, e.joining_date::text
         FROM employees e
         JOIN project_members pm ON e.id = pm.employee_id
         WHERE pm.project_id = $1
@@ -3687,6 +3687,7 @@ export const db = {
   async createProject(name: string, description?: string, start_date?: string, deadline?: string | null, status?: ProjectStatus, manager_id?: number | null, memberIds?: number[]): Promise<Project> {
     if (this.isPostgres() && pool) {
       const client = await pool.connect();
+      let newProj: any = null;
       try {
         await client.query('BEGIN');
         const insertRes = await client.query(`
@@ -3694,7 +3695,7 @@ export const db = {
           VALUES ($1, $2, $3, $4, $5, $6)
           RETURNING *
         `, [name, description || null, start_date || getLocalDateStr(), deadline || null, status || 'Planning', manager_id || null]);
-        const newProj = insertRes.rows[0];
+        newProj = insertRes.rows[0];
         if (memberIds && memberIds.length > 0) {
           const uniqueMemberIds = Array.from(new Set(memberIds));
           for (const empId of uniqueMemberIds) {
@@ -3706,13 +3707,13 @@ export const db = {
           }
         }
         await client.query('COMMIT');
-        client.release();
-        return (await this.getProjectById(newProj.id))!;
       } catch (err) {
         await client.query('ROLLBACK');
-        client.release();
         throw err;
+      } finally {
+        client.release();
       }
+      return (await this.getProjectById(newProj.id))!;
     }
 
     const newId = jsonDb.projects.length > 0 ? Math.max(...jsonDb.projects.map(p => p.id)) + 1 : 1;
@@ -3750,7 +3751,7 @@ export const db = {
         if (fields.length > 0) {
           const setClause = fields.map((f, i) => `${f} = $${i + 2}`).join(', ');
           const values = [id, ...Object.values(updateData)];
-          await pool.query(`UPDATE projects SET ${setClause} WHERE id = $1`, values);
+          await client.query(`UPDATE projects SET ${setClause} WHERE id = $1`, values);
         }
         if (memberIds !== undefined) {
           await client.query('DELETE FROM project_members WHERE project_id = $1', [id]);
@@ -3764,13 +3765,13 @@ export const db = {
           }
         }
         await client.query('COMMIT');
-        client.release();
-        return this.getProjectById(id);
       } catch (err) {
         await client.query('ROLLBACK');
-        client.release();
         throw err;
+      } finally {
+        client.release();
       }
+      return this.getProjectById(id);
     }
 
     const idx = jsonDb.projects.findIndex(p => p.id === id);
@@ -3908,7 +3909,7 @@ export const db = {
       if (!row) return null;
       if (row.lead && row.lead.id === null) row.lead = null;
       const memRes = await pool.query(`
-        SELECT id, employee_id, first_name, last_name, email, designation, role, status, joining_date::text
+        SELECT e.id, e.employee_id, e.first_name, e.last_name, e.email, e.designation, e.role, e.status, e.joining_date::text
         FROM employees e
         JOIN team_members tm ON e.id = tm.employee_id
         WHERE tm.team_id = $1
@@ -3940,6 +3941,7 @@ export const db = {
   async createTeam(name: string, department_id?: number | null, lead_id?: number | null, memberIds?: number[]): Promise<Team> {
     if (this.isPostgres() && pool) {
       const client = await pool.connect();
+      let newTeam: any = null;
       try {
         await client.query('BEGIN');
         const insertRes = await client.query(`
@@ -3947,7 +3949,7 @@ export const db = {
           VALUES ($1, $2, $3)
           RETURNING *
         `, [name, department_id || null, lead_id || null]);
-        const newTeam = insertRes.rows[0];
+        newTeam = insertRes.rows[0];
         if (memberIds && memberIds.length > 0) {
           const uniqueMemberIds = Array.from(new Set(memberIds));
           for (const empId of uniqueMemberIds) {
@@ -3959,13 +3961,13 @@ export const db = {
           }
         }
         await client.query('COMMIT');
-        client.release();
-        return (await this.getTeamById(newTeam.id))!;
       } catch (err) {
         await client.query('ROLLBACK');
-        client.release();
         throw err;
+      } finally {
+        client.release();
       }
+      return (await this.getTeamById(newTeam.id))!;
     }
 
     const newId = jsonDb.teams.length > 0 ? Math.max(...jsonDb.teams.map(t => t.id)) + 1 : 1;
@@ -4000,7 +4002,7 @@ export const db = {
         if (fields.length > 0) {
           const setClause = fields.map((f, i) => `${f} = $${i + 2}`).join(', ');
           const values = [id, ...Object.values(updateData)];
-          await pool.query(`UPDATE teams SET ${setClause} WHERE id = $1`, values);
+          await client.query(`UPDATE teams SET ${setClause} WHERE id = $1`, values);
         }
         if (memberIds !== undefined) {
           await client.query('DELETE FROM team_members WHERE team_id = $1', [id]);
@@ -4014,13 +4016,13 @@ export const db = {
           }
         }
         await client.query('COMMIT');
-        client.release();
-        return this.getTeamById(id);
       } catch (err) {
         await client.query('ROLLBACK');
-        client.release();
         throw err;
+      } finally {
+        client.release();
       }
+      return this.getTeamById(id);
     }
 
     const idx = jsonDb.teams.findIndex(t => t.id === id);
