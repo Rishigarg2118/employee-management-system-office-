@@ -146,7 +146,12 @@ export const LeaveApply: React.FC = () => {
       setFileList([]);
     },
     beforeUpload: (file: any) => {
-      setFileList([file]);
+      setFileList([{
+        uid: file.uid || `-upload-${Date.now()}`,
+        name: file.name,
+        status: 'done',
+        originFileObj: file
+      }]);
       return false; // Stop auto-upload to server
     },
     fileList,

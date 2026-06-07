@@ -240,9 +240,9 @@ export async function approveLeaveWorkflow(req: AuthenticatedRequest, res: Respo
     }
 
     // Role check and verification:
-    // Manager Review: must be manager of the department or Admin.
+    // Manager Review: must be manager of the department or Admin/Super Admin.
     if (stage === 'Manager Review') {
-      if (req.user?.role !== 'Manager' && req.user?.role !== 'Admin') {
+      if (req.user?.role !== 'Manager' && req.user?.role !== 'Admin' && req.user?.role !== 'Super Admin') {
         res.status(403).json({ message: 'Forbidden: Only managers or admins can review this stage.' });
         return;
       }
@@ -257,10 +257,10 @@ export async function approveLeaveWorkflow(req: AuthenticatedRequest, res: Respo
       }
     }
 
-    // HR Review: must be Admin (HR represents Admin in our system).
+    // HR Review: must be Admin, Super Admin, or HR.
     if (stage === 'HR Review') {
-      if (req.user?.role !== 'Admin') {
-        res.status(403).json({ message: 'Forbidden: HR approvals require Administrator role privileges.' });
+      if (req.user?.role !== 'Admin' && req.user?.role !== 'Super Admin' && req.user?.role !== 'HR') {
+        res.status(403).json({ message: 'Forbidden: HR approvals require HR or Administrator role privileges.' });
         return;
       }
     }

@@ -7,7 +7,10 @@ import {
   getEmployeeAttendanceHistory, 
   getAttendanceTeam, 
   updateAttendance, 
-  getAttendanceAnalytics 
+  getAttendanceAnalytics,
+  submitCorrectionRequest,
+  rejectCorrectionRequest,
+  getCorrectionRequests
 } from '../controllers/attendanceController';
 import { authenticateToken, requireRole } from '../middleware/auth';
 
@@ -36,6 +39,23 @@ router.put('/:id',
   authenticateToken as any, 
   requireRole(['Super Admin', 'Admin', 'HR', 'Manager']) as any, 
   updateAttendance as any
+);
+
+router.post('/:id/correction-request',
+  authenticateToken as any,
+  submitCorrectionRequest as any
+);
+
+router.post('/corrections/:id/reject',
+  authenticateToken as any,
+  requireRole(['Super Admin', 'Admin', 'HR', 'Manager']) as any,
+  rejectCorrectionRequest as any
+);
+
+router.get('/corrections',
+  authenticateToken as any,
+  requireRole(['Super Admin', 'Admin', 'HR', 'Manager']) as any,
+  getCorrectionRequests as any
 );
 
 router.get('/analytics', 

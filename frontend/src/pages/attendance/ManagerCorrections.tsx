@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Table, Card, Tag, Button, Modal, Form, Select, DatePicker, TimePicker, Input, Space, Divider, message, Row, Col, Typography } from 'antd';
+import { Table, Card, Tag, Button, Modal, Form, Select, DatePicker, TimePicker, Input, Space, Divider, message, Row, Col, Typography, Alert } from 'antd';
 import { EditOutlined, TeamOutlined, SearchOutlined, FilterOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
@@ -37,6 +37,12 @@ export const ManagerCorrections: React.FC = () => {
     })
   });
 
+  // Fetch pending correction requests
+  const { data: correctionRequests = [] } = useQuery<any[]>({
+    queryKey: ['attendanceCorrectionRequests'],
+    queryFn: () => api.getAttendanceCorrectionRequests({ status: 'Pending' })
+  });
+
   // 3. Edit attendance mutation
   const editMutation = useMutation({
     mutationFn: (data: { id: number; payload: any }) => api.updateAttendance(data.id, data.payload),
@@ -44,10 +50,26 @@ export const ManagerCorrections: React.FC = () => {
       message.success('Record corrected successfully!');
       queryClient.invalidateQueries({ queryKey: ['attendanceTeam'] });
       queryClient.invalidateQueries({ queryKey: ['attendanceHistory'] });
+      queryClient.invalidateQueries({ queryKey: ['attendanceCorrectionRequests'] });
       setModalVisible(false);
     },
     onError: (err: any) => {
       message.error(err.response?.data?.message || 'Error updating record.');
+    }
+  });
+
+  // Reject correction request mutation
+  const rejectMutation = useMutation({
+    mutationFn: (data: { id: number; remarks?: string }) => api.rejectAttendanceCorrectionRequest(data.id, { remarks: data.remarks }),
+    onSuccess: () => {
+      message.success('Correction request rejected successfully!');
+      queryClient.invalidateQueries({ queryKey: ['attendanceTeam'] });
+      queryClient.invalidateQueries({ queryKey: ['attendanceHistory'] });
+      queryClient.invalidateQueries({ queryKey: ['attendanceCorrectionRequests'] });
+      setModalVisible(false);
+    },
+    onError: (err: any) => {
+      message.error(err.response?.data?.message || 'Error rejecting request.');
     }
   });
 
@@ -130,10 +152,18 @@ export const ManagerCorrections: React.FC = () => {
       key: 'employee',
       render: (_: any, record: any) => {
         const emp = record.employee;
+        const hasPendingRequest = correctionRequests.some((c: any) => c.attendance_id === record.id);
         return emp ? (
           <div>
-            <div style={{ fontWeight: 600, color: '#0F172A' }}>
-              {emp.first_name} {emp.last_name}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontWeight: 600, color: '#0F172A' }}>
+                {emp.first_name} {emp.last_name}
+              </span>
+              {hasPendingRequest && (
+                <Tag color="volcano" style={{ fontSize: 10, margin: 0, borderRadius: 4 }}>
+                  Requested
+                </Tag>
+              )}
             </div>
             <div style={{ fontSize: 11, color: '#64748B' }}>
               {emp.employee_id} • {emp.designation}
@@ -269,78 +299,135 @@ export const ManagerCorrections: React.FC = () => {
         footer={null}
         width={500}
       >
-        {editingRecord && (
-          <Form
-            form={form}
-            layout="vertical"
-            onFinish={handleSaveEdit}
-            style={{ marginTop: 16 }}
-          >
-            <div style={{ marginBottom: 16 }}>
-              <Text type="secondary">Employee: </Text>
-              <Text strong style={{ fontSize: 14 }}>
-                {editingRecord.employee?.first_name} {editingRecord.employee?.last_name}
-              </Text>
-              <div>
-                <Text type="secondary">Date: </Text>
-                <Text strong>{editingRecord.date}</Text>
+        {editingRecord && (() => {
+          const pendingRequest = correctionRequests.find((c: any) => c.attendance_id === editingRecord.id);
+          return (
+            <Form
+              form={form}
+              layout="vertical"
+              onFinish={handleSaveEdit}
+              style={{ marginTop: 16 }}
+            >
+              <div style={{ marginBottom: 16 }}>
+                <Text type="secondary">Employee: </Text>
+                <Text strong style={{ fontSize: 14 }}>
+                  {editingRecord.employee?.first_name} {editingRecord.employee?.last_name}
+                </Text>
+                <div>
+                  <Text type="secondary">Date: </Text>
+                  <Text strong>{editingRecord.date}</Text>
+                </div>
               </div>
-            </div>
 
-            <Divider style={{ margin: '12px 0' }} />
+              {pendingRequest && (
+                <Alert
+                  message="Employee Correction Request"
+                  description={
+                    <div style={{ marginTop: 4, fontSize: 13 }}>
+                      <div><strong>Requested Status:</strong> {pendingRequest.requested_status}</div>
+                      <div>
+                        <strong>Requested Times:</strong>{' '}
+                        {pendingRequest.requested_check_in 
+                          ? dayjs(pendingRequest.requested_check_in).format('hh:mm A') 
+                          : '--:--'}{' '}
+                        to{' '}
+                        {pendingRequest.requested_check_out 
+                          ? dayjs(pendingRequest.requested_check_out).format('hh:mm A') 
+                          : '--:--'}
+                      </div>
+                      <div><strong>Reason:</strong> {pendingRequest.reason}</div>
+                    </div>
+                  }
+                  type="warning"
+                  showIcon
+                  style={{ borderRadius: 8, marginBottom: 16 }}
+                />
+              )}
 
-            <Form.Item 
-              label="Shift Status" 
-              name="status"
-              rules={[{ required: true, message: 'Please select a status' }]}
-            >
-              <Select placeholder="Select Status">
-                <Option value="Present">Present</Option>
-                <Option value="Late">Late</Option>
-                <Option value="Work From Home">Work From Home</Option>
-                <Option value="Half Day">Half Day</Option>
-                <Option value="Absent">Absent</Option>
-              </Select>
-            </Form.Item>
+              <Divider style={{ margin: '12px 0' }} />
 
-            <Row gutter={16}>
-              <Col span={12}>
-                <Form.Item label="Check In Time" name="check_in">
-                  <TimePicker format="HH:mm:ss" style={{ width: '100%' }} />
-                </Form.Item>
-              </Col>
-              <Col span={12}>
-                <Form.Item label="Check Out Time" name="check_out">
-                  <TimePicker format="HH:mm:ss" style={{ width: '100%' }} />
-                </Form.Item>
-              </Col>
-            </Row>
+              <Form.Item 
+                label="Shift Status" 
+                name="status"
+                rules={[{ required: true, message: 'Please select a status' }]}
+              >
+                <Select placeholder="Select Status">
+                  <Option value="Present">Present</Option>
+                  <Option value="Late">Late</Option>
+                  <Option value="Work From Home">Work From Home</Option>
+                  <Option value="Half Day">Half Day</Option>
+                  <Option value="Absent">Absent</Option>
+                </Select>
+              </Form.Item>
 
-            <Form.Item 
-              label="Audit Correction Remarks" 
-              name="remarks"
-              rules={[{ required: true, message: 'Please provide adjustment remarks' }]}
-            >
-              <TextArea rows={3} placeholder="Provide audit trail comment e.g., 'Correcting late swipe - transit issues' or 'Forgot card, checked in manual'..." style={{ borderRadius: 8 }} />
-            </Form.Item>
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Form.Item label="Check In Time" name="check_in">
+                    <TimePicker format="HH:mm:ss" style={{ width: '100%' }} />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item label="Check Out Time" name="check_out">
+                    <TimePicker format="HH:mm:ss" style={{ width: '100%' }} />
+                  </Form.Item>
+                </Col>
+              </Row>
 
-            <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>
-              <Space>
-                <Button onClick={() => setModalVisible(false)} style={{ borderRadius: 6 }}>
-                  Cancel
-                </Button>
-                <Button 
-                  type="primary" 
-                  htmlType="submit" 
-                  loading={editMutation.isPending}
-                  style={{ borderRadius: 6, background: '#10B981', borderColor: '#10B981' }}
-                >
-                  Save Adjustments
-                </Button>
-              </Space>
-            </Form.Item>
-          </Form>
-        )}
+              <Form.Item 
+                label="Audit Correction Remarks" 
+                name="remarks"
+                rules={[{ required: true, message: 'Please provide adjustment remarks' }]}
+              >
+                <TextArea rows={3} placeholder="Provide audit trail comment e.g., 'Correcting late swipe - transit issues' or 'Forgot card, checked in manual'..." style={{ borderRadius: 8 }} />
+              </Form.Item>
+
+              <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>
+                <Space>
+                  {pendingRequest && (
+                    <Button 
+                      danger 
+                      loading={rejectMutation.isPending}
+                      onClick={() => {
+                        Modal.confirm({
+                          title: 'Reject Correction Request',
+                          content: (
+                            <div>
+                              <p>Are you sure you want to reject this correction request?</p>
+                              <Input.TextArea 
+                                id="rejectRemarks" 
+                                placeholder="Optional rejection remarks..." 
+                                rows={3} 
+                                style={{ marginTop: 8 }}
+                              />
+                            </div>
+                          ),
+                          onOk: () => {
+                            const remarksVal = (document.getElementById('rejectRemarks') as HTMLTextAreaElement)?.value || '';
+                            rejectMutation.mutate({ id: pendingRequest.id, remarks: remarksVal });
+                          }
+                        });
+                      }}
+                      style={{ borderRadius: 6 }}
+                    >
+                      Reject Request
+                    </Button>
+                  )}
+                  <Button onClick={() => setModalVisible(false)} style={{ borderRadius: 6 }}>
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="primary" 
+                    htmlType="submit" 
+                    loading={editMutation.isPending}
+                    style={{ borderRadius: 6, background: '#10B981', borderColor: '#10B981' }}
+                  >
+                    Save Adjustments
+                  </Button>
+                </Space>
+              </Form.Item>
+            </Form>
+          );
+        })()}
       </Modal>
     </div>
   );

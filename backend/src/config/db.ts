@@ -62,6 +62,7 @@ interface JsonDatabase {
   team_members: TeamMember[];
   notifications: Notification[];
   audit_logs: AuditLog[];
+  attendance_corrections?: any[];
 }
 
 let jsonDb: JsonDatabase = {
@@ -84,7 +85,8 @@ let jsonDb: JsonDatabase = {
   teams: [],
   team_members: [],
   notifications: [],
-  audit_logs: []
+  audit_logs: [],
+  attendance_corrections: []
 };
 
 // Seed Data definition
@@ -856,6 +858,25 @@ export async function initializeDatabase() {
         await client.query('CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status)');
         await client.query('CREATE INDEX IF NOT EXISTS idx_task_comments_task ON task_comments(task_id)');
         await client.query('CREATE INDEX IF NOT EXISTS idx_task_activities_task ON task_activities(task_id)');
+
+        // Ensure attendance_corrections table exists
+        await client.query(`
+          CREATE TABLE IF NOT EXISTS attendance_corrections (
+              id SERIAL PRIMARY KEY,
+              attendance_id INTEGER NOT NULL REFERENCES attendance(id) ON DELETE CASCADE,
+              employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+              requested_status VARCHAR(30) NOT NULL CHECK (requested_status IN ('Present', 'Absent', 'Late', 'Half Day', 'Work From Home')),
+              requested_check_in TIMESTAMP,
+              requested_check_out TIMESTAMP,
+              reason TEXT NOT NULL,
+              status VARCHAR(20) DEFAULT 'Pending' CHECK (status IN ('Pending', 'Approved', 'Rejected')),
+              remarks TEXT,
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+              updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          );
+        `);
+        await client.query('CREATE INDEX IF NOT EXISTS idx_attendance_corrections_attendance ON attendance_corrections(attendance_id)');
+        await client.query('CREATE INDEX IF NOT EXISTS idx_attendance_corrections_employee ON attendance_corrections(employee_id)');
 
         // Run additive schema migrations (Projects, Teams, Notifications, Audit Logs)
         await client.query(`
@@ -1909,6 +1930,53 @@ export const db = {
 
         await client.query('COMMIT');
         client.release();
+
+        // Send Notifications in Background (non-blocking)
+        (async () => {
+          try {
+            await this.createNotification(
+              data.employee_id,
+              'Leave Request Submitted',
+              `Your request for ${data.total_days} day(s) of ${typeName} has been submitted.`,
+              'LEAVE'
+            );
+
+            const mgrRes = await pool.connect();
+            try {
+              const res = await mgrRes.query(`
+                SELECT d.manager_id 
+                FROM employees e 
+                LEFT JOIN departments d ON e.department_id = d.id 
+                WHERE e.id = $1
+              `, [data.employee_id]);
+              const managerId = res.rows[0]?.manager_id;
+              if (managerId && managerId !== data.employee_id) {
+                await this.createNotification(
+                  managerId,
+                  'Leave Request Pending Review',
+                  `${empName} has submitted a leave request that requires your review.`,
+                  'LEAVE'
+                );
+              }
+
+              const hrRes = await mgrRes.query(`
+                SELECT id FROM employees WHERE role IN ('HR', 'Admin', 'Super Admin') AND id != $1
+              `, [data.employee_id]);
+              for (const row of hrRes.rows) {
+                await this.createNotification(
+                  row.id,
+                  'Leave Request Submitted',
+                  `${empName} has applied for ${data.total_days} day(s) of ${typeName}.`,
+                  'LEAVE'
+                );
+              }
+            } finally {
+              mgrRes.release();
+            }
+          } catch (notifErr) {
+            console.error('[Notification Error] applyLeave:', notifErr);
+          }
+        })();
         
         return (await this.getLeaveRequestById(newRequest.id))!;
       } catch (err) {
@@ -1963,6 +2031,43 @@ export const db = {
       });
 
       saveJsonDb();
+
+      // Send Notifications in Background
+      (async () => {
+        try {
+          await this.createNotification(
+            data.employee_id,
+            'Leave Request Submitted',
+            `Your request for ${data.total_days} day(s) of ${typeName} has been submitted.`,
+            'LEAVE'
+          );
+
+          if (emp && emp.department_id) {
+            const dept = jsonDb.departments.find(d => d.id === emp.department_id);
+            if (dept && dept.manager_id && dept.manager_id !== data.employee_id) {
+              await this.createNotification(
+                dept.manager_id,
+                'Leave Request Pending Review',
+                `${empName} has submitted a leave request that requires your review.`,
+                'LEAVE'
+              );
+            }
+          }
+
+          const hrs = jsonDb.employees.filter(e => ['HR', 'Admin', 'Super Admin'].includes(e.role) && e.id !== data.employee_id);
+          for (const hr of hrs) {
+            await this.createNotification(
+              hr.id,
+              'Leave Request Submitted',
+              `${empName} has applied for ${data.total_days} day(s) of ${typeName}.`,
+              'LEAVE'
+            );
+          }
+        } catch (notifErr) {
+          console.error('[Notification Error] JSON applyLeave:', notifErr);
+        }
+      })();
+
       return (await this.getLeaveRequestById(newId))!;
     } catch (err) {
       jsonDb = JSON.parse(backup);
@@ -2070,6 +2175,98 @@ export const db = {
         await client.query('COMMIT');
         client.release();
 
+        // Send Notifications in Background
+        (async () => {
+          try {
+            const notifClient = await pool.connect();
+            try {
+              const empRes = await notifClient.query('SELECT first_name, last_name, role FROM employees WHERE id = $1', [request.employee_id]);
+              const empName = empRes.rows.length > 0 ? `${empRes.rows[0].first_name} ${empRes.rows[0].last_name}` : 'Employee';
+              const typeRes = await notifClient.query('SELECT name FROM leave_types WHERE id = $1', [request.leave_type_id]);
+              const typeName = typeRes.rows.length > 0 ? typeRes.rows[0].name : 'Leave';
+
+              if (status === 'Rejected') {
+                // Notify Employee
+                await this.createNotification(
+                  request.employee_id,
+                  'Leave Request Rejected',
+                  `Your request for ${request.total_days} day(s) of ${typeName} was rejected by ${stage === 'Manager Review' ? 'Manager' : 'HR'}.`,
+                  'LEAVE'
+                );
+
+                // If HR review, also notify manager
+                if (stage === 'HR Review') {
+                  const res = await notifClient.query(`
+                    SELECT d.manager_id 
+                    FROM employees e 
+                    LEFT JOIN departments d ON e.department_id = d.id 
+                    WHERE e.id = $1
+                  `, [request.employee_id]);
+                  const managerId = res.rows[0]?.manager_id;
+                  if (managerId) {
+                    await this.createNotification(
+                      managerId,
+                      'Leave Request Rejected by HR',
+                      `The leave request for ${empName} was rejected by HR.`,
+                      'LEAVE'
+                    );
+                  }
+                }
+              } else {
+                if (stage === 'Manager Review') {
+                  // Notify Employee
+                  await this.createNotification(
+                    request.employee_id,
+                    'Leave Approved by Manager',
+                    `Your leave request for ${request.total_days} day(s) of ${typeName} has been approved by your Manager and is pending HR review.`,
+                    'LEAVE'
+                  );
+
+                  // Notify HR/Admins
+                  const hrRes = await notifClient.query("SELECT id FROM employees WHERE role IN ('HR', 'Admin', 'Super Admin')");
+                  for (const row of hrRes.rows) {
+                    await this.createNotification(
+                      row.id,
+                      'Leave Request Pending HR Approval',
+                      `${empName}'s request for ${request.total_days} day(s) of ${typeName} has manager approval and is pending your review.`,
+                      'LEAVE'
+                    );
+                  }
+                } else if (stage === 'HR Review') {
+                  // Notify Employee
+                  await this.createNotification(
+                    request.employee_id,
+                    'Leave Request Approved Finally',
+                    `Your leave request for ${request.total_days} day(s) of ${typeName} has been finally approved by HR.`,
+                    'LEAVE'
+                  );
+
+                  // Notify Manager
+                  const res = await notifClient.query(`
+                    SELECT d.manager_id 
+                    FROM employees e 
+                    LEFT JOIN departments d ON e.department_id = d.id 
+                    WHERE e.id = $1
+                  `, [request.employee_id]);
+                  const managerId = res.rows[0]?.manager_id;
+                  if (managerId) {
+                    await this.createNotification(
+                      managerId,
+                      'Leave Request Approved Finally',
+                      `${empName}'s leave request for ${request.total_days} day(s) of ${typeName} has been finally approved by HR.`,
+                      'LEAVE'
+                    );
+                  }
+                }
+              }
+            } finally {
+              notifClient.release();
+            }
+          } catch (notifErr) {
+            console.error('[Notification Error] approveLeaveWorkflow:', notifErr);
+          }
+        })();
+
         return (await this.getLeaveRequestById(requestId))!;
       } catch (err) {
         await client.query('ROLLBACK');
@@ -2168,6 +2365,78 @@ export const db = {
       jsonDb.leave_requests[requestIndex].updated_at = new Date().toISOString();
 
       saveJsonDb();
+
+      // Send Notifications in Background
+      (async () => {
+        try {
+          const emp = jsonDb.employees.find(e => e.id === request.employee_id);
+          const empName = emp ? `${emp.first_name} ${emp.last_name}` : 'Employee';
+          const lt = jsonDb.leave_types.find(t => t.id === request.leave_type_id);
+          const typeName = lt ? lt.name : 'Leave';
+
+          if (status === 'Rejected') {
+            await this.createNotification(
+              request.employee_id,
+              'Leave Request Rejected',
+              `Your request for ${request.total_days} day(s) of ${typeName} was rejected by ${stage === 'Manager Review' ? 'Manager' : 'HR'}.`,
+              'LEAVE'
+            );
+
+            if (stage === 'HR Review' && emp && emp.department_id) {
+              const dept = jsonDb.departments.find(d => d.id === emp.department_id);
+              if (dept && dept.manager_id) {
+                await this.createNotification(
+                  dept.manager_id,
+                  'Leave Request Rejected by HR',
+                  `The leave request for ${empName} was rejected by HR.`,
+                  'LEAVE'
+                );
+              }
+            }
+          } else {
+            if (stage === 'Manager Review') {
+              await this.createNotification(
+                request.employee_id,
+                'Leave Approved by Manager',
+                `Your leave request for ${request.total_days} day(s) of ${typeName} has been approved by your Manager and is pending HR review.`,
+                'LEAVE'
+              );
+
+              const hrs = jsonDb.employees.filter(e => ['HR', 'Admin', 'Super Admin'].includes(e.role));
+              for (const hr of hrs) {
+                await this.createNotification(
+                  hr.id,
+                  'Leave Request Pending HR Approval',
+                  `${empName}'s request for ${request.total_days} day(s) of ${typeName} has manager approval and is pending your review.`,
+                  'LEAVE'
+                );
+              }
+            } else if (stage === 'HR Review') {
+              await this.createNotification(
+                request.employee_id,
+                'Leave Request Approved Finally',
+                `Your leave request for ${request.total_days} day(s) of ${typeName} has been finally approved by HR.`,
+                'LEAVE'
+              );
+
+              if (emp && emp.department_id) {
+                const dept = jsonDb.departments.find(d => d.id === emp.department_id);
+                if (dept && dept.manager_id) {
+                  await this.createNotification(
+                    dept.manager_id,
+                    'Leave Request Approved Finally',
+                    `${empName}'s leave request for ${request.total_days} day(s) of ${typeName} has been finally approved by HR.`,
+                    'LEAVE'
+                  );
+                }
+              }
+            }
+          }
+        } catch (notifErr) {
+          console.error('[Notification Error] JSON approveLeaveWorkflow:', notifErr);
+        }
+      })();
+
       return (await this.getLeaveRequestById(requestId))!;
     } catch (err) {
       jsonDb = JSON.parse(backup);
@@ -2211,6 +2480,59 @@ export const db = {
         await client.query('COMMIT');
         client.release();
 
+        // Send Notifications in Background
+        (async () => {
+          try {
+            const notifClient = await pool.connect();
+            try {
+              const typeRes = await notifClient.query('SELECT name FROM leave_types WHERE id = $1', [request.leave_type_id]);
+              const typeName = typeRes.rows.length > 0 ? typeRes.rows[0].name : 'Leave';
+
+              // 1. Notify Employee
+              await this.createNotification(
+                employeeId,
+                'Leave Request Cancelled',
+                `Your leave request for ${request.total_days} day(s) of ${typeName} has been cancelled.`,
+                'LEAVE'
+              );
+
+              // 2. Notify Manager
+              const res = await notifClient.query(`
+                SELECT d.manager_id 
+                FROM employees e 
+                LEFT JOIN departments d ON e.department_id = d.id 
+                WHERE e.id = $1
+              `, [employeeId]);
+              const managerId = res.rows[0]?.manager_id;
+              if (managerId && managerId !== employeeId) {
+                await this.createNotification(
+                  managerId,
+                  'Leave Request Cancelled',
+                  `${empName} has cancelled their leave request.`,
+                  'LEAVE'
+                );
+              }
+
+              // 3. Notify HR/Admins
+              const hrRes = await notifClient.query(`
+                SELECT id FROM employees WHERE role IN ('HR', 'Admin', 'Super Admin') AND id != $1
+              `, [employeeId]);
+              for (const row of hrRes.rows) {
+                await this.createNotification(
+                  row.id,
+                  'Leave Request Cancelled',
+                  `${empName} has cancelled their leave request.`,
+                  'LEAVE'
+                );
+              }
+            } finally {
+              notifClient.release();
+            }
+          } catch (notifErr) {
+            console.error('[Notification Error] cancelLeave:', notifErr);
+          }
+        })();
+
         return (await this.getLeaveRequestById(requestId))!;
       } catch (err) {
         await client.query('ROLLBACK');
@@ -2249,6 +2571,48 @@ export const db = {
       });
 
       saveJsonDb();
+
+      // Send Notifications in Background
+      (async () => {
+        try {
+          const emp = jsonDb.employees.find(e => e.id === employeeId);
+          const empName = emp ? `${emp.first_name} ${emp.last_name}` : 'Employee';
+          const lt = jsonDb.leave_types.find(t => t.id === request.leave_type_id);
+          const typeName = lt ? lt.name : 'Leave';
+
+          await this.createNotification(
+            employeeId,
+            'Leave Request Cancelled',
+            `Your leave request for ${request.total_days} day(s) of ${typeName} has been cancelled.`,
+            'LEAVE'
+          );
+
+          if (emp && emp.department_id) {
+            const dept = jsonDb.departments.find(d => d.id === emp.department_id);
+            if (dept && dept.manager_id && dept.manager_id !== employeeId) {
+              await this.createNotification(
+                dept.manager_id,
+                'Leave Request Cancelled',
+                `${empName} has cancelled their leave request.`,
+                'LEAVE'
+              );
+            }
+          }
+
+          const hrs = jsonDb.employees.filter(e => ['HR', 'Admin', 'Super Admin'].includes(e.role) && e.id !== employeeId);
+          for (const hr of hrs) {
+            await this.createNotification(
+              hr.id,
+              'Leave Request Cancelled',
+              `${empName} has cancelled their leave request.`,
+              'LEAVE'
+            );
+          }
+        } catch (notifErr) {
+          console.error('[Notification Error] JSON cancelLeave:', notifErr);
+        }
+      })();
+
       return (await this.getLeaveRequestById(requestId))!;
     } catch (err) {
       jsonDb = JSON.parse(backup);
@@ -2690,14 +3054,22 @@ export const db = {
 
     if (this.isPostgres() && pool) {
       const fields = Object.keys(updateData);
+      let res;
       if (fields.length === 0) {
-        const res = await pool.query('SELECT * FROM attendance WHERE id = $1', [id]);
-        return res.rows[0] || null;
+        res = await pool.query('SELECT * FROM attendance WHERE id = $1', [id]);
+      } else {
+        const setClause = fields.map((f, i) => `${f} = $${i + 2}`).join(', ');
+        const values = [id, ...Object.values(updateData)];
+        res = await pool.query(`UPDATE attendance SET ${setClause} WHERE id = $1 RETURNING *`, values);
       }
       
-      const setClause = fields.map((f, i) => `${f} = $${i + 2}`).join(', ');
-      const values = [id, ...Object.values(updateData)];
-      const res = await pool.query(`UPDATE attendance SET ${setClause} WHERE id = $1 RETURNING *`, values);
+      // Auto-approve matching pending correction request
+      await pool.query(`
+        UPDATE attendance_corrections 
+        SET status = 'Approved', updated_at = NOW() 
+        WHERE attendance_id = $1 AND status = 'Pending'
+      `, [id]);
+      
       return res.rows[0] || null;
     }
 
@@ -2708,6 +3080,16 @@ export const db = {
       ...jsonDb.attendance[index], 
       ...updateData
     };
+
+    // Auto-approve matching pending correction request for JSON
+    jsonDb.attendance_corrections = jsonDb.attendance_corrections || [];
+    jsonDb.attendance_corrections = jsonDb.attendance_corrections.map((c: any) => {
+      if (c.attendance_id === id && c.status === 'Pending') {
+        return { ...c, status: 'Approved', updated_at: new Date().toISOString() };
+      }
+      return c;
+    });
+
     saveJsonDb();
     return jsonDb.attendance[index];
   },
@@ -3923,6 +4305,305 @@ export const db = {
     (jsonDb as any).active_sessions = (jsonDb as any).active_sessions || [];
     (jsonDb as any).active_sessions = (jsonDb as any).active_sessions.filter((s: any) => new Date(s.expires_at) > new Date());
     saveJsonDb();
+  },
+
+  async getReportsHeadcount(): Promise<{ count: number }> {
+    if (this.isPostgres() && pool) {
+      const res = await pool.query('SELECT COUNT(*)::int AS count FROM employees WHERE deleted_at IS NULL');
+      return { count: res.rows[0].count };
+    }
+    const count = jsonDb.employees.filter(e => !e.deleted_at).length;
+    return { count };
+  },
+
+  async getReportsDepartmentDistribution(): Promise<{ name: string; value: number }[]> {
+    if (this.isPostgres() && pool) {
+      const res = await pool.query(`
+        SELECT COALESCE(d.name, 'Unassigned') AS name, COUNT(e.id)::int AS value
+        FROM employees e
+        LEFT JOIN departments d ON e.department_id = d.id
+        WHERE e.deleted_at IS NULL
+        GROUP BY d.name
+        ORDER BY value DESC
+      `);
+      return res.rows;
+    }
+    const deptCountMap: { [name: string]: number } = {};
+    jsonDb.employees.filter(e => !e.deleted_at).forEach(emp => {
+      const dept = jsonDb.departments.find(d => d.id === emp.department_id);
+      const deptName = dept ? dept.name : 'Unassigned';
+      deptCountMap[deptName] = (deptCountMap[deptName] || 0) + 1;
+    });
+    return Object.keys(deptCountMap).map(name => ({
+      name,
+      value: deptCountMap[name]
+    }));
+  },
+
+  async getReportsTaskStats(): Promise<{ totalTasksCount: number; taskCompletionRate: number; taskPriorityData: { name: string; count: number }[] }> {
+    if (this.isPostgres() && pool) {
+      const res = await pool.query(`
+        SELECT 
+          COUNT(*)::int AS total,
+          COUNT(CASE WHEN status = 'Done' THEN 1 END)::int AS completed,
+          COUNT(CASE WHEN priority = 'Low' THEN 1 END)::int AS low,
+          COUNT(CASE WHEN priority = 'Medium' THEN 1 END)::int AS medium,
+          COUNT(CASE WHEN priority = 'High' THEN 1 END)::int AS high,
+          COUNT(CASE WHEN priority = 'Urgent' THEN 1 END)::int AS urgent
+        FROM tasks
+      `);
+      const { total, completed, low, medium, high, urgent } = res.rows[0];
+      const rate = total > 0 ? Math.round((completed / total) * 100) : 0;
+      return {
+        totalTasksCount: total,
+        taskCompletionRate: rate,
+        taskPriorityData: [
+          { name: 'Low', count: low },
+          { name: 'Medium', count: medium },
+          { name: 'High', count: high },
+          { name: 'Urgent', count: urgent }
+        ]
+      };
+    }
+    const activeTasks = jsonDb.tasks;
+    const total = activeTasks.length;
+    const completed = activeTasks.filter(t => t.status === 'Done').length;
+    const rate = total > 0 ? Math.round((completed / total) * 100) : 0;
+    const low = activeTasks.filter(t => t.priority === 'Low').length;
+    const medium = activeTasks.filter(t => t.priority === 'Medium').length;
+    const high = activeTasks.filter(t => t.priority === 'High').length;
+    const urgent = activeTasks.filter(t => t.priority === 'Urgent').length;
+    return {
+      totalTasksCount: total,
+      taskCompletionRate: rate,
+      taskPriorityData: [
+        { name: 'Low', count: low },
+        { name: 'Medium', count: medium },
+        { name: 'High', count: high },
+        { name: 'Urgent', count: urgent }
+      ]
+    };
+  },
+
+  async getReportsLeaveStats(): Promise<{ pendingLeavesCount: number; monthlyTrends: { name: string; Requested: number; Approved: number }[] }> {
+    if (this.isPostgres() && pool) {
+      const pendingRes = await pool.query(`
+        SELECT COUNT(*)::int AS count 
+        FROM leave_requests 
+        WHERE status IN ('Pending', 'Under Review', 'Manager Approved')
+      `);
+      const pendingLeavesCount = pendingRes.rows[0].count;
+
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const now = new Date();
+      const trendsMap = new Map<string, { Requested: number; Approved: number }>();
+      const orderedBuckets: string[] = [];
+
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const name = `${months[d.getMonth()]} ${d.getFullYear().toString().substring(2)}`;
+        trendsMap.set(name, { Requested: 0, Approved: 0 });
+        orderedBuckets.push(name);
+      }
+
+      const trendRes = await pool.query(`
+        SELECT 
+          TO_CHAR(created_at, 'Mon YY') AS month_name,
+          COUNT(*)::int AS requested,
+          COUNT(CASE WHEN status = 'Approved' THEN 1 END)::int AS approved
+        FROM leave_requests
+        WHERE created_at >= DATE_TRUNC('month', NOW() - INTERVAL '5 months')
+        GROUP BY TO_CHAR(created_at, 'Mon YY'), DATE_TRUNC('month', created_at)
+        ORDER BY DATE_TRUNC('month', created_at) ASC
+      `);
+
+      for (const row of trendRes.rows) {
+        const key = row.month_name.trim();
+        const matchedKey = orderedBuckets.find(b => b.toLowerCase() === key.toLowerCase());
+        if (matchedKey && trendsMap.has(matchedKey)) {
+          trendsMap.set(matchedKey, { Requested: row.requested, Approved: row.approved });
+        }
+      }
+
+      const monthlyTrends = orderedBuckets.map(name => ({
+        name,
+        Requested: trendsMap.get(name)!.Requested,
+        Approved: trendsMap.get(name)!.Approved
+      }));
+
+      return {
+        pendingLeavesCount,
+        monthlyTrends
+      };
+    }
+
+    const allRequests = jsonDb.leave_requests;
+    const pendingLeavesCount = allRequests.filter(r => ['Pending', 'Under Review', 'Manager Approved'].includes(r.status)).length;
+    
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const now = new Date();
+    const last6Months: { name: string; year: number; monthIdx: number; Requested: number; Approved: number }[] = [];
+    
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      last6Months.push({
+        name: `${months[d.getMonth()]} ${d.getFullYear().toString().substring(2)}`,
+        year: d.getFullYear(),
+        monthIdx: d.getMonth(),
+        Requested: 0,
+        Approved: 0
+      });
+    }
+
+    allRequests.forEach(r => {
+      if (!r.created_at) return;
+      const cDate = new Date(r.created_at);
+      const rYear = cDate.getFullYear();
+      const rMonth = cDate.getMonth();
+
+      const mBucket = last6Months.find(m => m.year === rYear && m.monthIdx === rMonth);
+      if (mBucket) {
+        mBucket.Requested++;
+        if (r.status === 'Approved') {
+          mBucket.Approved++;
+        }
+      }
+    });
+
+    const monthlyTrends = last6Months.map(m => ({
+      name: m.name,
+      Requested: m.Requested,
+      Approved: m.Approved
+    }));
+
+    return {
+      pendingLeavesCount,
+      monthlyTrends
+    };
+  },
+
+  async createAttendanceCorrectionRequest(
+    attendanceId: number, 
+    employeeId: number, 
+    data: { requested_status: string; requested_check_in: string | null; requested_check_out: string | null; reason: string }
+  ): Promise<any> {
+    if (this.isPostgres() && pool) {
+      const res = await pool.query(`
+        INSERT INTO attendance_corrections (
+          attendance_id, employee_id, requested_status, requested_check_in, requested_check_out, reason, status
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, 'Pending')
+        RETURNING *
+      `, [
+        attendanceId, 
+        employeeId, 
+        data.requested_status, 
+        data.requested_check_in ? new Date(data.requested_check_in) : null, 
+        data.requested_check_out ? new Date(data.requested_check_out) : null, 
+        data.reason
+      ]);
+      return res.rows[0];
+    }
+    
+    // JSON DB fallback
+    jsonDb.attendance_corrections = jsonDb.attendance_corrections || [];
+    const newId = jsonDb.attendance_corrections.length > 0 ? Math.max(...jsonDb.attendance_corrections.map(c => c.id)) + 1 : 1;
+    const newReq = {
+      id: newId,
+      attendance_id: attendanceId,
+      employee_id: employeeId,
+      requested_status: data.requested_status,
+      requested_check_in: data.requested_check_in,
+      requested_check_out: data.requested_check_out,
+      reason: data.reason,
+      status: 'Pending',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    jsonDb.attendance_corrections.push(newReq);
+    saveJsonDb();
+    return newReq;
+  },
+
+  async getAttendanceCorrectionRequests(filters: { status?: string; employeeId?: number } = {}): Promise<any[]> {
+    if (this.isPostgres() && pool) {
+      let queryText = `
+        SELECT c.*,
+               json_build_object(
+                 'id', e.id, 'employee_id', e.employee_id, 'first_name', e.first_name, 'last_name', e.last_name, 'email', e.email, 'designation', e.designation, 'department_id', e.department_id
+               ) as employee
+        FROM attendance_corrections c
+        JOIN employees e ON c.employee_id = e.id
+        WHERE 1=1
+      `;
+      const params: any[] = [];
+      let index = 1;
+
+      if (filters.status) {
+        queryText += ` AND c.status = $${index++}`;
+        params.push(filters.status);
+      }
+      if (filters.employeeId) {
+        queryText += ` AND c.employee_id = $${index++}`;
+        params.push(filters.employeeId);
+      }
+
+      queryText += ' ORDER BY c.id DESC';
+      const res = await pool.query(queryText, params);
+      return res.rows;
+    }
+
+    // JSON DB fallback
+    jsonDb.attendance_corrections = jsonDb.attendance_corrections || [];
+    let list = jsonDb.attendance_corrections.map(c => {
+      const emp = jsonDb.employees.find(e => e.id === c.employee_id);
+      return {
+        ...c,
+        employee: emp ? {
+          id: emp.id,
+          employee_id: emp.employee_id,
+          first_name: emp.first_name,
+          last_name: emp.last_name,
+          email: emp.email,
+          designation: emp.designation,
+          department_id: emp.department_id
+        } : null
+      };
+    });
+
+    if (filters.status) {
+      list = list.filter(c => c.status === filters.status);
+    }
+    if (filters.employeeId) {
+      list = list.filter(c => c.employee_id === filters.employeeId);
+    }
+    return list.reverse();
+  },
+
+  async rejectAttendanceCorrectionRequest(requestId: number, remarks: string = ''): Promise<any> {
+    if (this.isPostgres() && pool) {
+      const res = await pool.query(`
+        UPDATE attendance_corrections
+        SET status = 'Rejected', remarks = $2, updated_at = NOW()
+        WHERE id = $1
+        RETURNING *
+      `, [requestId, remarks]);
+      return res.rows[0] || null;
+    }
+
+    // JSON DB fallback
+    jsonDb.attendance_corrections = jsonDb.attendance_corrections || [];
+    const index = jsonDb.attendance_corrections.findIndex(c => c.id === requestId);
+    if (index === -1) return null;
+
+    jsonDb.attendance_corrections[index] = {
+      ...jsonDb.attendance_corrections[index],
+      status: 'Rejected',
+      remarks: remarks,
+      updated_at: new Date().toISOString()
+    };
+    saveJsonDb();
+    return jsonDb.attendance_corrections[index];
   }
 };
 export default db;

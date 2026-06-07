@@ -69,6 +69,12 @@ export async function createTask(req: AuthenticatedRequest, res: Response): Prom
     return;
   }
 
+  const allowedRoles = ['Super Admin', 'Admin', 'HR', 'Manager'];
+  if (!allowedRoles.includes(req.user.role)) {
+    res.status(403).json({ message: 'Forbidden: Insufficient privileges to create tasks.' });
+    return;
+  }
+
   const { title, description, priority, due_date, assignee_id, department_id, project_id, team_id } = req.body;
 
   if (!title) {
@@ -132,6 +138,16 @@ export async function updateTask(req: AuthenticatedRequest, res: Response): Prom
     const existingTask = await db.getTaskById(id);
     if (!existingTask) {
       res.status(404).json({ message: 'Task not found.' });
+      return;
+    }
+
+    const allowedRoles = ['Super Admin', 'Admin', 'HR', 'Manager'];
+    const userId = req.user.id;
+    const isCreator = existingTask.creator_id === userId;
+    const isAssignee = existingTask.assignee_id === userId;
+
+    if (!allowedRoles.includes(req.user.role) && !isCreator && !isAssignee) {
+      res.status(403).json({ message: 'Forbidden: Insufficient privileges to update this task.' });
       return;
     }
 
@@ -233,6 +249,15 @@ export async function deleteTask(req: AuthenticatedRequest, res: Response): Prom
     const task = await db.getTaskById(id);
     if (!task) {
       res.status(404).json({ message: 'Task not found.' });
+      return;
+    }
+
+    const allowedRoles = ['Super Admin', 'Admin', 'HR', 'Manager'];
+    const userId = req.user.id;
+    const isCreator = task.creator_id === userId;
+
+    if (!allowedRoles.includes(req.user.role) && !isCreator) {
+      res.status(403).json({ message: 'Forbidden: Insufficient privileges to delete this task.' });
       return;
     }
 

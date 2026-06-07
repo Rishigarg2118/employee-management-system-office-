@@ -25,12 +25,6 @@ export const ReportsCenter: React.FC = () => {
   const [selectedDept, setSelectedDept] = useState<number | undefined>(undefined);
 
   // Queries
-  const { data: employeesRes, isLoading: isLoadingEmps } = useQuery({
-    queryKey: ['employees'],
-    queryFn: () => api.getEmployees({ limit: 1000 })
-  });
-  const employees = employeesRes?.data || [];
-
   const { data: departments = [] } = useQuery<Department[]>({
     queryKey: ['departments'],
     queryFn: () => api.getDepartments()
@@ -41,22 +35,32 @@ export const ReportsCenter: React.FC = () => {
     queryFn: () => api.getAttendanceAnalytics({ departmentId: selectedDept })
   });
 
-  const { data: leaveAnalytics, isLoading: isLoadingLeaves } = useQuery({
-    queryKey: ['leaveAnalytics'],
-    queryFn: () => api.getLeaveAnalytics()
-  });
-
-  const { data: tasks = [], isLoading: isLoadingTasks } = useQuery<Task[]>({
-    queryKey: ['tasks'],
-    queryFn: () => api.getTasks()
-  });
-
   const { data: projects = [], isLoading: isLoadingProjects } = useQuery<Project[]>({
     queryKey: ['projects'],
     queryFn: () => api.getProjects()
   });
 
-  if (isLoadingEmps || isLoadingAtt || isLoadingLeaves || isLoadingTasks || isLoadingProjects) {
+  const { data: headcountData, isLoading: isLoadingHeadcount } = useQuery({
+    queryKey: ['reportsHeadcount'],
+    queryFn: () => api.getReportsHeadcount()
+  });
+
+  const { data: leaveStats, isLoading: isLoadingLeaveStats } = useQuery({
+    queryKey: ['reportsLeaveStats'],
+    queryFn: () => api.getReportsLeaveStats()
+  });
+
+  const { data: taskStats, isLoading: isLoadingTaskStats } = useQuery({
+    queryKey: ['reportsTaskStats'],
+    queryFn: () => api.getReportsTaskStats()
+  });
+
+  const { data: deptDistribution = [], isLoading: isLoadingDeptDist } = useQuery({
+    queryKey: ['reportsDeptDistribution'],
+    queryFn: () => api.getReportsDepartmentDistribution()
+  });
+
+  if (isLoadingHeadcount || isLoadingAtt || isLoadingLeaveStats || isLoadingTaskStats || isLoadingDeptDist || isLoadingProjects) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 400 }}>
         <Spin size="large" tip="Compiling executive dashboard reports..." />
@@ -65,42 +69,20 @@ export const ReportsCenter: React.FC = () => {
   }
 
   // --- Headcount Distribution Calculations ---
-  const deptCountMap: { [name: string]: number } = {};
-  employees.forEach(emp => {
-    const dept = departments.find(d => d.id === emp.department_id);
-    const deptName = dept ? dept.name : 'Unassigned';
-    deptCountMap[deptName] = (deptCountMap[deptName] || 0) + 1;
-  });
-
-  const headcountChartData = Object.keys(deptCountMap).map(name => ({
-    name,
-    value: deptCountMap[name]
-  }));
+  const headcountChartData = deptDistribution;
 
   // --- Task Priority distribution ---
-  const priorityCountMap = { Low: 0, Medium: 0, High: 0, Urgent: 0 };
-  tasks.forEach(t => {
-    if (t.priority in priorityCountMap) {
-      priorityCountMap[t.priority as keyof typeof priorityCountMap] += 1;
-    }
-  });
-
-  const taskPriorityData = Object.keys(priorityCountMap).map(name => ({
-    name,
-    count: priorityCountMap[name as keyof typeof priorityCountMap]
-  }));
+  const taskPriorityData = taskStats?.taskPriorityData || [];
 
   // --- Leave Monthly Trends ---
-  const leaveTrendData = leaveAnalytics?.monthlyTrends || [];
+  const leaveTrendData = leaveStats?.monthlyTrends || [];
 
   // --- Summary Cards calculations ---
-  const totalEmployeesCount = employees.length;
+  const totalEmployeesCount = headcountData?.count || 0;
   const attendanceRate = attendanceAnalytics?.monthlyPercentage || 92;
-  const pendingLeavesCount = leaveAnalytics?.summary?.pending || 0;
-  
-  const completedTasksCount = tasks.filter(t => t.status === 'Done').length;
-  const totalTasksCount = tasks.length;
-  const taskCompletionRate = totalTasksCount > 0 ? Math.round((completedTasksCount / totalTasksCount) * 100) : 0;
+  const pendingLeavesCount = leaveStats?.pendingLeavesCount || 0;
+  const totalTasksCount = taskStats?.totalTasksCount || 0;
+  const taskCompletionRate = taskStats?.taskCompletionRate || 0;
 
   // Mock export handler
   const handleExport = (type: string) => {

@@ -51,24 +51,41 @@ export const AttendanceLogs: React.FC = () => {
     setDrawerVisible(true);
   };
 
-  const handleGenerateRequest = (values: any) => {
-    const dateStr = values.date.format('YYYY-MM-DD');
-    const checkInStr = values.check_in ? values.check_in.format('hh:mm A') : 'N/A';
-    const checkOutStr = values.check_out ? values.check_out.format('hh:mm A') : 'N/A';
-    
-    const requestText = `Hi Team,
+  const handleGenerateRequest = async (values: any) => {
+    if (!selectedRecord) return;
+    try {
+      const dateStr = values.date.format('YYYY-MM-DD');
+      const checkInIso = values.check_in ? `${dateStr}T${values.check_in.format('HH:mm:ss')}.000Z` : null;
+      const checkOutIso = values.check_out ? `${dateStr}T${values.check_out.format('HH:mm:ss')}.000Z` : null;
 
+      await api.submitAttendanceCorrectionRequest(selectedRecord.id, {
+        requested_status: values.status,
+        requested_check_in: checkInIso,
+        requested_check_out: checkOutIso,
+        reason: values.reason
+      });
+
+      message.success('Correction request submitted to database successfully!');
+
+      const checkInStr = values.check_in ? values.check_in.format('hh:mm A') : 'N/A';
+      const checkOutStr = values.check_out ? values.check_out.format('hh:mm A') : 'N/A';
+      
+      const requestText = `Hi Team,
+ 
 I am requesting an attendance log correction for ${dateStr}.
 • Original Status: ${selectedRecord?.status}
 • Requested Status: ${values.status}
 • Corrected Times: Check-in at ${checkInStr} | Check-out at ${checkOutStr}
 • Reason for Adjustment: ${values.reason || 'Not specified'}
-
+ 
 Please adjust my log from the Attendance Manager Correction Board at your earliest convenience.
-
+ 
 Best regards,`;
-    
-    setGeneratedText(requestText);
+      
+      setGeneratedText(requestText);
+    } catch (err: any) {
+      message.error(err.response?.data?.message || 'Error submitting correction request.');
+    }
   };
 
   const handleCopyText = () => {

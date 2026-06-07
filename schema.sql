@@ -194,3 +194,22 @@ CREATE INDEX IF NOT EXISTS idx_tasks_dept ON tasks(department_id);
 CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
 CREATE INDEX IF NOT EXISTS idx_task_comments_task ON task_comments(task_id);
 CREATE INDEX IF NOT EXISTS idx_task_activities_task ON task_activities(task_id);
+
+-- 13. Attendance Corrections Table
+CREATE TABLE IF NOT EXISTS attendance_corrections (
+    id SERIAL PRIMARY KEY,
+    attendance_id INTEGER NOT NULL REFERENCES attendance(id) ON DELETE CASCADE,
+    employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+    requested_status VARCHAR(30) NOT NULL CHECK (requested_status IN ('Present', 'Absent', 'Late', 'Half Day', 'Work From Home')),
+    requested_check_in TIMESTAMP,
+    requested_check_out TIMESTAMP,
+    reason TEXT NOT NULL,
+    status VARCHAR(20) DEFAULT 'Pending' CHECK (status IN ('Pending', 'Approved', 'Rejected')),
+    remarks TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_attendance_corrections_attendance ON attendance_corrections(attendance_id);
+CREATE INDEX IF NOT EXISTS idx_attendance_corrections_employee ON attendance_corrections(employee_id);
+

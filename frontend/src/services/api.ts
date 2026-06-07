@@ -308,6 +308,18 @@ export const api = {
     const res = await apiClient.put(`/attendance/${id}`, payload);
     return res.data;
   },
+  async submitAttendanceCorrectionRequest(id: number, payload: { requested_status: string; requested_check_in?: string | null; requested_check_out?: string | null; reason: string }): Promise<any> {
+    const res = await apiClient.post(`/attendance/${id}/correction-request`, payload);
+    return res.data;
+  },
+  async rejectAttendanceCorrectionRequest(id: number, payload?: { remarks?: string }): Promise<any> {
+    const res = await apiClient.post(`/attendance/corrections/${id}/reject`, payload || {});
+    return res.data;
+  },
+  async getAttendanceCorrectionRequests(params?: { status?: string; employeeId?: number }): Promise<any[]> {
+    const res = await apiClient.get('/attendance/corrections', { params });
+    return res.data;
+  },
   async getAttendanceAnalytics(params?: { departmentId?: number; employeeId?: number }): Promise<AttendanceAnalytics> {
     const res = await apiClient.get('/attendance/analytics', { params });
     return res.data;
@@ -418,6 +430,24 @@ export const api = {
   // Global Search
   async search(query: string) {
     const res = await apiClient.get('/search', { params: { q: query } });
+    return res.data;
+  },
+
+  // Executive Reports (Security Hardened & Scalable)
+  async getReportsHeadcount(): Promise<{ count: number }> {
+    const res = await apiClient.get('/reports/headcount');
+    return res.data;
+  },
+  async getReportsLeaveStats(): Promise<{ pendingLeavesCount: number; monthlyTrends: any[] }> {
+    const res = await apiClient.get('/reports/leave-stats');
+    return res.data;
+  },
+  async getReportsTaskStats(): Promise<{ totalTasksCount: number; taskCompletionRate: number; taskPriorityData: any[] }> {
+    const res = await apiClient.get('/reports/task-stats');
+    return res.data;
+  },
+  async getReportsDepartmentDistribution(): Promise<{ name: string; value: number }[]> {
+    const res = await apiClient.get('/reports/department-distribution');
     return res.data;
   }
 };
