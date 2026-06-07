@@ -16,6 +16,20 @@ function getLocalDateStr(): string {
   return new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
 }
 
+function ensureDateString(dateVal: any): string {
+  if (!dateVal) return '';
+  if (dateVal instanceof Date) {
+    const year = dateVal.getFullYear();
+    const month = String(dateVal.getMonth() + 1).padStart(2, '0');
+    const day = String(dateVal.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+  if (typeof dateVal === 'string') {
+    return dateVal.split('T')[0];
+  }
+  return String(dateVal);
+}
+
 let pool: Pool | null = null;
 let pgConnected = false;
 
@@ -2637,8 +2651,8 @@ export const db = {
 
     const activeLeaves = allRequests.filter(r => {
       if (r.status !== 'Approved') return false;
-      const start = r.start_date.split('T')[0];
-      const end = r.end_date.split('T')[0];
+      const start = ensureDateString(r.start_date);
+      const end = ensureDateString(r.end_date);
       return todayStr >= start && todayStr <= end;
     });
     
@@ -2814,7 +2828,7 @@ export const db = {
         totalDays: r.total_days,
         reason: r.reason,
         status: r.status,
-        appliedOn: r.created_at?.split('T')[0] || 'Unknown'
+        appliedOn: ensureDateString(r.created_at) || 'Unknown'
       };
     });
   },
