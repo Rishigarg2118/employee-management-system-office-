@@ -9,7 +9,7 @@ import {
   UserOutlined, EditOutlined, DeleteOutlined, TeamOutlined 
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import api from '../../services/api';
+import api, { SERVER_URL } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { Project, ProjectStatus, Employee } from '../../types';
 import dayjs from 'dayjs';
@@ -303,7 +303,7 @@ export const ProjectWorkspace: React.FC = () => {
                 return (
                   <Space>
                     <Avatar 
-                      src={manager.avatar_url ? `http://localhost:5000/${manager.avatar_url}` : undefined}
+                      src={manager.avatar_url ? `${SERVER_URL}/${manager.avatar_url}` : undefined}
                       icon={!manager.avatar_url && <UserOutlined />}
                       size="small"
                       style={{ backgroundColor: '#10B981' }}

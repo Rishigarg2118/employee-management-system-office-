@@ -21,7 +21,7 @@ import {
   ArrowLeftOutlined
 } from '@ant-design/icons';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { api, API_URL } from '../services/api';
+import { api, API_URL, SERVER_URL } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { EmployeeDetails, Skill, SkillProficiency } from '../types';
 
@@ -416,7 +416,7 @@ export const EmployeeProfile: React.FC = () => {
                       {getFileIcon(doc.file_type)}
                       <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
                         <a 
-                          href={`http://localhost:5000/${doc.file_path}`} 
+                          href={`${SERVER_URL}/${doc.file_path}`} 
                           target="_blank" 
                           rel="noreferrer"
                           style={{ fontWeight: 500, color: 'var(--text-primary)', fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}

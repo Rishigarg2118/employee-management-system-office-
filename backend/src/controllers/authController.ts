@@ -6,8 +6,7 @@ import { AuthenticatedRequest } from '../middleware/auth';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'enterprise_hrms_super_secure_jwt_secret_key_2026';
 
-// Store valid sessions (refresh tokens) in memory for validation and revocation
-export const activeSessions = new Set<string>();
+// Persistent database-backed sessions are used instead of in-memory activeSessions Set.
 
 export async function login(req: AuthenticatedRequest, res: Response): Promise<void> {
   const { email, password } = req.body;
@@ -48,8 +47,8 @@ export async function login(req: AuthenticatedRequest, res: Response): Promise<v
       { expiresIn: '7d' }
     );
 
-    // Save refresh token session
-    activeSessions.add(refreshToken);
+    // Save refresh token session to database
+    await db.addSession(employee.id, refreshToken, new Date(Date.now() + 7 * 24 * 3600 * 1000));
 
     // Remove password from response
     const { password: _, ...userWithoutPassword } = employee;
@@ -144,7 +143,7 @@ export async function refresh(req: AuthenticatedRequest, res: Response): Promise
     return;
   }
 
-  if (!activeSessions.has(refreshToken)) {
+  if (!(await db.hasSession(refreshToken))) {
     res.status(401).json({ message: 'Invalid or expired refresh session.' });
     return;
   }
@@ -155,7 +154,7 @@ export async function refresh(req: AuthenticatedRequest, res: Response): Promise
     // Check if employee still exists and is Active
     const employee = await db.getEmployeeById(decoded.id);
     if (!employee || employee.status === 'Inactive') {
-      activeSessions.delete(refreshToken);
+      await db.removeSession(refreshToken);
       res.status(403).json({ message: 'Access denied. Employee status is inactive.' });
       return;
     }
@@ -174,15 +173,15 @@ export async function refresh(req: AuthenticatedRequest, res: Response): Promise
     );
 
     // Rotate refresh token
-    activeSessions.delete(refreshToken);
-    activeSessions.add(newRefreshToken);
+    await db.removeSession(refreshToken);
+    await db.addSession(employee.id, newRefreshToken, new Date(Date.now() + 7 * 24 * 3600 * 1000));
 
     res.json({
       token: newAccessToken,
       refreshToken: newRefreshToken
     });
   } catch (err) {
-    activeSessions.delete(refreshToken);
+    await db.removeSession(refreshToken);
     res.status(403).json({ message: 'Refresh session expired or invalid.' });
   }
 }
@@ -190,7 +189,7 @@ export async function refresh(req: AuthenticatedRequest, res: Response): Promise
 export async function logout(req: AuthenticatedRequest, res: Response): Promise<void> {
   const { refreshToken } = req.body;
   if (refreshToken) {
-    activeSessions.delete(refreshToken);
+    await db.removeSession(refreshToken);
   }
   res.json({ message: 'Logged out successfully.' });
 }

@@ -14,7 +14,7 @@ import {
   UserOutlined
 } from '@ant-design/icons';
 import { useAuth } from '../../context/AuthContext';
-import api from '../../services/api';
+import api, { SERVER_URL } from '../../services/api';
 import { LeaveRequest, LeaveStatus } from '../../types';
 
 const { Text } = Typography;
@@ -333,7 +333,7 @@ export const LeaveList: React.FC = () => {
                         type="dashed" 
                         size="small" 
                         icon={<DownloadOutlined />}
-                        href={`http://localhost:5000/${selectedRequest.attachment_path}`}
+                        href={`${SERVER_URL}/${selectedRequest.attachment_path}`}
                         target="_blank"
                         style={{ fontSize: 12 }}
                       >

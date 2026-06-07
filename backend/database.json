@@ -379,6 +379,21 @@
       "department_id": 1,
       "created_at": "2026-05-01T00:00:00.000Z",
       "updated_at": "2026-05-01T00:00:00.000Z"
+    },
+    {
+      "id": 20,
+      "employee_id": "EMP-030",
+      "first_name": "Multipart",
+      "last_name": "Test",
+      "email": "multi.test11@enterprise.io",
+      "password": "$2b$10$497M88w6cYdVJS0/Y987UO71Yp4p87pnSZ3DY9VJKbvcsq8k7bP0a",
+      "department_id": 1,
+      "designation": "Software Intern",
+      "status": "Active",
+      "joining_date": "2026-06-04",
+      "role": "Employee",
+      "created_at": "2026-06-06T06:44:41.938Z",
+      "updated_at": "2026-06-06T06:44:41.938Z"
     }
   ],
   "skills": [
@@ -567,6 +582,11 @@
     {
       "employee_id": 17,
       "skill_id": 6,
+      "proficiency_level": "Intermediate"
+    },
+    {
+      "employee_id": 20,
+      "skill_id": 1,
       "proficiency_level": "Intermediate"
     }
   ],
@@ -764,6 +784,13 @@
       "activity_type": "DOCUMENT_UPLOADED",
       "description": "Document \"harshibar_s_resume (4).pdf\" was uploaded by sarah.j@enterprise.io.",
       "created_at": "2026-06-05T18:51:19.545Z"
+    },
+    {
+      "id": 22,
+      "employee_id": 20,
+      "activity_type": "EMPLOYEE_CREATED",
+      "description": "Employee account for Multipart Test was created by sarah.j@enterprise.io.",
+      "created_at": "2026-06-06T06:44:41.940Z"
     }
   ],
   "leave_types": [
@@ -3277,6 +3304,46 @@
       "old_value": null,
       "new_value": "{\"email\":\"pam.b@enterprise.io\",\"password\":\"******\"}",
       "created_at": "2026-06-05T20:35:22.559Z"
+    },
+    {
+      "id": 22,
+      "actor_id": null,
+      "actor_name": "System",
+      "action": "User Login",
+      "module": "AUTH",
+      "old_value": null,
+      "new_value": "{\"email\":\"pam.b@enterprise.io\",\"password\":\"******\"}",
+      "created_at": "2026-06-06T06:44:20.524Z"
+    },
+    {
+      "id": 23,
+      "actor_id": null,
+      "actor_name": "System",
+      "action": "User Login",
+      "module": "AUTH",
+      "old_value": null,
+      "new_value": "{\"email\":\"sarah.j@enterprise.io\",\"password\":\"******\"}",
+      "created_at": "2026-06-06T06:44:34.180Z"
+    },
+    {
+      "id": 24,
+      "actor_id": null,
+      "actor_name": "System",
+      "action": "User Login",
+      "module": "AUTH",
+      "old_value": null,
+      "new_value": "{\"email\":\"sarah.j@enterprise.io\",\"password\":\"******\"}",
+      "created_at": "2026-06-06T06:44:41.864Z"
+    },
+    {
+      "id": 25,
+      "actor_id": 1,
+      "actor_name": "Sarah Jenkins",
+      "action": "Created employee",
+      "module": "EMPLOYEES",
+      "old_value": null,
+      "new_value": "{\"employee_id\":\"EMP-030\",\"first_name\":\"Multipart\",\"last_name\":\"Test\",\"email\":\"multi.test11@enterprise.io\",\"designation\":\"Software Intern\",\"joining_date\":\"2026-06-04\",\"role\":\"Employee\",\"status\":\"Active\",\"department_id\":\"1\",\"skills\":\"[{\\\"skill_id\\\":1,\\\"proficiency_level\\\":\\\"Intermediate\\\"}]\"}",
+      "created_at": "2026-06-06T06:44:41.941Z"
     }
   ]
 }

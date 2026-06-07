@@ -22,12 +22,17 @@ let pgConnected = false;
 // Initialize PostgreSQL Pool if enabled
 if (dbEnabled) {
   try {
+    const sslConfig = process.env.DB_SSL === 'true'
+      ? { rejectUnauthorized: false }
+      : false;
+
     pool = new Pool({
       host: process.env.DB_HOST || 'localhost',
       port: parseInt(process.env.DB_PORT || '5432'),
       user: process.env.DB_USER || 'postgres',
       password: process.env.DB_PASSWORD || 'postgres',
       database: process.env.DB_DATABASE || 'premium_hrms',
+      ssl: sslConfig,
     });
     console.log('[Database] PostgreSQL Pool created.');
   } catch (err) {
@@ -948,6 +953,27 @@ export async function initializeDatabase() {
 
         // Add deleted_at column for soft deletes migration (Phase 5 Database Hardening)
         await client.query('ALTER TABLE employees ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP');
+
+        // Ensure active_sessions and cloudinary_mappings exist (Infrastructure Hardening Sprint)
+        await client.query(`
+          CREATE TABLE IF NOT EXISTS active_sessions (
+              id SERIAL PRIMARY KEY,
+              employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+              refresh_token VARCHAR(512) NOT NULL UNIQUE,
+              expires_at TIMESTAMP NOT NULL,
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          );
+        `);
+        await client.query('CREATE INDEX IF NOT EXISTS idx_sessions_token ON active_sessions(refresh_token)');
+
+        await client.query(`
+          CREATE TABLE IF NOT EXISTS cloudinary_mappings (
+              filename VARCHAR(255) PRIMARY KEY,
+              cloudinary_url TEXT NOT NULL,
+              public_id VARCHAR(255) NOT NULL,
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          );
+        `);
 
         const empCount = await client.query('SELECT COUNT(*) FROM employees');
         if (parseInt(empCount.rows[0].count) === 0) {
@@ -3680,7 +3706,7 @@ export const db = {
       const emps = await pool.query(`
         SELECT id, employee_id, first_name, last_name, email, designation 
         FROM employees 
-        WHERE first_name ILIKE $1 OR last_name ILIKE $1 OR email ILIKE $1 OR designation ILIKE $1
+        WHERE first_name ILIKE $1 OR last_name ILIKE $1 OR CONCAT(first_name, ' ', last_name) ILIKE $1 OR email ILIKE $1 OR designation ILIKE $1
       `, [q]);
 
       const depts = await pool.query(`
@@ -3737,6 +3763,7 @@ export const db = {
     const emps = jsonDb.employees.filter(e => 
       e.first_name.toLowerCase().includes(lowerQ) ||
       e.last_name.toLowerCase().includes(lowerQ) ||
+      `${e.first_name} ${e.last_name}`.toLowerCase().includes(lowerQ) ||
       e.email.toLowerCase().includes(lowerQ) ||
       e.designation.toLowerCase().includes(lowerQ)
     ).map(({ password, ...rest }) => rest);
@@ -3795,6 +3822,107 @@ export const db = {
       tasks,
       leaves
     };
+  },
+
+  async saveCloudinaryMapping(filename: string, cloudinaryUrl: string, publicId: string): Promise<void> {
+    if (this.isPostgres() && pool) {
+      await pool.query(
+        `INSERT INTO cloudinary_mappings (filename, cloudinary_url, public_id) 
+         VALUES ($1, $2, $3) 
+         ON CONFLICT (filename) DO UPDATE SET cloudinary_url = $2, public_id = $3`,
+        [filename, cloudinaryUrl, publicId]
+      );
+      return;
+    }
+    (jsonDb as any).cloudinary_mappings = (jsonDb as any).cloudinary_mappings || [];
+    const idx = (jsonDb as any).cloudinary_mappings.findIndex((m: any) => m.filename === filename);
+    if (idx !== -1) {
+      (jsonDb as any).cloudinary_mappings[idx] = { filename, cloudinary_url: cloudinaryUrl, public_id: publicId, created_at: new Date().toISOString() };
+    } else {
+      (jsonDb as any).cloudinary_mappings.push({ filename, cloudinary_url: cloudinaryUrl, public_id: publicId, created_at: new Date().toISOString() });
+    }
+    saveJsonDb();
+  },
+
+  async getCloudinaryMapping(filename: string): Promise<{ filename: string; cloudinary_url: string; public_id: string } | null> {
+    if (this.isPostgres() && pool) {
+      const res = await pool.query('SELECT * FROM cloudinary_mappings WHERE filename = $1', [filename]);
+      return res.rows.length > 0 ? res.rows[0] : null;
+    }
+    (jsonDb as any).cloudinary_mappings = (jsonDb as any).cloudinary_mappings || [];
+    const found = (jsonDb as any).cloudinary_mappings.find((m: any) => m.filename === filename);
+    return found || null;
+  },
+
+  async deleteCloudinaryMapping(filename: string): Promise<void> {
+    if (this.isPostgres() && pool) {
+      await pool.query('DELETE FROM cloudinary_mappings WHERE filename = $1', [filename]);
+      return;
+    }
+    (jsonDb as any).cloudinary_mappings = (jsonDb as any).cloudinary_mappings || [];
+    (jsonDb as any).cloudinary_mappings = (jsonDb as any).cloudinary_mappings.filter((m: any) => m.filename !== filename);
+    saveJsonDb();
+  },
+
+  async addSession(employeeId: number, token: string, expiresAt: Date): Promise<void> {
+    if (this.isPostgres() && pool) {
+      await pool.query(
+        'INSERT INTO active_sessions (employee_id, refresh_token, expires_at) VALUES ($1, $2, $3)',
+        [employeeId, token, expiresAt]
+      );
+      return;
+    }
+    (jsonDb as any).active_sessions = (jsonDb as any).active_sessions || [];
+    (jsonDb as any).active_sessions.push({
+      employee_id: employeeId,
+      refresh_token: token,
+      expires_at: expiresAt.toISOString(),
+      created_at: new Date().toISOString()
+    });
+    saveJsonDb();
+  },
+
+  async hasSession(token: string): Promise<boolean> {
+    if (this.isPostgres() && pool) {
+      const res = await pool.query(
+        'SELECT 1 FROM active_sessions WHERE refresh_token = $1 AND expires_at > NOW()',
+        [token]
+      );
+      return res.rows.length > 0;
+    }
+    (jsonDb as any).active_sessions = (jsonDb as any).active_sessions || [];
+    const found = (jsonDb as any).active_sessions.find((s: any) => s.refresh_token === token && new Date(s.expires_at) > new Date());
+    return !!found;
+  },
+
+  async removeSession(token: string): Promise<void> {
+    if (this.isPostgres() && pool) {
+      await pool.query('DELETE FROM active_sessions WHERE refresh_token = $1', [token]);
+      return;
+    }
+    (jsonDb as any).active_sessions = (jsonDb as any).active_sessions || [];
+    (jsonDb as any).active_sessions = (jsonDb as any).active_sessions.filter((s: any) => s.refresh_token !== token);
+    saveJsonDb();
+  },
+
+  async revokeAllSessionsForEmployee(employeeId: number): Promise<void> {
+    if (this.isPostgres() && pool) {
+      await pool.query('DELETE FROM active_sessions WHERE employee_id = $1', [employeeId]);
+      return;
+    }
+    (jsonDb as any).active_sessions = (jsonDb as any).active_sessions || [];
+    (jsonDb as any).active_sessions = (jsonDb as any).active_sessions.filter((s: any) => s.employee_id !== employeeId);
+    saveJsonDb();
+  },
+
+  async cleanExpiredSessions(): Promise<void> {
+    if (this.isPostgres() && pool) {
+      await pool.query('DELETE FROM active_sessions WHERE expires_at <= NOW()');
+      return;
+    }
+    (jsonDb as any).active_sessions = (jsonDb as any).active_sessions || [];
+    (jsonDb as any).active_sessions = (jsonDb as any).active_sessions.filter((s: any) => new Date(s.expires_at) > new Date());
+    saveJsonDb();
   }
 };
 export default db;

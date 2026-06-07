@@ -2,7 +2,7 @@ import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import * as path from 'path';
-import { initializeDatabase } from './config/db';
+import { initializeDatabase, db } from './config/db';
 
 // Import routers
 import authRouter from './routes/authRoutes';
@@ -38,7 +38,8 @@ const allowedOrigins = [
   'http://localhost:5174',
   'http://localhost:5175',
   'http://localhost:3000',
-  process.env.FRONTEND_URL || ''
+  process.env.FRONTEND_URL || '',
+  ...(process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim()) : [])
 ].filter(Boolean);
 
 app.use(cors({
@@ -68,6 +69,19 @@ const globalLimiter = createRateLimiter({
   message: 'Too many requests from this IP. Please try again after 15 minutes.'
 });
 app.use('/api', globalLimiter);
+
+// Serve file uploads redirect middleware for Cloudinary
+app.get('/uploads/:filename', async (req, res, next) => {
+  try {
+    const mapping = await db.getCloudinaryMapping(req.params.filename);
+    if (mapping) {
+      return res.redirect(mapping.cloudinary_url);
+    }
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
 
 // Serve file uploads statically
 app.use('/uploads', express.static(path.resolve(__dirname, '../uploads')));
@@ -108,6 +122,21 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
       : err.message || 'Internal server error occurred.'
   });
 });
+
+// Environment Variable Validation (Fail-Fast)
+const isProduction = process.env.NODE_ENV === 'production';
+if (isProduction && (!process.env.JWT_SECRET || process.env.JWT_SECRET === 'enterprise_hrms_super_secure_jwt_secret_key_2026')) {
+  console.error('[Server] Critical Error: JWT_SECRET must be explicitly configured in production mode.');
+  process.exit(1);
+}
+
+if (process.env.DB_ENABLED === 'true') {
+  const missingDbParams = ['DB_HOST', 'DB_PORT', 'DB_USER', 'DB_PASSWORD', 'DB_DATABASE'].filter(param => !process.env[param]);
+  if (missingDbParams.length > 0) {
+    console.error(`[Server] Critical Error: PostgreSQL database connection variables are missing: ${missingDbParams.join(', ')}`);
+    process.exit(1);
+  }
+}
 
 // Initialize database then start server
 initializeDatabase().then(() => {

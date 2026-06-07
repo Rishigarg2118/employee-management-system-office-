@@ -15,7 +15,7 @@ import {
   MoreOutlined
 } from '@ant-design/icons';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { api } from '../services/api';
+import { api, SERVER_URL } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { Employee, Department, EmployeeStatus } from '../types';
 
@@ -180,7 +180,7 @@ export const EmployeeList: React.FC = () => {
       sorter: true,
       render: (_: any, record: Employee) => {
         const fullName = `${record.first_name} ${record.last_name}`;
-        const avatarUrl = record.avatar_url ? `http://localhost:5000/${record.avatar_url}` : undefined;
+        const avatarUrl = record.avatar_url ? `${SERVER_URL}/${record.avatar_url}` : undefined;
         return (
           <Space size={10}>
             <Avatar 

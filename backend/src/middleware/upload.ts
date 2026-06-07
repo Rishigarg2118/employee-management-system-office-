@@ -2,7 +2,7 @@ import multer from 'multer';
 import * as path from 'path';
 import * as fs from 'fs';
 
-const uploadDir = path.resolve(__dirname, '../../../uploads');
+const uploadDir = path.resolve(__dirname, '../../uploads');
 
 // Ensure upload directory exists
 if (!fs.existsSync(uploadDir)) {

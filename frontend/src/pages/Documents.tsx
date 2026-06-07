@@ -11,7 +11,7 @@ import {
   DownloadOutlined
 } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
-import { api, API_URL } from '../services/api';
+import { api, API_URL, SERVER_URL } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { Employee, Document } from '../types';
 
@@ -124,7 +124,7 @@ export const Documents: React.FC = () => {
         return (
           <Space size={8}>
             <Avatar 
-              src={record.owner.avatar_url ? `http://localhost:5000/${record.owner.avatar_url}` : undefined} 
+              src={record.owner.avatar_url ? `${SERVER_URL}/${record.owner.avatar_url}` : undefined} 
               icon={<UserOutlined />} 
               size="small"
               style={{ backgroundColor: 'var(--hover-color)', color: 'var(--text-secondary)' }}

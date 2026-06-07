@@ -11,7 +11,7 @@ import {
   CalendarOutlined
 } from '@ant-design/icons';
 import { useSearchParams } from 'react-router-dom';
-import { api } from '../services/api';
+import { api, SERVER_URL } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { Department, Employee } from '../types';
 
@@ -162,7 +162,7 @@ export const Departments: React.FC = () => {
                     
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <Avatar 
-                        src={dept.manager?.avatar_url ? `http://localhost:5000/${dept.manager.avatar_url}` : undefined} 
+                        src={dept.manager?.avatar_url ? `${SERVER_URL}/${dept.manager.avatar_url}` : undefined} 
                         icon={<UserOutlined />} 
                         size="small"
                         style={{ backgroundColor: 'var(--hover-color)', color: 'var(--text-secondary)' }}

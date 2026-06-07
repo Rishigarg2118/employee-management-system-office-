@@ -9,7 +9,7 @@ import {
   DeleteOutlined, TeamOutlined, AppstoreOutlined 
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import api from '../../services/api';
+import api, { SERVER_URL } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { Team, Employee, Department } from '../../types';
 
@@ -261,7 +261,7 @@ export const TeamWorkspace: React.FC = () => {
                 return (
                   <Space>
                     <Avatar 
-                      src={lead.avatar_url ? `http://localhost:5000/${lead.avatar_url}` : undefined}
+                      src={lead.avatar_url ? `${SERVER_URL}/${lead.avatar_url}` : undefined}
                       icon={!lead.avatar_url && <UserOutlined />}
                       size="small"
                       style={{ backgroundColor: '#10B981' }}
@@ -288,7 +288,7 @@ export const TeamWorkspace: React.FC = () => {
                       {members?.map(m => (
                         <Tooltip key={m.id} title={`${m.first_name} ${m.last_name}`}>
                           <Avatar 
-                            src={m.avatar_url ? `http://localhost:5000/${m.avatar_url}` : undefined}
+                            src={m.avatar_url ? `${SERVER_URL}/${m.avatar_url}` : undefined}
                             icon={!m.avatar_url && <UserOutlined />}
                             style={{ backgroundColor: '#3B82F6' }}
                           />

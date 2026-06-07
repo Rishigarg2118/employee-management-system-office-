@@ -1,6 +1,9 @@
 import { Response } from 'express';
 import { db } from '../config/db';
 import { AuthenticatedRequest } from '../middleware/auth';
+import { uploadToCloudinary, deleteFromCloudinary } from '../config/cloudinary';
+import * as fs from 'fs';
+import * as path from 'path';
 
 export async function uploadDocument(req: AuthenticatedRequest, res: Response): Promise<void> {
   const employeeId = parseInt((req.body.employee_id || req.params.employeeId) as string);
@@ -22,6 +25,8 @@ export async function uploadDocument(req: AuthenticatedRequest, res: Response): 
       return;
     }
 
+    const cloudRes = await uploadToCloudinary(req.file.path, 'documents');
+    await db.saveCloudinaryMapping(req.file.filename, cloudRes.secure_url, cloudRes.public_id);
     const filePath = `uploads/${req.file.filename}`;
     const newDoc = await db.createDocument(
       employeeId,
@@ -63,6 +68,21 @@ export async function deleteDocument(req: AuthenticatedRequest, res: Response): 
     if (!success) {
       res.status(500).json({ message: 'Failed to delete document database record.' });
       return;
+    }
+
+    // Clean up file from Cloudinary or local disk
+    const oldFilename = doc.file_path.replace('uploads/', '');
+    const oldMapping = await db.getCloudinaryMapping(oldFilename);
+    if (oldMapping) {
+      await deleteFromCloudinary(oldMapping.public_id);
+      await db.deleteCloudinaryMapping(oldFilename);
+    } else {
+      try {
+        const oldPath = path.resolve(__dirname, '../../../', doc.file_path);
+        if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+      } catch (e) {
+        console.warn('Failed to delete local document file', e);
+      }
     }
 
     const adminName = req.user ? req.user.email : 'System';

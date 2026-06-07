@@ -3,6 +3,9 @@ import * as bcrypt from 'bcryptjs';
 import { db } from '../config/db';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { Employee, EmployeeStatus, EmployeeRole } from '../types';
+import { uploadToCloudinary, deleteFromCloudinary } from '../config/cloudinary';
+import * as fs from 'fs';
+import * as path from 'path';
 
 export async function getEmployees(req: AuthenticatedRequest, res: Response): Promise<void> {
   const page = parseInt(req.query.page as string) || 1;
@@ -23,7 +26,7 @@ export async function getEmployees(req: AuthenticatedRequest, res: Response): Pr
       let paramCount = 1;
 
       if (search) {
-        queryStr += ` AND (LOWER(e.first_name) LIKE $${paramCount} OR LOWER(e.last_name) LIKE $${paramCount} OR LOWER(e.email) LIKE $${paramCount} OR LOWER(e.employee_id) LIKE $${paramCount})`;
+        queryStr += ` AND (LOWER(e.first_name) LIKE $${paramCount} OR LOWER(e.last_name) LIKE $${paramCount} OR LOWER(CONCAT(e.first_name, ' ', e.last_name)) LIKE $${paramCount} OR LOWER(e.email) LIKE $${paramCount} OR LOWER(e.employee_id) LIKE $${paramCount})`;
         params.push(`%${search}%`);
         paramCount++;
       }
@@ -83,6 +86,7 @@ export async function getEmployees(req: AuthenticatedRequest, res: Response): Pr
         filtered = filtered.filter(e => 
           e.first_name.toLowerCase().includes(search) ||
           e.last_name.toLowerCase().includes(search) ||
+          `${e.first_name} ${e.last_name}`.toLowerCase().includes(search) ||
           e.email.toLowerCase().includes(search) ||
           e.employee_id.toLowerCase().includes(search)
         );
@@ -218,7 +222,12 @@ export async function createEmployee(req: AuthenticatedRequest, res: Response): 
     const defaultPassword = password || 'Welcome@123';
     const hashedPassword = await bcrypt.hash(defaultPassword, 10);
 
-    const avatarUrl = req.file ? `uploads/${req.file.filename}` : undefined;
+    let avatarUrl = undefined;
+    if (req.file) {
+      const cloudRes = await uploadToCloudinary(req.file.path, 'avatars');
+      await db.saveCloudinaryMapping(req.file.filename, cloudRes.secure_url, cloudRes.public_id);
+      avatarUrl = `uploads/${req.file.filename}`;
+    }
 
     const newEmp = await db.createEmployee({
       employee_id,
@@ -289,14 +298,24 @@ export async function updateEmployee(req: AuthenticatedRequest, res: Response): 
 
     // Handle avatar uploads
     if (req.file) {
+      const cloudRes = await uploadToCloudinary(req.file.path, 'avatars');
+      await db.saveCloudinaryMapping(req.file.filename, cloudRes.secure_url, cloudRes.public_id);
       data.avatar_url = `uploads/${req.file.filename}`;
+
       // delete old avatar if exists
       if (existing.avatar_url) {
-        try {
-          const oldPath = path.resolve(__dirname, '../../../', existing.avatar_url);
-          if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
-        } catch (e) {
-          console.warn('Failed to delete old avatar file', e);
+        const oldFilename = existing.avatar_url.replace('uploads/', '');
+        const oldMapping = await db.getCloudinaryMapping(oldFilename);
+        if (oldMapping) {
+          await deleteFromCloudinary(oldMapping.public_id);
+          await db.deleteCloudinaryMapping(oldFilename);
+        } else {
+          try {
+            const oldPath = path.resolve(__dirname, '../../../', existing.avatar_url);
+            if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+          } catch (e) {
+            console.warn('Failed to delete old local avatar file', e);
+          }
         }
       }
     }
@@ -365,11 +384,35 @@ export async function deleteEmployee(req: AuthenticatedRequest, res: Response): 
   }
 
   try {
-    const success = await db.deleteEmployee(id);
-    if (!success) {
+    const existing = await db.getEmployeeById(id);
+    if (!existing) {
       res.status(404).json({ message: 'Employee not found.' });
       return;
     }
+
+    const success = await db.deleteEmployee(id);
+    if (!success) {
+      res.status(500).json({ message: 'Error deleting employee record.' });
+      return;
+    }
+
+    // Clean up avatar from Cloudinary or local disk
+    if (existing.avatar_url) {
+      const oldFilename = existing.avatar_url.replace('uploads/', '');
+      const oldMapping = await db.getCloudinaryMapping(oldFilename);
+      if (oldMapping) {
+        await deleteFromCloudinary(oldMapping.public_id);
+        await db.deleteCloudinaryMapping(oldFilename);
+      } else {
+        try {
+          const oldPath = path.resolve(__dirname, '../../../', existing.avatar_url);
+          if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+        } catch (e) {
+          console.warn('Failed to delete local avatar file', e);
+        }
+      }
+    }
+
     res.json({ message: 'Employee record and associated assets removed.' });
   } catch (err) {
     console.error('deleteEmployee error:', err);
@@ -411,5 +454,3 @@ export async function bulkActions(req: AuthenticatedRequest, res: Response): Pro
   }
 }
 
-import * as path from 'path';
-import * as fs from 'fs';

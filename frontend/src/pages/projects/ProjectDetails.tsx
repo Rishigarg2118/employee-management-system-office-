@@ -10,7 +10,7 @@ import {
   TeamOutlined, PlusOutlined, CheckSquareOutlined, ClockCircleOutlined,
   PlayCircleOutlined, SmileOutlined
 } from '@ant-design/icons';
-import api from '../../services/api';
+import api, { SERVER_URL } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { Project, Task, TaskStatus } from '../../types';
 import { KanbanBoard } from '../tasks/KanbanBoard';
@@ -170,7 +170,7 @@ export const ProjectDetails: React.FC = () => {
             </Text>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8 }}>
               <Avatar 
-                src={project.manager?.avatar_url ? `http://localhost:5000/${project.manager.avatar_url}` : undefined}
+                src={project.manager?.avatar_url ? `${SERVER_URL}/${project.manager.avatar_url}` : undefined}
                 icon={!project.manager?.avatar_url && <UserOutlined />}
                 size="large"
                 style={{ backgroundColor: '#10B981' }}
@@ -258,7 +258,7 @@ export const ProjectDetails: React.FC = () => {
                 project.members.map(member => (
                   <Tooltip key={member.id} title={`${member.first_name} ${member.last_name} - ${member.designation}`}>
                     <Avatar 
-                      src={member.avatar_url ? `http://localhost:5000/${member.avatar_url}` : undefined}
+                      src={member.avatar_url ? `${SERVER_URL}/${member.avatar_url}` : undefined}
                       icon={!member.avatar_url && <UserOutlined />}
                       size="large"
                       style={{ 

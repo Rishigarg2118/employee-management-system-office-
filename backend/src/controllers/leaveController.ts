@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { db } from '../config/db';
 import { AuthenticatedRequest } from '../middleware/auth';
+import { uploadToCloudinary } from '../config/cloudinary';
 
 // Helper to calculate weekdays (excluding Saturday and Sunday)
 function calculateBusinessDays(startDateStr: string, endDateStr: string): number {
@@ -171,7 +172,17 @@ export async function applyLeave(req: AuthenticatedRequest, res: Response): Prom
     return;
   }
 
-  const attachmentPath = req.file ? `uploads/${req.file.filename}` : null;
+  let attachmentPath = null;
+  if (req.file) {
+    try {
+      const cloudRes = await uploadToCloudinary(req.file.path, 'leaves');
+      await db.saveCloudinaryMapping(req.file.filename, cloudRes.secure_url, cloudRes.public_id);
+      attachmentPath = `uploads/${req.file.filename}`;
+    } catch (uploadErr) {
+      res.status(500).json({ message: 'Error uploading attachment to cloud storage.' });
+      return;
+    }
+  }
 
   try {
     const newRequest = await db.applyLeave({

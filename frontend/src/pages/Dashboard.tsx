@@ -9,7 +9,7 @@ import {
 } from '@ant-design/icons';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Link } from 'react-router-dom';
-import { api } from '../services/api';
+import { api, SERVER_URL } from '../services/api';
 import { StatCard } from '../components/StatCard';
 import { DashboardStats, DepartmentDistributionItem, GrowthTrendItem, Employee } from '../types';
 
@@ -67,7 +67,7 @@ export const Dashboard: React.FC = () => {
         return (
           <Space size={10}>
             <Avatar 
-              src={record.avatar_url ? `http://localhost:5000/${record.avatar_url}` : undefined} 
+              src={record.avatar_url ? `${SERVER_URL}/${record.avatar_url}` : undefined} 
               icon={<UserOutlined />} 
               style={{ backgroundColor: 'var(--hover-color)', color: 'var(--text-secondary)' }}
             />
@@ -339,7 +339,7 @@ export const Dashboard: React.FC = () => {
                     return (
                       <div key={act.id} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
                         <Avatar 
-                          src={act.employee_avatar ? `http://localhost:5000/${act.employee_avatar}` : undefined} 
+                          src={act.employee_avatar ? `${SERVER_URL}/${act.employee_avatar}` : undefined} 
                           icon={<UserOutlined />}
                           size="small"
                           style={{ backgroundColor: 'var(--hover-color)', color: 'var(--text-secondary)', marginTop: '2px' }}
