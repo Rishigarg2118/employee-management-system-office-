@@ -28,10 +28,254 @@ async function migrate() {
   try {
     await client.query('BEGIN');
     
+    // 0. Ensure all tables exist before truncation
+    console.log('[Migration] Ensuring all database tables exist...');
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS departments (
+          id SERIAL PRIMARY KEY,
+          name VARCHAR(100) NOT NULL UNIQUE,
+          code VARCHAR(10) NOT NULL UNIQUE,
+          description TEXT,
+          manager_id INTEGER,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+      
+      CREATE TABLE IF NOT EXISTS employees (
+          id SERIAL PRIMARY KEY,
+          employee_id VARCHAR(20) NOT NULL UNIQUE,
+          first_name VARCHAR(50) NOT NULL,
+          last_name VARCHAR(50) NOT NULL,
+          email VARCHAR(100) NOT NULL UNIQUE,
+          password VARCHAR(255) NOT NULL,
+          phone VARCHAR(20),
+          department_id INTEGER REFERENCES departments(id) ON DELETE SET NULL,
+          designation VARCHAR(100) NOT NULL,
+          status VARCHAR(20) DEFAULT 'Active' CHECK (status IN ('Active', 'Inactive', 'On Leave', 'Probation')),
+          joining_date DATE NOT NULL,
+          avatar_url VARCHAR(255),
+          address TEXT,
+          bio TEXT,
+          role VARCHAR(20) DEFAULT 'Employee' CHECK (role IN ('Super Admin', 'Admin', 'HR', 'Manager', 'Employee', 'Intern')),
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          deleted_at TIMESTAMP
+      );
+
+      DO $$ 
+      BEGIN 
+          IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_departments_manager') THEN
+              ALTER TABLE departments ADD CONSTRAINT fk_departments_manager FOREIGN KEY (manager_id) REFERENCES employees(id) ON DELETE SET NULL;
+          END IF;
+      END $$;
+
+      CREATE TABLE IF NOT EXISTS skills (
+          id SERIAL PRIMARY KEY,
+          name VARCHAR(50) NOT NULL UNIQUE,
+          category VARCHAR(50) NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS employee_skills (
+          employee_id INTEGER REFERENCES employees(id) ON DELETE CASCADE,
+          skill_id INTEGER REFERENCES skills(id) ON DELETE CASCADE,
+          proficiency_level VARCHAR(20) NOT NULL CHECK (proficiency_level IN ('Beginner', 'Intermediate', 'Expert')),
+          PRIMARY KEY (employee_id, skill_id)
+      );
+
+      CREATE TABLE IF NOT EXISTS documents (
+          id SERIAL PRIMARY KEY,
+          employee_id INTEGER REFERENCES employees(id) ON DELETE CASCADE,
+          name VARCHAR(255) NOT NULL,
+          file_path VARCHAR(255) NOT NULL,
+          file_size INTEGER NOT NULL,
+          file_type VARCHAR(100) NOT NULL,
+          uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS activities (
+          id SERIAL PRIMARY KEY,
+          employee_id INTEGER REFERENCES employees(id) ON DELETE SET NULL,
+          activity_type VARCHAR(50) NOT NULL,
+          description TEXT NOT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS leave_types (
+          id SERIAL PRIMARY KEY,
+          name VARCHAR(50) NOT NULL UNIQUE,
+          code VARCHAR(10) NOT NULL UNIQUE,
+          description TEXT,
+          default_days INTEGER NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS leave_balances (
+          employee_id INTEGER REFERENCES employees(id) ON DELETE CASCADE,
+          leave_type_id INTEGER REFERENCES leave_types(id) ON DELETE CASCADE,
+          total_days INTEGER NOT NULL,
+          used_days INTEGER NOT NULL DEFAULT 0,
+          remaining_days INTEGER NOT NULL,
+          PRIMARY KEY (employee_id, leave_type_id)
+      );
+
+      CREATE TABLE IF NOT EXISTS leave_requests (
+          id SERIAL PRIMARY KEY,
+          employee_id INTEGER REFERENCES employees(id) ON DELETE CASCADE,
+          leave_type_id INTEGER REFERENCES leave_types(id) ON DELETE RESTRICT,
+          start_date DATE NOT NULL,
+          end_date DATE NOT NULL,
+          total_days INTEGER NOT NULL,
+          reason TEXT NOT NULL,
+          status VARCHAR(30) DEFAULT 'Pending' CHECK (status IN ('Pending', 'Under Review', 'Manager Approved', 'HR Approved', 'Approved', 'Rejected', 'Cancelled')),
+          attachment_path VARCHAR(255),
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS leave_approvals (
+          id SERIAL PRIMARY KEY,
+          leave_request_id INTEGER REFERENCES leave_requests(id) ON DELETE CASCADE,
+          approver_id INTEGER REFERENCES employees(id) ON DELETE SET NULL,
+          stage VARCHAR(30) NOT NULL CHECK (stage IN ('Manager Review', 'HR Review')),
+          status VARCHAR(20) NOT NULL CHECK (status IN ('Approved', 'Rejected')),
+          remarks TEXT,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS attendance (
+          id SERIAL PRIMARY KEY,
+          employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+          date DATE NOT NULL,
+          check_in TIMESTAMP,
+          check_out TIMESTAMP,
+          status VARCHAR(30) NOT NULL CHECK (status IN ('Present', 'Absent', 'Late', 'Half Day', 'Work From Home')),
+          working_hours NUMERIC(4,2),
+          remarks TEXT,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          CONSTRAINT unique_employee_date UNIQUE (employee_id, date)
+      );
+
+      CREATE TABLE IF NOT EXISTS projects (
+          id SERIAL PRIMARY KEY,
+          name VARCHAR(255) NOT NULL,
+          description TEXT,
+          start_date DATE NOT NULL,
+          deadline DATE,
+          status VARCHAR(50) DEFAULT 'Planning' CHECK (status IN ('Planning', 'Active', 'Review', 'Completed', 'Archived')),
+          manager_id INTEGER REFERENCES employees(id) ON DELETE SET NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS project_members (
+          project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE,
+          employee_id INTEGER REFERENCES employees(id) ON DELETE CASCADE,
+          PRIMARY KEY (project_id, employee_id)
+      );
+
+      CREATE TABLE IF NOT EXISTS teams (
+          id SERIAL PRIMARY KEY,
+          name VARCHAR(255) NOT NULL,
+          department_id INTEGER REFERENCES departments(id) ON DELETE SET NULL,
+          lead_id INTEGER REFERENCES employees(id) ON DELETE SET NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS team_members (
+          team_id INTEGER REFERENCES teams(id) ON DELETE CASCADE,
+          employee_id INTEGER REFERENCES employees(id) ON DELETE CASCADE,
+          PRIMARY KEY (team_id, employee_id)
+      );
+
+      CREATE TABLE IF NOT EXISTS tasks (
+          id SERIAL PRIMARY KEY,
+          title VARCHAR(255) NOT NULL,
+          description TEXT,
+          status VARCHAR(50) DEFAULT 'Todo' CHECK (status IN ('Todo', 'In Progress', 'In Review', 'Done')),
+          priority VARCHAR(20) DEFAULT 'Medium' CHECK (priority IN ('Low', 'Medium', 'High', 'Urgent')),
+          due_date DATE,
+          assignee_id INTEGER REFERENCES employees(id) ON DELETE SET NULL,
+          creator_id INTEGER REFERENCES employees(id) ON DELETE SET NULL,
+          department_id INTEGER REFERENCES departments(id) ON DELETE SET NULL,
+          project_id INTEGER REFERENCES projects(id) ON DELETE SET NULL,
+          team_id INTEGER REFERENCES teams(id) ON DELETE SET NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS task_comments (
+          id SERIAL PRIMARY KEY,
+          task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+          author_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+          content TEXT NOT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS task_activities (
+          id SERIAL PRIMARY KEY,
+          task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+          employee_id INTEGER REFERENCES employees(id) ON DELETE SET NULL,
+          activity_type VARCHAR(50) NOT NULL,
+          description TEXT NOT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS notifications (
+          id SERIAL PRIMARY KEY,
+          employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+          title VARCHAR(255) NOT NULL,
+          message TEXT NOT NULL,
+          type VARCHAR(50) NOT NULL CHECK (type IN ('TASK', 'LEAVE', 'ATTENDANCE', 'PROJECT', 'SYSTEM')),
+          is_read BOOLEAN DEFAULT FALSE,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS audit_logs (
+          id SERIAL PRIMARY KEY,
+          actor_id INTEGER REFERENCES employees(id) ON DELETE SET NULL,
+          actor_name VARCHAR(255) NOT NULL,
+          action VARCHAR(100) NOT NULL,
+          module VARCHAR(50) NOT NULL CHECK (module IN ('AUTH', 'EMPLOYEES', 'DEPARTMENTS', 'LEAVES', 'ATTENDANCE', 'TASKS', 'PROJECTS', 'TEAMS', 'SYSTEM')),
+          old_value TEXT,
+          new_value TEXT,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS attendance_corrections (
+          id SERIAL PRIMARY KEY,
+          attendance_id INTEGER NOT NULL REFERENCES attendance(id) ON DELETE CASCADE,
+          employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+          requested_status VARCHAR(30) NOT NULL CHECK (requested_status IN ('Present', 'Absent', 'Late', 'Half Day', 'Work From Home')),
+          requested_check_in TIMESTAMP,
+          requested_check_out TIMESTAMP,
+          reason TEXT NOT NULL,
+          status VARCHAR(20) DEFAULT 'Pending' CHECK (status IN ('Pending', 'Approved', 'Rejected')),
+          remarks TEXT,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS active_sessions (
+          id SERIAL PRIMARY KEY,
+          employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+          refresh_token VARCHAR(512) NOT NULL UNIQUE,
+          expires_at TIMESTAMP NOT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS cloudinary_mappings (
+          filename VARCHAR(255) PRIMARY KEY,
+          cloudinary_url TEXT NOT NULL,
+          public_id VARCHAR(255) NOT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
     // 1. Truncate all tables to clear out auto-seeding defaults
     console.log('[Migration] Truncating all existing PostgreSQL tables to start clean...');
     await client.query(`
       TRUNCATE TABLE 
+        active_sessions,
+        cloudinary_mappings,
+        attendance_corrections,
         audit_logs,
         notifications,
         task_activities,

@@ -24,6 +24,14 @@ export async function uploadToCloudinary(
       resource_type: 'auto',
     });
 
+    return {
+      secure_url: result.secure_url,
+      public_id: result.public_id,
+    };
+  } catch (err) {
+    console.error('[Cloudinary Upload Error]:', err);
+    throw new Error('Cloud storage upload failed.');
+  } finally {
     // Clean up local temporary file
     try {
       if (fs.existsSync(localFilePath)) {
@@ -32,14 +40,6 @@ export async function uploadToCloudinary(
     } catch (unlinkErr) {
       console.warn(`[Cloudinary] Failed to delete local temp file: ${localFilePath}`, unlinkErr);
     }
-
-    return {
-      secure_url: result.secure_url,
-      public_id: result.public_id,
-    };
-  } catch (err) {
-    console.error('[Cloudinary Upload Error]:', err);
-    throw new Error('Cloud storage upload failed.');
   }
 }
 

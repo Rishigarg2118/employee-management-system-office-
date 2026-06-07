@@ -115,9 +115,9 @@ export const TeamWorkspace: React.FC = () => {
     form.validateFields().then(values => {
       const payload = {
         name: values.name,
-        department_id: values.department_id ? parseInt(values.department_id) : null,
-        lead_id: values.lead_id ? parseInt(values.lead_id) : null,
-        memberIds: values.memberIds ? values.memberIds.map((id: any) => parseInt(id)) : []
+        department_id: values.department_id ? Number(values.department_id) : null,
+        lead_id: values.lead_id ? Number(values.lead_id) : null,
+        memberIds: values.memberIds ? values.memberIds.map((id: any) => Number(id)) : []
       };
       
       if (editingTeam) {
@@ -365,7 +365,7 @@ export const TeamWorkspace: React.FC = () => {
               <Form.Item name="department_id" label="Department Division">
                 <Select placeholder="Select Department" allowClear>
                   {departments.map(dept => (
-                    <Option key={dept.id} value={dept.id.toString()}>{dept.name}</Option>
+                    <Option key={dept.id} value={dept.id}>{dept.name}</Option>
                   ))}
                 </Select>
               </Form.Item>
@@ -374,7 +374,7 @@ export const TeamWorkspace: React.FC = () => {
               <Form.Item name="lead_id" label="Team Lead / Manager">
                 <Select placeholder="Assign Lead" showSearch optionFilterProp="children" allowClear>
                   {employees.map(emp => (
-                    <Option key={emp.id} value={emp.id.toString()}>
+                    <Option key={emp.id} value={emp.id}>
                       {emp.first_name} {emp.last_name}
                     </Option>
                   ))}
@@ -392,7 +392,7 @@ export const TeamWorkspace: React.FC = () => {
               style={{ width: '100%' }}
             >
               {employees.map(emp => (
-                <Option key={emp.id} value={emp.id.toString()}>
+                <Option key={emp.id} value={emp.id}>
                   {emp.first_name} {emp.last_name} ({emp.designation})
                 </Option>
               ))}

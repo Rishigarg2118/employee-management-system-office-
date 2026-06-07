@@ -115,6 +115,16 @@ export async function createTask(req: AuthenticatedRequest, res: Response): Prom
       `Created task "${title}" (ID: ${task.id}).`
     );
 
+    // Notify assignee
+    if (task.assignee_id) {
+      await db.createNotification(
+        task.assignee_id,
+        'New Task Assigned',
+        `You have been assigned the task: "${task.title}".`,
+        'TASK'
+      );
+    }
+
     res.status(201).json(task);
   } catch (err) {
     console.error('createTask error:', err);
@@ -192,6 +202,16 @@ export async function updateTask(req: AuthenticatedRequest, res: Response): Prom
         const assigneeEmp = parsedAssignee ? await db.getEmployeeById(parsedAssignee) : null;
         const assigneeName = assigneeEmp ? `${assigneeEmp.first_name} ${assigneeEmp.last_name}` : 'Unassigned';
         await db.logTaskActivity(id, actorId, 'REASSIGNED', `Assigned to ${assigneeName} by ${actorName}.`);
+        
+        // Notify new assignee
+        if (parsedAssignee) {
+          await db.createNotification(
+            parsedAssignee,
+            'New Task Assigned',
+            `You have been assigned the task: "${existingTask.title}".`,
+            'TASK'
+          );
+        }
       }
     }
 

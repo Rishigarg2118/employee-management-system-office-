@@ -202,6 +202,9 @@ export const api = {
     const res = await apiClient.put(`/departments/${id}`, payload);
     return res.data;
   },
+  async deleteDepartment(id: number): Promise<void> {
+    await apiClient.delete(`/departments/${id}`);
+  },
 
   // Skills
   async getSkills(): Promise<Skill[]> {

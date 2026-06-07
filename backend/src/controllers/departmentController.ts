@@ -98,3 +98,33 @@ export async function updateDepartment(req: AuthenticatedRequest, res: Response)
     res.status(500).json({ message: 'Error updating department.' });
   }
 }
+
+export async function deleteDepartment(req: AuthenticatedRequest, res: Response): Promise<void> {
+  const id = parseInt(req.params.id as string);
+  if (isNaN(id)) {
+    res.status(400).json({ message: 'Invalid department ID.' });
+    return;
+  }
+
+  try {
+    const existing = await db.getDepartmentById(id);
+    if (!existing) {
+      res.status(404).json({ message: 'Department not found.' });
+      return;
+    }
+
+    const success = await db.deleteDepartment(id);
+    if (!success) {
+      res.status(400).json({ message: 'Failed to delete department.' });
+      return;
+    }
+
+    const adminName = req.user ? req.user.email : 'System';
+    await db.logActivity(null, 'DEPARTMENT_DELETED', `Department "${existing.name}" (${existing.code}) was deleted by ${adminName}.`);
+
+    res.json({ message: 'Department deleted successfully.' });
+  } catch (err) {
+    console.error('deleteDepartment error:', err);
+    res.status(500).json({ message: 'Error deleting department.' });
+  }
+}

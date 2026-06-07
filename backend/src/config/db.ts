@@ -1388,6 +1388,35 @@ export const db = {
     return jsonDb.departments[index];
   },
 
+  async deleteDepartment(id: number): Promise<boolean> {
+    if (this.isPostgres() && pool) {
+      const res = await pool.query('DELETE FROM departments WHERE id = $1', [id]);
+      return (res.rowCount ?? 0) > 0;
+    }
+    const index = jsonDb.departments.findIndex(d => d.id === id);
+    if (index === -1) return false;
+    
+    jsonDb.departments.splice(index, 1);
+    
+    // Cleanup employees department association
+    jsonDb.employees.forEach(emp => {
+      if (emp.department_id === id) emp.department_id = null as any;
+    });
+    
+    // Cleanup teams department association
+    jsonDb.teams.forEach(team => {
+      if (team.department_id === id) team.department_id = null as any;
+    });
+    
+    // Cleanup tasks department association
+    jsonDb.tasks.forEach(task => {
+      if (task.department_id === id) task.department_id = null as any;
+    });
+    
+    saveJsonDb();
+    return true;
+  },
+
   // --- EMPLOYEES CRUDS ---
   async getEmployees(): Promise<Employee[]> {
     if (this.isPostgres() && pool) {
@@ -3558,15 +3587,31 @@ export const db = {
       query += ` ORDER BY p.id DESC`;
       const res = await pool.query(query, params);
       
-      for (const row of res.rows) {
-        if (row.manager && row.manager.id === null) row.manager = null;
+      const projectIds = res.rows.map(row => row.id);
+      if (projectIds.length > 0) {
         const memRes = await pool.query(`
-          SELECT id, employee_id, first_name, last_name, email, designation, role, status, joining_date::text
+          SELECT pm.project_id, e.id, e.employee_id, e.first_name, e.last_name, e.email, e.designation, e.role, e.status, e.joining_date::text
           FROM employees e
           JOIN project_members pm ON e.id = pm.employee_id
-          WHERE pm.project_id = $1
-        `, [row.id]);
-        row.members = memRes.rows;
+          WHERE pm.project_id = ANY($1)
+        `, [projectIds]);
+        
+        const membersByProjectId: { [key: number]: any[] } = {};
+        for (const mem of memRes.rows) {
+          const pId = mem.project_id;
+          if (!membersByProjectId[pId]) membersByProjectId[pId] = [];
+          const { project_id, ...empData } = mem;
+          membersByProjectId[pId].push(empData);
+        }
+        for (const row of res.rows) {
+          if (row.manager && row.manager.id === null) row.manager = null;
+          row.members = membersByProjectId[row.id] || [];
+        }
+      } else {
+        for (const row of res.rows) {
+          if (row.manager && row.manager.id === null) row.manager = null;
+          row.members = [];
+        }
       }
       return res.rows;
     }
@@ -3581,7 +3626,8 @@ export const db = {
     return list.map(p => {
       const mgr = jsonDb.employees.find(e => e.id === p.manager_id);
       const memberIds = jsonDb.project_members.filter(pm => pm.project_id === p.id).map(pm => pm.employee_id);
-      const members = jsonDb.employees.filter(e => memberIds.includes(e.id)).map(e => {
+      const uniqueMemberIds = Array.from(new Set(memberIds));
+      const members = jsonDb.employees.filter(e => uniqueMemberIds.includes(e.id)).map(e => {
         const { password, ...rest } = e;
         return rest;
       });
@@ -3650,10 +3696,12 @@ export const db = {
         `, [name, description || null, start_date || getLocalDateStr(), deadline || null, status || 'Planning', manager_id || null]);
         const newProj = insertRes.rows[0];
         if (memberIds && memberIds.length > 0) {
-          for (const empId of memberIds) {
+          const uniqueMemberIds = Array.from(new Set(memberIds));
+          for (const empId of uniqueMemberIds) {
             await client.query(`
               INSERT INTO project_members (project_id, employee_id)
               VALUES ($1, $2)
+              ON CONFLICT (project_id, employee_id) DO NOTHING
             `, [newProj.id, empId]);
           }
         }
@@ -3681,7 +3729,8 @@ export const db = {
     };
     jsonDb.projects.push(newProj);
     if (memberIds && memberIds.length > 0) {
-      for (const empId of memberIds) {
+      const uniqueMemberIds = Array.from(new Set(memberIds));
+      for (const empId of uniqueMemberIds) {
         jsonDb.project_members.push({ project_id: newId, employee_id: empId });
       }
     }
@@ -3701,14 +3750,16 @@ export const db = {
         if (fields.length > 0) {
           const setClause = fields.map((f, i) => `${f} = $${i + 2}`).join(', ');
           const values = [id, ...Object.values(updateData)];
-          await client.query(`UPDATE projects SET ${setClause} WHERE id = $1`, values);
+          await pool.query(`UPDATE projects SET ${setClause} WHERE id = $1`, values);
         }
         if (memberIds !== undefined) {
           await client.query('DELETE FROM project_members WHERE project_id = $1', [id]);
-          for (const empId of memberIds) {
+          const uniqueMemberIds = Array.from(new Set(memberIds));
+          for (const empId of uniqueMemberIds) {
             await client.query(`
               INSERT INTO project_members (project_id, employee_id)
               VALUES ($1, $2)
+              ON CONFLICT (project_id, employee_id) DO NOTHING
             `, [id, empId]);
           }
         }
@@ -3730,7 +3781,8 @@ export const db = {
     jsonDb.projects[idx] = { ...jsonDb.projects[idx], ...updateData };
     if (memberIds !== undefined) {
       jsonDb.project_members = jsonDb.project_members.filter(pm => pm.project_id !== id);
-      for (const empId of memberIds) {
+      const uniqueMemberIds = Array.from(new Set(memberIds));
+      for (const empId of uniqueMemberIds) {
         jsonDb.project_members.push({ project_id: id, employee_id: empId });
       }
     }
@@ -3781,15 +3833,32 @@ export const db = {
       }
       query += ` ORDER BY t.id DESC`;
       const res = await pool.query(query, params);
-      for (const row of res.rows) {
-        if (row.lead && row.lead.id === null) row.lead = null;
+      
+      const teamIds = res.rows.map(row => row.id);
+      if (teamIds.length > 0) {
         const memRes = await pool.query(`
-          SELECT id, employee_id, first_name, last_name, email, designation, role, status, joining_date::text
+          SELECT tm.team_id, e.id, e.employee_id, e.first_name, e.last_name, e.email, e.designation, e.role, e.status, e.joining_date::text
           FROM employees e
           JOIN team_members tm ON e.id = tm.employee_id
-          WHERE tm.team_id = $1
-        `, [row.id]);
-        row.members = memRes.rows;
+          WHERE tm.team_id = ANY($1)
+        `, [teamIds]);
+        
+        const membersByTeamId: { [key: number]: any[] } = {};
+        for (const mem of memRes.rows) {
+          const tId = mem.team_id;
+          if (!membersByTeamId[tId]) membersByTeamId[tId] = [];
+          const { team_id, ...empData } = mem;
+          membersByTeamId[tId].push(empData);
+        }
+        for (const row of res.rows) {
+          if (row.lead && row.lead.id === null) row.lead = null;
+          row.members = membersByTeamId[row.id] || [];
+        }
+      } else {
+        for (const row of res.rows) {
+          if (row.lead && row.lead.id === null) row.lead = null;
+          row.members = [];
+        }
       }
       return res.rows;
     }
@@ -3805,7 +3874,8 @@ export const db = {
       const dept = jsonDb.departments.find(d => d.id === t.department_id);
       const lead = jsonDb.employees.find(e => e.id === t.lead_id);
       const memberIds = jsonDb.team_members.filter(tm => tm.team_id === t.id).map(tm => tm.employee_id);
-      const members = jsonDb.employees.filter(e => memberIds.includes(e.id)).map(e => {
+      const uniqueMemberIds = Array.from(new Set(memberIds));
+      const members = jsonDb.employees.filter(e => uniqueMemberIds.includes(e.id)).map(e => {
         const { password, ...rest } = e;
         return rest;
       });
@@ -3879,10 +3949,12 @@ export const db = {
         `, [name, department_id || null, lead_id || null]);
         const newTeam = insertRes.rows[0];
         if (memberIds && memberIds.length > 0) {
-          for (const empId of memberIds) {
+          const uniqueMemberIds = Array.from(new Set(memberIds));
+          for (const empId of uniqueMemberIds) {
             await client.query(`
               INSERT INTO team_members (team_id, employee_id)
               VALUES ($1, $2)
+              ON CONFLICT (team_id, employee_id) DO NOTHING
             `, [newTeam.id, empId]);
           }
         }
@@ -3906,7 +3978,8 @@ export const db = {
     };
     jsonDb.teams.push(newTeam);
     if (memberIds && memberIds.length > 0) {
-      for (const empId of memberIds) {
+      const uniqueMemberIds = Array.from(new Set(memberIds));
+      for (const empId of uniqueMemberIds) {
         jsonDb.team_members.push({ team_id: newId, employee_id: empId });
       }
     }
@@ -3927,14 +4000,16 @@ export const db = {
         if (fields.length > 0) {
           const setClause = fields.map((f, i) => `${f} = $${i + 2}`).join(', ');
           const values = [id, ...Object.values(updateData)];
-          await client.query(`UPDATE teams SET ${setClause} WHERE id = $1`, values);
+          await pool.query(`UPDATE teams SET ${setClause} WHERE id = $1`, values);
         }
         if (memberIds !== undefined) {
           await client.query('DELETE FROM team_members WHERE team_id = $1', [id]);
-          for (const empId of memberIds) {
+          const uniqueMemberIds = Array.from(new Set(memberIds));
+          for (const empId of uniqueMemberIds) {
             await client.query(`
               INSERT INTO team_members (team_id, employee_id)
               VALUES ($1, $2)
+              ON CONFLICT (team_id, employee_id) DO NOTHING
             `, [id, empId]);
           }
         }
@@ -3957,7 +4032,8 @@ export const db = {
     jsonDb.teams[idx] = { ...jsonDb.teams[idx], ...updateData };
     if (memberIds !== undefined) {
       jsonDb.team_members = jsonDb.team_members.filter(tm => tm.team_id !== id);
-      for (const empId of memberIds) {
+      const uniqueMemberIds = Array.from(new Set(memberIds));
+      for (const empId of uniqueMemberIds) {
         jsonDb.team_members.push({ team_id: id, employee_id: empId });
       }
     }

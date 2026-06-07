@@ -17,6 +17,7 @@ import {
 } from '@ant-design/icons';
 import { useNavigate, useParams } from 'react-router-dom';
 import dayjs from 'dayjs';
+import { useAuth } from '../context/AuthContext';
 import { api, API_URL } from '../services/api';
 import { EmployeeStatus, EmployeeRole, Department, Skill, SkillProficiency } from '../types';
 
@@ -25,7 +26,9 @@ const { Dragger } = Upload;
 export const EmployeeWizard: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const isEditMode = !!id;
+  const isHrOrAdmin = ['Super Admin', 'Admin', 'HR'].includes(user?.role || '');
 
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
@@ -338,7 +341,7 @@ export const EmployeeWizard: React.FC = () => {
                   label="Employee ID (Code)"
                   rules={[{ required: true, message: 'Employee ID is required' }]}
                 >
-                  <Input placeholder="EMP-001" style={{ height: '40px', fontFamily: 'monospace' }} disabled={isEditMode} />
+                  <Input placeholder="EMP-001" style={{ height: '40px', fontFamily: 'monospace' }} disabled={isEditMode || !isHrOrAdmin} />
                 </Form.Item>
               </Col>
               <Col span={12}>
@@ -347,7 +350,7 @@ export const EmployeeWizard: React.FC = () => {
                   label="Designation / Role Title"
                   rules={[{ required: true, message: 'Designation is required' }]}
                 >
-                  <Input placeholder="Senior Frontend Architect" style={{ height: '40px' }} />
+                  <Input placeholder="Senior Frontend Architect" style={{ height: '40px' }} disabled={!isHrOrAdmin} />
                 </Form.Item>
               </Col>
             </Row>
@@ -359,7 +362,7 @@ export const EmployeeWizard: React.FC = () => {
                   label="Joining / Hire Date"
                   rules={[{ required: true, message: 'Joining date is required' }]}
                 >
-                  <DatePicker style={{ width: '100%', height: '40px' }} placeholder="Select date" format="YYYY-MM-DD" />
+                  <DatePicker style={{ width: '100%', height: '40px' }} placeholder="Select date" format="YYYY-MM-DD" disabled={!isHrOrAdmin} />
                 </Form.Item>
               </Col>
               <Col span={12}>
@@ -371,6 +374,7 @@ export const EmployeeWizard: React.FC = () => {
                 >
                   <Select
                     style={{ height: '40px' }}
+                    disabled={!isHrOrAdmin}
                     options={[
                       { label: 'Super Admin Access', value: 'Super Admin' },
                       { label: 'Administrator Access', value: 'Admin' },
@@ -392,6 +396,7 @@ export const EmployeeWizard: React.FC = () => {
             >
               <Select
                 style={{ height: '40px' }}
+                disabled={!isHrOrAdmin}
                 options={[
                   { label: 'Active', value: 'Active' },
                   { label: 'Inactive / Deactivated', value: 'Inactive' },
@@ -416,6 +421,7 @@ export const EmployeeWizard: React.FC = () => {
               <Select
                 placeholder="Assign division..."
                 style={{ height: '40px' }}
+                disabled={!isHrOrAdmin}
                 options={departments.map(d => ({ label: `${d.name} (${d.code})`, value: d.id }))}
               />
             </Form.Item>

@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { 
   Row, Col, Card, Avatar, Button, Modal, Form, 
-  Input, Select, Space, Spin, message, Empty 
+  Input, Select, Space, Spin, message, Empty, Popconfirm 
 } from 'antd';
 import { 
   AppstoreOutlined, 
   PlusOutlined, 
   UserOutlined, 
   EnvironmentOutlined,
-  CalendarOutlined
+  CalendarOutlined,
+  EditOutlined,
+  DeleteOutlined
 } from '@ant-design/icons';
 import { useSearchParams } from 'react-router-dom';
 import { api, SERVER_URL } from '../services/api';
@@ -42,27 +44,62 @@ export const Departments: React.FC = () => {
     }
   };
 
+  const [editingDept, setEditingDept] = useState<Department | null>(null);
+
+  const handleEditClick = (dept: Department) => {
+    setEditingDept(dept);
+    form.setFieldsValue({
+      name: dept.name,
+      code: dept.code,
+      description: dept.description,
+      manager_id: dept.manager?.id || dept.manager_id || null
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleAddClick = () => {
+    setEditingDept(null);
+    form.resetFields();
+    setIsModalOpen(true);
+  };
+
+  const handleDeleteConfirm = async (id: number) => {
+    try {
+      await api.deleteDepartment(id);
+      message.success('Department deleted successfully.');
+      loadData();
+    } catch (err: any) {
+      message.error(err.response?.data?.message || 'Failed to delete department.');
+    }
+  };
+
   useEffect(() => {
     loadData();
 
     // Check query params to auto-open creation modal
     if (searchParams.get('openCreate') === 'true') {
-      setIsModalOpen(true);
+      handleAddClick();
       // Clean query parameter
       setSearchParams({});
     }
   }, [searchParams]);
 
-  const handleCreate = async (values: any) => {
+  const handleSubmit = async (values: any) => {
     setSubmitting(true);
     try {
-      await api.createDepartment(values);
-      message.success('Department successfully registered.');
+      if (editingDept) {
+        await api.updateDepartment(editingDept.id, values);
+        message.success('Department successfully updated.');
+      } else {
+        await api.createDepartment(values);
+        message.success('Department successfully registered.');
+      }
       setIsModalOpen(false);
       form.resetFields();
+      setEditingDept(null);
       loadData();
     } catch (err: any) {
-      message.error(err.response?.data?.message || 'Failed to create department.');
+      message.error(err.response?.data?.message || 'Failed to process department details.');
     } finally {
       setSubmitting(false);
     }
@@ -94,7 +131,7 @@ export const Departments: React.FC = () => {
           <Button 
             type="primary" 
             icon={<PlusOutlined />} 
-            onClick={() => setIsModalOpen(true)}
+            onClick={handleAddClick}
             style={{ display: 'flex', alignItems: 'center' }}
           >
             Add Department
@@ -114,6 +151,19 @@ export const Departments: React.FC = () => {
                 <Card 
                   style={{ height: '100%' }}
                   bodyStyle={{ padding: '24px', display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'between' }}
+                  actions={isAdmin ? [
+                    <EditOutlined key="edit" onClick={() => handleEditClick(dept)} />,
+                    <Popconfirm
+                      title="Delete Department"
+                      description="Are you sure you want to delete this department? Employees inside this department will be unassigned."
+                      onConfirm={() => handleDeleteConfirm(dept.id)}
+                      okText="Yes"
+                      cancelText="No"
+                      okButtonProps={{ danger: true }}
+                    >
+                      <DeleteOutlined key="delete" style={{ color: '#EF4444' }} />
+                    </Popconfirm>
+                  ] : undefined}
                 >
                   <div>
                     {/* Icon and Code */}
@@ -182,18 +232,18 @@ export const Departments: React.FC = () => {
         <Empty description="No corporate departments registered." />
       )}
 
-      {/* CREATE DEPARTMENT MODAL */}
+      {/* CREATE/EDIT DEPARTMENT MODAL */}
       <Modal
-        title="Add Department"
+        title={editingDept ? 'Edit Department Details' : 'Add Department'}
         open={isModalOpen}
-        onCancel={() => { setIsModalOpen(false); form.resetFields(); }}
+        onCancel={() => { setIsModalOpen(false); form.resetFields(); setEditingDept(null); }}
         footer={null}
         destroyOnClose
       >
         <Form
           form={form}
           layout="vertical"
-          onFinish={handleCreate}
+          onFinish={handleSubmit}
           requiredMark={false}
           style={{ marginTop: 16 }}
         >
@@ -213,7 +263,7 @@ export const Departments: React.FC = () => {
               { max: 10, message: 'Code must be 10 characters or less.' }
             ]}
           >
-            <Input placeholder="ENG" style={{ height: '40px', fontFamily: 'monospace' }} />
+            <Input placeholder="ENG" style={{ height: '40px', fontFamily: 'monospace' }} disabled={!!editingDept} />
           </Form.Item>
 
           <Form.Item
@@ -237,8 +287,10 @@ export const Departments: React.FC = () => {
 
           <Form.Item style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginBottom: 0, marginTop: '24px' }}>
             <Space>
-              <Button onClick={() => setIsModalOpen(false)}>Cancel</Button>
-              <Button type="primary" htmlType="submit" loading={submitting}>Register Department</Button>
+              <Button onClick={() => { setIsModalOpen(false); form.resetFields(); setEditingDept(null); }}>Cancel</Button>
+              <Button type="primary" htmlType="submit" loading={submitting}>
+                {editingDept ? 'Save Changes' : 'Register Department'}
+              </Button>
             </Space>
           </Form.Item>
         </Form>

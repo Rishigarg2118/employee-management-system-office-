@@ -271,6 +271,25 @@ export async function createEmployee(req: AuthenticatedRequest, res: Response): 
       `Employee account for ${first_name} ${last_name} was created by ${adminName}.`
     );
 
+    // Notify the new employee
+    await db.createNotification(
+      newEmp.id,
+      'Welcome to i-SOFTZONE',
+      `Welcome ${first_name}! Your employee account has been created.`,
+      'SYSTEM'
+    );
+
+    // Notify HR/Admins
+    const hrAdmins = (await db.getEmployees()).filter(e => ['Super Admin', 'Admin', 'HR'].includes(e.role) && e.id !== newEmp.id);
+    for (const hrAdmin of hrAdmins) {
+      await db.createNotification(
+        hrAdmin.id,
+        'New Employee Account Created',
+        `A new employee account has been created for ${first_name} ${last_name} (${employee_id}).`,
+        'SYSTEM'
+      );
+    }
+
     const { password: _, ...empNoPass } = newEmp;
     res.status(201).json(empNoPass);
   } catch (err) {
@@ -282,6 +301,13 @@ export async function createEmployee(req: AuthenticatedRequest, res: Response): 
 export async function updateEmployee(req: AuthenticatedRequest, res: Response): Promise<void> {
   const id = parseInt(req.params.id as string);
   if (isNaN(id)) {
+    if (req.file) {
+      try {
+        if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+      } catch (e) {
+        console.warn('Failed to clean up uploaded avatar on invalid ID', e);
+      }
+    }
     res.status(400).json({ message: 'Invalid employee ID.' });
     return;
   }
@@ -289,9 +315,39 @@ export async function updateEmployee(req: AuthenticatedRequest, res: Response): 
   const data = { ...req.body };
   delete data.password; // Prevent password updates via simple edit profile
 
+  const userRole = req.user?.role;
+  const userId = req.user?.id;
+  const isHrOrAdmin = ['Super Admin', 'Admin', 'HR'].includes(userRole || '');
+
+  if (!isHrOrAdmin) {
+    if (userId !== id) {
+      if (req.file) {
+        try {
+          if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+        } catch (e) {
+          console.warn('Failed to clean up uploaded avatar on auth failure', e);
+        }
+      }
+      res.status(403).json({ message: 'Forbidden: You can only update your own profile.' });
+      return;
+    }
+
+    const sensitiveFields = ['role', 'status', 'designation', 'employee_id', 'joining_date', 'department_id'];
+    for (const field of sensitiveFields) {
+      delete data[field];
+    }
+  }
+
   try {
     const existing = await db.getEmployeeById(id);
     if (!existing) {
+      if (req.file) {
+        try {
+          if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+        } catch (e) {
+          console.warn('Failed to clean up uploaded avatar on not found', e);
+        }
+      }
       res.status(404).json({ message: 'Employee not found.' });
       return;
     }

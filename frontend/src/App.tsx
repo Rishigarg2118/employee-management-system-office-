@@ -136,7 +136,7 @@ const App: React.FC = () => {
               <Route path="/employees" element={<ProtectedRoute allowedRoles={['Super Admin', 'Admin', 'HR']}><EmployeeList /></ProtectedRoute>} />
               <Route path="/employees/new" element={<ProtectedRoute allowedRoles={['Super Admin', 'Admin', 'HR']}><EmployeeWizard /></ProtectedRoute>} />
               <Route path="/employees/:id" element={<ProtectedRoute><EmployeeProfile /></ProtectedRoute>} />
-              <Route path="/employees/:id/edit" element={<ProtectedRoute allowedRoles={['Super Admin', 'Admin', 'HR']}><EmployeeWizard /></ProtectedRoute>} />
+              <Route path="/employees/:id/edit" element={<ProtectedRoute><EmployeeWizard /></ProtectedRoute>} />
               <Route path="/departments" element={<ProtectedRoute allowedRoles={['Super Admin', 'Admin']}><Departments /></ProtectedRoute>} />
               <Route path="/skills" element={<ProtectedRoute allowedRoles={['Super Admin', 'Admin', 'HR']}><Skills /></ProtectedRoute>} />
               <Route path="/documents" element={<ProtectedRoute allowedRoles={['Super Admin', 'Admin', 'HR']}><Documents /></ProtectedRoute>} />

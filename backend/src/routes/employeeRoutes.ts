@@ -17,7 +17,12 @@ router.post('/',
 
 router.put('/:id', 
   authenticateToken as any, 
-  requireRole(['Super Admin', 'Admin', 'HR']) as any,
+  upload.single('avatar'), 
+  updateEmployee as any
+);
+
+router.post('/:id', 
+  authenticateToken as any, 
   upload.single('avatar'), 
   updateEmployee as any
 );
