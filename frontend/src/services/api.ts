@@ -24,6 +24,15 @@ apiClient.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    if (config.data instanceof FormData) {
+      if (config.headers) {
+        if (typeof config.headers.delete === 'function') {
+          config.headers.delete('Content-Type');
+        } else {
+          delete config.headers['Content-Type'];
+        }
+      }
+    }
     return config;
   },
   (error) => Promise.reject(error)
@@ -178,14 +187,18 @@ export const api = {
     return res.data;
   },
   async createEmployee(formData: FormData): Promise<Employee> {
-    const res = await apiClient.post('/employees', formData);
+    const res = await apiClient.post('/employees', formData, {
+      headers: { 'Content-Type': undefined }
+    });
     return res.data;
   },
   async updateEmployee(id: number, formData: FormData): Promise<Employee> {
     // Note: Multer expects multipart/form-data. In Express, we mapped POST/PUT 
     // with upload.single. To avoid issues with PUT and file uploads on some browsers,
     // we utilize the standard route POST /api/employees/:id mapping to update.
-    const res = await apiClient.post(`/employees/${id}`, formData);
+    const res = await apiClient.post(`/employees/${id}`, formData, {
+      headers: { 'Content-Type': undefined }
+    });
     return res.data;
   },
   // Direct JSON updates without files
@@ -238,7 +251,9 @@ export const api = {
     const formData = new FormData();
     formData.append('employee_id', employeeId.toString());
     formData.append('document', file);
-    const res = await apiClient.post('/documents/upload', formData);
+    const res = await apiClient.post('/documents/upload', formData, {
+      headers: { 'Content-Type': undefined }
+    });
     return res.data;
   },
   async deleteDocument(id: number): Promise<void> {
@@ -263,7 +278,9 @@ export const api = {
     return res.data;
   },
   async applyLeave(formData: FormData): Promise<LeaveRequest> {
-    const res = await apiClient.post('/leaves/requests', formData);
+    const res = await apiClient.post('/leaves/requests', formData, {
+      headers: { 'Content-Type': undefined }
+    });
     return res.data;
   },
   async approveLeaveWorkflow(id: number, payload: { stage: 'Manager Review' | 'HR Review'; status: 'Approved' | 'Rejected'; remarks?: string }): Promise<LeaveRequest> {

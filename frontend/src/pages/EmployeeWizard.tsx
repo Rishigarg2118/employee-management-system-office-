@@ -132,6 +132,39 @@ export const EmployeeWizard: React.FC = () => {
   const handleFinish = async () => {
     setLoading(true);
     try {
+      // Validate files before creating/updating employee to prevent partial success states
+      if (avatarFile) {
+        const allowedAvatarExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.webp'];
+        const ext = avatarFile.name.substring(avatarFile.name.lastIndexOf('.')).toLowerCase();
+        if (!allowedAvatarExtensions.includes(ext)) {
+          message.error(`Invalid avatar image type. Allowed: ${allowedAvatarExtensions.join(', ')}`);
+          setLoading(false);
+          return;
+        }
+        if (avatarFile.size > 10 * 1024 * 1024) { // 10MB
+          message.error('Avatar file size must be less than 10MB.');
+          setLoading(false);
+          return;
+        }
+      }
+
+      if (documentFiles.length > 0) {
+        const allowedDocExtensions = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.png', '.jpg', '.jpeg'];
+        for (const file of documentFiles) {
+          const ext = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+          if (!allowedDocExtensions.includes(ext)) {
+            message.error(`Invalid document file type for "${file.name}". Allowed: ${allowedDocExtensions.join(', ')}`);
+            setLoading(false);
+            return;
+          }
+          if (file.size > 10 * 1024 * 1024) { // 10MB
+            message.error(`Document "${file.name}" exceeds the 10MB limit.`);
+            setLoading(false);
+            return;
+          }
+        }
+      }
+
       // Compile Wizard Payload into a FormData object
       const personalData = personalForm.getFieldsValue();
       const employmentData = employmentForm.getFieldsValue();

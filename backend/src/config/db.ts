@@ -4301,6 +4301,10 @@ export const db = {
   },
 
   async saveCloudinaryMapping(filename: string, cloudinaryUrl: string, publicId: string): Promise<void> {
+    if (!cloudinaryUrl || (!cloudinaryUrl.startsWith('http://') && !cloudinaryUrl.startsWith('https://'))) {
+      // Skip mapping for local fallback file paths to avoid infinite redirection loops
+      return;
+    }
     if (this.isPostgres() && pool) {
       await pool.query(
         `INSERT INTO cloudinary_mappings (filename, cloudinary_url, public_id) 
