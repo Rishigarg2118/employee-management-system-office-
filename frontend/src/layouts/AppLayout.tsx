@@ -200,7 +200,8 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
           bottom: 0,
           zIndex: 100,
           height: '100vh',
-          background: '#0F172A'
+          background: '#0F172A',
+          overflowY: 'auto'
         }}
       >
         <div style={{

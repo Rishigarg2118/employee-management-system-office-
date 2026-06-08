@@ -99,6 +99,18 @@ h3, .card-title {
   background: #94A3B8;
 }
 
+/* Custom scrollbar for fixed Sider to match design */
+.ant-layout-sider::-webkit-scrollbar {
+  width: 4px;
+}
+.ant-layout-sider::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+}
+.ant-layout-sider::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
 /* Page fade-in animations */
 .fade-in {
   animation: fadeIn 0.3s ease-out forwards;

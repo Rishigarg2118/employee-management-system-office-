@@ -43,6 +43,11 @@ const processQueue = (error: any, token: string | null = null) => {
   failedQueue = [];
 };
 
+export function resetAuthSession() {
+  isRefreshing = false;
+  failedQueue = [];
+}
+
 // Response Interceptor: Redirect or handle token expiration with automatic refresh
 apiClient.interceptors.response.use(
   (response) => response,
@@ -52,6 +57,14 @@ apiClient.interceptors.response.use(
     if (error.response && error.response.status === 401 && !originalRequest._retry) {
       if (originalRequest.url.includes('/auth/login') || originalRequest.url.includes('/auth/refresh')) {
         return Promise.reject(error);
+      }
+
+      // Check if token was already refreshed by another concurrent request while this one was in-flight
+      const currentToken = localStorage.getItem('hrms_token');
+      const requestToken = originalRequest.headers.Authorization?.split(' ')[1];
+      if (currentToken && requestToken && currentToken !== requestToken) {
+        originalRequest.headers.Authorization = 'Bearer ' + currentToken;
+        return apiClient(originalRequest);
       }
 
       originalRequest._retry = true;

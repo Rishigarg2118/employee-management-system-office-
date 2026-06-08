@@ -69,7 +69,7 @@ app.use(auditLogger);
 // Global API Rate Limiter
 const globalLimiter = createRateLimiter({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 150,
+  max: 1500,
   message: 'Too many requests from this IP. Please try again after 15 minutes.'
 });
 app.use('/api', globalLimiter);

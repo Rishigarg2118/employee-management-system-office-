@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Employee } from '../types';
-import { api } from '../services/api';
+import { api, resetAuthSession } from '../services/api';
 
 interface AuthContextType {
   user: Employee | null;
@@ -44,6 +44,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const login = async (credentials: any) => {
     setIsLoading(true);
     try {
+      resetAuthSession();
       const data = await api.login(credentials);
       setToken(data.token);
       setUser(data.user);
@@ -59,6 +60,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const logout = () => {
+    resetAuthSession();
     const refreshToken = localStorage.getItem('hrms_refresh_token');
     if (refreshToken) {
       api.logout({ refreshToken }).catch((err) => {
