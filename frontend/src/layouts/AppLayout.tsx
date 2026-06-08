@@ -45,7 +45,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
       return await api.getNotifications();
     },
     enabled: !!user,
-    refetchInterval: 15000 // Poll every 15s
+    refetchInterval: 60000 // Poll every 60s
   });
 
   const unreadCount = notifications.filter(n => !n.is_read).length;

@@ -963,6 +963,8 @@ export async function initializeDatabase() {
         `);
         await client.query('CREATE INDEX IF NOT EXISTS idx_notifications_employee ON notifications(employee_id)');
         await client.query('CREATE INDEX IF NOT EXISTS idx_notifications_unread ON notifications(employee_id) WHERE is_read = FALSE');
+        await client.query('CREATE INDEX IF NOT EXISTS idx_leave_requests_employee ON leave_requests(employee_id)');
+        await client.query('CREATE INDEX IF NOT EXISTS idx_leave_requests_status ON leave_requests(status)');
 
         await client.query(`
           CREATE TABLE IF NOT EXISTS audit_logs (

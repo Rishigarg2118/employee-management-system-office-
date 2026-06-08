@@ -21,7 +21,7 @@ export async function getEmployees(req: AuthenticatedRequest, res: Response): Pr
     
     if (db.isPostgres()) {
       // SQL execution
-      let queryStr = 'SELECT e.*, d.name as department_name FROM employees e LEFT JOIN departments d ON e.department_id = d.id WHERE 1=1';
+      let queryStr = 'SELECT e.*, d.name as department_name FROM employees e LEFT JOIN departments d ON e.department_id = d.id WHERE e.deleted_at IS NULL';
       const params: any[] = [];
       let paramCount = 1;
 
@@ -314,6 +314,8 @@ export async function updateEmployee(req: AuthenticatedRequest, res: Response): 
 
   const data = { ...req.body };
   delete data.password; // Prevent password updates via simple edit profile
+  const skillsInput = data.skills;
+  delete data.skills; // Prevent SQL execution errors due to non-existent column
 
   const userRole = req.user?.role;
   const userId = req.user?.id;
@@ -381,10 +383,10 @@ export async function updateEmployee(req: AuthenticatedRequest, res: Response): 
     const updated = await db.updateEmployee(id, data);
 
     // Skills adjustment (if supplied during edit profile)
-    let skillsListUpdate = data.skills;
-    if (data.skills && typeof data.skills === 'string') {
+    let skillsListUpdate = skillsInput;
+    if (skillsInput && typeof skillsInput === 'string') {
       try {
-        skillsListUpdate = JSON.parse(data.skills);
+        skillsListUpdate = JSON.parse(skillsInput);
       } catch (e) {
         console.error('Failed to parse skills JSON:', e);
       }
