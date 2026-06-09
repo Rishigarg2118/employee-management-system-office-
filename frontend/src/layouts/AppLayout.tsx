@@ -19,7 +19,8 @@ import {
   ProjectOutlined,
   TeamOutlined,
   BarChartOutlined,
-  HistoryOutlined
+  HistoryOutlined,
+  DesktopOutlined
 } from '@ant-design/icons';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -93,6 +94,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
     if (path.startsWith('/teams')) return '/teams';
     if (path.startsWith('/reports')) return '/reports';
     if (path.startsWith('/audit-logs')) return '/audit-logs';
+    if (path.startsWith('/assets')) return '/assets';
     if (path.startsWith('/settings')) return '/settings';
     return '/';
   };
@@ -102,16 +104,16 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
       return true;
     }
     if (role === 'HR') {
-      return ['/', '/employees', '/skills', '/documents', '/leaves', '/attendance', '/reports'].includes(key);
+      return ['/', '/employees', '/skills', '/documents', '/leaves', '/attendance', '/reports', '/assets'].includes(key);
     }
     if (role === 'Manager') {
-      return ['/', '/projects', '/teams', '/tasks', '/attendance', '/leaves'].includes(key);
+      return ['/', '/projects', '/teams', '/tasks', '/attendance', '/leaves', '/assets'].includes(key);
     }
     if (role === 'Employee') {
-      return ['/', '/tasks', '/attendance', '/leaves', '/projects'].includes(key);
+      return ['/', '/tasks', '/attendance', '/leaves', '/projects', '/assets'].includes(key);
     }
     if (role === 'Intern') {
-      return ['/', '/tasks', '/attendance', '/leaves'].includes(key);
+      return ['/', '/tasks', '/attendance', '/leaves', '/assets'].includes(key);
     }
     return false;
   };
@@ -125,6 +127,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
     { key: '/projects', icon: <ProjectOutlined />, label: 'Projects' },
     { key: '/skills', icon: <BulbOutlined />, label: 'Skills' },
     { key: '/documents', icon: <FileTextOutlined />, label: 'Documents' },
+    { key: '/assets', icon: <DesktopOutlined />, label: 'Assets' },
     { key: '/leaves', icon: <CalendarOutlined />, label: 'Leaves' },
     { key: '/attendance', icon: <ClockCircleOutlined />, label: 'Attendance' },
     { key: '/tasks', icon: <CheckSquareOutlined />, label: 'Tasks' },

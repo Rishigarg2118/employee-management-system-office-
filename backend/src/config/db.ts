@@ -76,7 +76,10 @@ interface JsonDatabase {
   team_members: TeamMember[];
   notifications: Notification[];
   audit_logs: AuditLog[];
-  attendance_corrections?: any[];
+  attendance_corrections: any[];
+  assets: any[];
+  asset_assignments: any[];
+  asset_history: any[];
 }
 
 let jsonDb: JsonDatabase = {
@@ -100,7 +103,10 @@ let jsonDb: JsonDatabase = {
   team_members: [],
   notifications: [],
   audit_logs: [],
-  attendance_corrections: []
+  attendance_corrections: [],
+  assets: [],
+  asset_assignments: [],
+  asset_history: []
 };
 
 // Seed Data definition
@@ -1011,6 +1017,78 @@ export async function initializeDatabase() {
               created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
           );
         `);
+
+        // Dynamic Audit Log Constraint Upgrade
+        try {
+          const auditConstraintRes = await client.query(`
+            SELECT constraint_name 
+            FROM information_schema.constraint_column_usage 
+            WHERE table_name = 'audit_logs' AND column_name = 'module'
+          `);
+          for (const row of auditConstraintRes.rows) {
+            await client.query(`ALTER TABLE audit_logs DROP CONSTRAINT IF EXISTS "${row.constraint_name}"`);
+          }
+          await client.query(`
+            ALTER TABLE audit_logs ADD CONSTRAINT audit_logs_module_check 
+            CHECK (module IN ('AUTH', 'EMPLOYEES', 'DEPARTMENTS', 'LEAVES', 'ATTENDANCE', 'TASKS', 'PROJECTS', 'TEAMS', 'SYSTEM', 'ASSETS'))
+          `);
+        } catch (e) {
+          console.error('[Database] Failed to alter audit_logs constraint:', e);
+        }
+
+        // Initialize Asset tables
+        await client.query(`
+          CREATE TABLE IF NOT EXISTS assets (
+              id SERIAL PRIMARY KEY,
+              asset_code VARCHAR(50) NOT NULL UNIQUE,
+              asset_name VARCHAR(255) NOT NULL,
+              asset_type VARCHAR(100) NOT NULL,
+              brand VARCHAR(100),
+              model VARCHAR(100),
+              serial_number VARCHAR(100),
+              purchase_date DATE,
+              purchase_cost NUMERIC(10, 2),
+              warranty_expiry DATE,
+              asset_condition VARCHAR(50) NOT NULL DEFAULT 'New' CHECK (asset_condition IN ('New', 'Excellent', 'Good', 'Fair', 'Damaged')),
+              status VARCHAR(50) NOT NULL DEFAULT 'Available' CHECK (status IN ('Available', 'Assigned', 'Maintenance', 'Lost', 'Damaged', 'Retired')),
+              notes TEXT,
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+              updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          );
+        `);
+        await client.query('CREATE INDEX IF NOT EXISTS idx_assets_type ON assets(asset_type)');
+        await client.query('CREATE INDEX IF NOT EXISTS idx_assets_status ON assets(status)');
+        await client.query('CREATE INDEX IF NOT EXISTS idx_assets_code ON assets(asset_code)');
+
+        await client.query(`
+          CREATE TABLE IF NOT EXISTS asset_assignments (
+              id SERIAL PRIMARY KEY,
+              asset_id INTEGER NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
+              employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+              assigned_by INTEGER REFERENCES employees(id) ON DELETE SET NULL,
+              assigned_date DATE NOT NULL DEFAULT CURRENT_DATE,
+              expected_return_date DATE,
+              actual_return_date DATE,
+              return_condition VARCHAR(50) CHECK (return_condition IN ('New', 'Excellent', 'Good', 'Fair', 'Damaged')),
+              remarks TEXT
+          );
+        `);
+        await client.query('CREATE INDEX IF NOT EXISTS idx_asset_assignments_asset ON asset_assignments(asset_id)');
+        await client.query('CREATE INDEX IF NOT EXISTS idx_asset_assignments_employee ON asset_assignments(employee_id)');
+        await client.query('CREATE INDEX IF NOT EXISTS idx_asset_assignments_active ON asset_assignments(asset_id) WHERE actual_return_date IS NULL');
+
+        await client.query(`
+          CREATE TABLE IF NOT EXISTS asset_history (
+              id SERIAL PRIMARY KEY,
+              asset_id INTEGER NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
+              action_type VARCHAR(50) NOT NULL CHECK (action_type IN ('Created', 'Assigned', 'Returned', 'Transferred', 'Marked Damaged', 'Sent For Maintenance', 'Retired')),
+              performed_by INTEGER REFERENCES employees(id) ON DELETE SET NULL,
+              description TEXT NOT NULL,
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          );
+        `);
+        await client.query('CREATE INDEX IF NOT EXISTS idx_asset_history_asset ON asset_history(asset_id)');
+        await client.query('CREATE INDEX IF NOT EXISTS idx_asset_history_created ON asset_history(created_at DESC)');
 
         const empCount = await client.query('SELECT COUNT(*) FROM employees');
         if (parseInt(empCount.rows[0].count) === 0) {
@@ -4678,20 +4756,19 @@ export const db = {
     return list.reverse();
   },
 
-  async rejectAttendanceCorrectionRequest(requestId: number, remarks: string = ''): Promise<any> {
+  async rejectAttendanceCorrectionRequest(id: number, remarks: string): Promise<any> {
     if (this.isPostgres() && pool) {
       const res = await pool.query(`
-        UPDATE attendance_corrections
+        UPDATE attendance_corrections 
         SET status = 'Rejected', remarks = $2, updated_at = NOW()
         WHERE id = $1
         RETURNING *
-      `, [requestId, remarks]);
-      return res.rows[0] || null;
+      `, [id, remarks]);
+      return res.rows[0];
     }
 
-    // JSON DB fallback
     jsonDb.attendance_corrections = jsonDb.attendance_corrections || [];
-    const index = jsonDb.attendance_corrections.findIndex(c => c.id === requestId);
+    const index = jsonDb.attendance_corrections.findIndex(c => c.id === id);
     if (index === -1) return null;
 
     jsonDb.attendance_corrections[index] = {
@@ -4702,6 +4779,467 @@ export const db = {
     };
     saveJsonDb();
     return jsonDb.attendance_corrections[index];
+  },
+
+  // --- ASSET MANAGEMENT METHODS ---
+  async getAssets(filters: { status?: string; assetType?: string; search?: string; departmentId?: number; employeeId?: number } = {}): Promise<any[]> {
+    if (this.isPostgres() && pool) {
+      let queryText = `
+        SELECT a.*, 
+               e.id as assigned_to_id,
+               CONCAT(e.first_name, ' ', e.last_name) as assigned_to,
+               e.department_id,
+               aa.id as assignment_id
+        FROM assets a
+        LEFT JOIN asset_assignments aa ON a.id = aa.asset_id AND aa.actual_return_date IS NULL
+        LEFT JOIN employees e ON aa.employee_id = e.id
+        WHERE 1=1
+      `;
+      const params: any[] = [];
+      let index = 1;
+
+      if (filters.status) {
+        queryText += ` AND a.status = $${index++}`;
+        params.push(filters.status);
+      }
+      if (filters.assetType) {
+        queryText += ` AND a.asset_type = $${index++}`;
+        params.push(filters.assetType);
+      }
+      if (filters.employeeId) {
+        queryText += ` AND aa.employee_id = $${index++}`;
+        params.push(filters.employeeId);
+      }
+      if (filters.departmentId) {
+        queryText += ` AND e.department_id = $${index++}`;
+        params.push(filters.departmentId);
+      }
+      if (filters.search) {
+        queryText += ` AND (LOWER(a.asset_code) LIKE $${index} OR LOWER(a.asset_name) LIKE $${index} OR LOWER(a.serial_number) LIKE $${index} OR LOWER(CONCAT(e.first_name, ' ', e.last_name)) LIKE $${index})`;
+        params.push(`%${filters.search.toLowerCase()}%`);
+        index++;
+      }
+
+      queryText += ' ORDER BY a.id DESC';
+      const res = await pool.query(queryText, params);
+      return res.rows;
+    }
+
+    // JSON DB fallback
+    jsonDb.assets = jsonDb.assets || [];
+    jsonDb.asset_assignments = jsonDb.asset_assignments || [];
+    
+    let list = jsonDb.assets.map(a => {
+      const activeAssignment = jsonDb.asset_assignments?.find(aa => aa.asset_id === a.id && !aa.actual_return_date);
+      const emp = activeAssignment ? jsonDb.employees.find(e => e.id === activeAssignment.employee_id) : null;
+      return {
+        ...a,
+        assigned_to_id: emp ? emp.id : null,
+        assigned_to: emp ? `${emp.first_name} ${emp.last_name}` : null,
+        department_id: emp ? emp.department_id : null,
+        assignment_id: activeAssignment ? activeAssignment.id : null
+      };
+    });
+
+    if (filters.status) {
+      list = list.filter(a => a.status === filters.status);
+    }
+    if (filters.assetType) {
+      list = list.filter(a => a.asset_type === filters.assetType);
+    }
+    if (filters.employeeId) {
+      list = list.filter(a => a.assigned_to_id === filters.employeeId);
+    }
+    if (filters.departmentId) {
+      list = list.filter(a => a.department_id === filters.departmentId);
+    }
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase();
+      list = list.filter(a => 
+        a.asset_code.toLowerCase().includes(searchLower) ||
+        a.asset_name.toLowerCase().includes(searchLower) ||
+        (a.serial_number && a.serial_number.toLowerCase().includes(searchLower)) ||
+        (a.assigned_to && a.assigned_to.toLowerCase().includes(searchLower))
+      );
+    }
+
+    return list.reverse();
+  },
+
+  async getAssetById(id: number): Promise<any | null> {
+    if (this.isPostgres() && pool) {
+      const res = await pool.query(`
+        SELECT a.*, 
+               e.id as assigned_to_id,
+               CONCAT(e.first_name, ' ', e.last_name) as assigned_to,
+               aa.id as assignment_id
+        FROM assets a
+        LEFT JOIN asset_assignments aa ON a.id = aa.asset_id AND aa.actual_return_date IS NULL
+        LEFT JOIN employees e ON aa.employee_id = e.id
+        WHERE a.id = $1
+      `, [id]);
+      return res.rows[0] || null;
+    }
+
+    jsonDb.assets = jsonDb.assets || [];
+    const a = jsonDb.assets.find(item => item.id === id);
+    if (!a) return null;
+
+    const activeAssignment = jsonDb.asset_assignments?.find(aa => aa.asset_id === a.id && !aa.actual_return_date);
+    const emp = activeAssignment ? jsonDb.employees.find(e => e.id === activeAssignment.employee_id) : null;
+    return {
+      ...a,
+      assigned_to_id: emp ? emp.id : null,
+      assigned_to: emp ? `${emp.first_name} ${emp.last_name}` : null,
+      assignment_id: activeAssignment ? activeAssignment.id : null
+    };
+  },
+
+  async getAssetHistory(assetId?: number): Promise<any[]> {
+    if (this.isPostgres() && pool) {
+      if (assetId) {
+        const res = await pool.query(`
+          SELECT h.*,
+                 CONCAT(e.first_name, ' ', e.last_name) as performed_by_name
+          FROM asset_history h
+          LEFT JOIN employees e ON h.performed_by = e.id
+          WHERE h.asset_id = $1
+          ORDER BY h.id DESC
+        `, [assetId]);
+        return res.rows;
+      } else {
+        const res = await pool.query(`
+          SELECT h.*,
+                 a.asset_code,
+                 a.asset_name,
+                 CONCAT(e.first_name, ' ', e.last_name) as performed_by_name
+          FROM asset_history h
+          JOIN assets a ON h.asset_id = a.id
+          LEFT JOIN employees e ON h.performed_by = e.id
+          ORDER BY h.id DESC
+        `);
+        return res.rows;
+      }
+    }
+
+    jsonDb.asset_history = jsonDb.asset_history || [];
+    let list = jsonDb.asset_history.map(h => {
+      const asset = jsonDb.assets?.find(a => a.id === h.asset_id);
+      const emp = h.performed_by ? jsonDb.employees.find(e => e.id === h.performed_by) : null;
+      return {
+        ...h,
+        asset_code: asset ? asset.asset_code : null,
+        asset_name: asset ? asset.asset_name : null,
+        performed_by_name: emp ? `${emp.first_name} ${emp.last_name}` : 'System'
+      };
+    });
+
+    if (assetId) {
+      list = list.filter(h => h.asset_id === assetId);
+    }
+    return list.reverse();
+  },
+
+  async createAsset(data: any, creatorId: number | null): Promise<any> {
+    const creatorName = creatorId 
+      ? await this.getEmployeeById(creatorId).then(e => e ? `${e.first_name} ${e.last_name}` : 'Admin')
+      : 'System';
+
+    if (this.isPostgres() && pool) {
+      const res = await pool.query(`
+        INSERT INTO assets (asset_code, asset_name, asset_type, brand, model, serial_number, purchase_date, purchase_cost, warranty_expiry, asset_condition, status, notes)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        RETURNING *
+      `, [
+        data.asset_code, data.asset_name, data.asset_type, data.brand || null, data.model || null,
+        data.serial_number || null, data.purchase_date || null, data.purchase_cost || null,
+        data.warranty_expiry || null, data.asset_condition || 'New', data.status || 'Available', data.notes || null
+      ]);
+      const newAsset = res.rows[0];
+
+      // Add to history
+      await pool.query(`
+        INSERT INTO asset_history (asset_id, action_type, performed_by, description)
+        VALUES ($1, 'Created', $2, $3)
+      `, [newAsset.id, creatorId, `Asset registered by ${creatorName}`]);
+
+      return newAsset;
+    }
+
+    jsonDb.assets = jsonDb.assets || [];
+    const newId = jsonDb.assets.length > 0 ? Math.max(...jsonDb.assets.map(a => a.id)) + 1 : 1;
+    const newAsset = {
+      id: newId,
+      asset_code: data.asset_code,
+      asset_name: data.asset_name,
+      asset_type: data.asset_type,
+      brand: data.brand || null,
+      model: data.model || null,
+      serial_number: data.serial_number || null,
+      purchase_date: data.purchase_date || null,
+      purchase_cost: data.purchase_cost ? parseFloat(data.purchase_cost) : null,
+      warranty_expiry: data.warranty_expiry || null,
+      asset_condition: data.asset_condition || 'New',
+      status: data.status || 'Available',
+      notes: data.notes || null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    jsonDb.assets.push(newAsset);
+
+    // Add to history fallback
+    jsonDb.asset_history = jsonDb.asset_history || [];
+    jsonDb.asset_history.push({
+      id: jsonDb.asset_history.length > 0 ? Math.max(...jsonDb.asset_history.map(h => h.id)) + 1 : 1,
+      asset_id: newAsset.id,
+      action_type: 'Created',
+      performed_by: creatorId,
+      description: `Asset registered by ${creatorName}`,
+      created_at: new Date().toISOString()
+    });
+
+    saveJsonDb();
+    return newAsset;
+  },
+
+  async updateAsset(id: number, data: any, modifierId: number | null): Promise<any | null> {
+    if (this.isPostgres() && pool) {
+      const keys = Object.keys(data).filter(k => k !== 'id');
+      if (keys.length === 0) return this.getAssetById(id);
+
+      const setClause = keys.map((key, i) => `"${key}" = $${i + 2}`).join(', ');
+      const params = keys.map(key => data[key]);
+      
+      const queryText = `
+        UPDATE assets
+        SET ${setClause}, updated_at = NOW()
+        WHERE id = $1
+        RETURNING *
+      `;
+      
+      const res = await pool.query(queryText, [id, ...params]);
+      return res.rows[0] || null;
+    }
+
+    jsonDb.assets = jsonDb.assets || [];
+    const index = jsonDb.assets.findIndex(a => a.id === id);
+    if (index === -1) return null;
+
+    jsonDb.assets[index] = {
+      ...jsonDb.assets[index],
+      ...data,
+      updated_at: new Date().toISOString()
+    };
+    saveJsonDb();
+    return jsonDb.assets[index];
+  },
+
+  async deleteAsset(id: number): Promise<boolean> {
+    if (this.isPostgres() && pool) {
+      const res = await pool.query('DELETE FROM assets WHERE id = $1', [id]);
+      return (res.rowCount ?? 0) > 0;
+    }
+
+    jsonDb.assets = jsonDb.assets || [];
+    const initialLen = jsonDb.assets.length;
+    jsonDb.assets = jsonDb.assets.filter(a => a.id !== id);
+    saveJsonDb();
+    return jsonDb.assets.length < initialLen;
+  },
+
+  async assignAsset(assignment: { asset_id: number; employee_id: number; assigned_by: number; expected_return_date?: string | null; remarks?: string | null }): Promise<any> {
+    const asset = await this.getAssetById(assignment.asset_id);
+    if (!asset) throw new Error('Asset not found.');
+
+    const emp = await this.getEmployeeById(assignment.employee_id);
+    if (!emp) throw new Error('Employee not found.');
+
+    const admin = await this.getEmployeeById(assignment.assigned_by);
+    const adminName = admin ? `${admin.first_name} ${admin.last_name}` : 'Admin';
+    const empName = `${emp.first_name} ${emp.last_name}`;
+
+    if (this.isPostgres() && pool) {
+      // 1. Check active assignment (Transfer case)
+      if (asset.status === 'Assigned') {
+        const activeRes = await pool.query('SELECT * FROM asset_assignments WHERE asset_id = $1 AND actual_return_date IS NULL', [assignment.asset_id]);
+        if (activeRes.rows.length > 0) {
+          const activeAssign = activeRes.rows[0];
+          const prevEmp = await this.getEmployeeById(activeAssign.employee_id);
+          const prevEmpName = prevEmp ? `${prevEmp.first_name} ${prevEmp.last_name}` : 'Previous Employee';
+
+          // Close active assignment
+          await pool.query(`
+            UPDATE asset_assignments 
+            SET actual_return_date = CURRENT_DATE, remarks = $2
+            WHERE id = $1
+          `, [activeAssign.id, `Transferred to ${empName}`]);
+
+          // History log for Transfer
+          await pool.query(`
+            INSERT INTO asset_history (asset_id, action_type, performed_by, description)
+            VALUES ($1, 'Transferred', $2, $3)
+          `, [assignment.asset_id, assignment.assigned_by, `Transferred from ${prevEmpName} to ${empName} by ${adminName}`]);
+        }
+      }
+
+      // 2. Create new assignment
+      const res = await pool.query(`
+        INSERT INTO asset_assignments (asset_id, employee_id, assigned_by, expected_return_date, remarks)
+        VALUES ($1, $2, $3, $4, $5)
+        RETURNING *
+      `, [assignment.asset_id, assignment.employee_id, assignment.assigned_by, assignment.expected_return_date || null, assignment.remarks || null]);
+      const newAssignment = res.rows[0];
+
+      // 3. Update asset status to 'Assigned'
+      await pool.query("UPDATE assets SET status = 'Assigned' WHERE id = $1", [assignment.asset_id]);
+
+      // 4. Log in history (if not logged as Transfer, log as Assigned)
+      if (asset.status !== 'Assigned') {
+        await pool.query(`
+          INSERT INTO asset_history (asset_id, action_type, performed_by, description)
+          VALUES ($1, 'Assigned', $2, $3)
+        `, [assignment.asset_id, assignment.assigned_by, `Assigned to ${empName} by ${adminName}`]);
+      }
+
+      return newAssignment;
+    }
+
+    // JSON fallback
+    jsonDb.asset_assignments = jsonDb.asset_assignments || [];
+    jsonDb.asset_history = jsonDb.asset_history || [];
+
+    // Transfer case fallback
+    if (asset.status === 'Assigned') {
+      const activeIdx = jsonDb.asset_assignments.findIndex(aa => aa.asset_id === assignment.asset_id && !aa.actual_return_date);
+      if (activeIdx !== -1) {
+        const activeAssign = jsonDb.asset_assignments[activeIdx];
+        const prevEmp = jsonDb.employees.find(e => e.id === activeAssign.employee_id);
+        const prevEmpName = prevEmp ? `${prevEmp.first_name} ${prevEmp.last_name}` : 'Previous Employee';
+
+        jsonDb.asset_assignments[activeIdx] = {
+          ...activeAssign,
+          actual_return_date: new Date().toISOString().split('T')[0],
+          remarks: `Transferred to ${empName}`
+        };
+
+        jsonDb.asset_history.push({
+          id: jsonDb.asset_history.length > 0 ? Math.max(...jsonDb.asset_history.map(h => h.id)) + 1 : 1,
+          asset_id: assignment.asset_id,
+          action_type: 'Transferred',
+          performed_by: assignment.assigned_by,
+          description: `Transferred from ${prevEmpName} to ${empName} by ${adminName}`,
+          created_at: new Date().toISOString()
+        });
+      }
+    }
+
+    const newId = jsonDb.asset_assignments.length > 0 ? Math.max(...jsonDb.asset_assignments.map(aa => aa.id)) + 1 : 1;
+    const newAssignment = {
+      id: newId,
+      asset_id: assignment.asset_id,
+      employee_id: assignment.employee_id,
+      assigned_by: assignment.assigned_by,
+      assigned_date: new Date().toISOString().split('T')[0],
+      expected_return_date: assignment.expected_return_date || null,
+      actual_return_date: null,
+      return_condition: null,
+      remarks: assignment.remarks || null
+    };
+    jsonDb.asset_assignments.push(newAssignment);
+
+    // Update status fallback
+    const assetIdx = jsonDb.assets.findIndex(a => a.id === assignment.asset_id);
+    if (assetIdx !== -1) {
+      jsonDb.assets[assetIdx].status = 'Assigned';
+    }
+
+    if (asset.status !== 'Assigned') {
+      jsonDb.asset_history.push({
+        id: jsonDb.asset_history.length > 0 ? Math.max(...jsonDb.asset_history.map(h => h.id)) + 1 : 1,
+        asset_id: assignment.asset_id,
+        action_type: 'Assigned',
+        performed_by: assignment.assigned_by,
+        description: `Assigned to ${empName} by ${adminName}`,
+        created_at: new Date().toISOString()
+      });
+    }
+
+    saveJsonDb();
+    return newAssignment;
+  },
+
+  async returnAsset(assignmentId: number, data: { actual_return_date: string; return_condition: string; remarks?: string | null; status?: string }): Promise<any> {
+    if (this.isPostgres() && pool) {
+      // 1. Fetch assignment details
+      const assignRes = await pool.query('SELECT * FROM asset_assignments WHERE id = $1', [assignmentId]);
+      if (assignRes.rows.length === 0) throw new Error('Asset assignment not found.');
+      const assignment = assignRes.rows[0];
+
+      // 2. Update assignment
+      const updatedAssignRes = await pool.query(`
+        UPDATE asset_assignments
+        SET actual_return_date = $2, return_condition = $3, remarks = $4
+        WHERE id = $1
+        RETURNING *
+      `, [assignmentId, data.actual_return_date, data.return_condition, data.remarks || null]);
+      const updatedAssignment = updatedAssignRes.rows[0];
+
+      // 3. Update asset status and condition
+      const nextStatus = data.status || 'Available';
+      await pool.query(`
+        UPDATE assets
+        SET status = $2, asset_condition = $3, updated_at = NOW()
+        WHERE id = $1
+      `, [assignment.asset_id, nextStatus, data.return_condition]);
+
+      // 4. Log in history
+      const prevEmp = await this.getEmployeeById(assignment.employee_id);
+      const prevEmpName = prevEmp ? `${prevEmp.first_name} ${prevEmp.last_name}` : 'Employee';
+      await pool.query(`
+        INSERT INTO asset_history (asset_id, action_type, performed_by, description)
+        VALUES ($1, 'Returned', $2, $3)
+      `, [assignment.asset_id, assignment.assigned_by, `Returned by ${prevEmpName}. Condition: ${data.return_condition}. Notes: ${data.remarks || 'None'}`]);
+
+      return updatedAssignment;
+    }
+
+    // JSON fallback
+    jsonDb.asset_assignments = jsonDb.asset_assignments || [];
+    const index = jsonDb.asset_assignments.findIndex(aa => aa.id === assignmentId);
+    if (index === -1) throw new Error('Asset assignment not found.');
+
+    const assignment = jsonDb.asset_assignments[index];
+    jsonDb.asset_assignments[index] = {
+      ...assignment,
+      actual_return_date: data.actual_return_date,
+      return_condition: data.return_condition,
+      remarks: data.remarks || null
+    };
+
+    // Update asset fallback
+    const nextStatus = data.status || 'Available';
+    const assetIdx = jsonDb.assets.findIndex(a => a.id === assignment.asset_id);
+    if (assetIdx !== -1) {
+      jsonDb.assets[assetIdx].status = nextStatus;
+      jsonDb.assets[assetIdx].asset_condition = data.return_condition;
+    }
+
+    // Log history fallback
+    jsonDb.asset_history = jsonDb.asset_history || [];
+    const prevEmp = jsonDb.employees.find(e => e.id === assignment.employee_id);
+    const prevEmpName = prevEmp ? `${prevEmp.first_name} ${prevEmp.last_name}` : 'Employee';
+
+    jsonDb.asset_history.push({
+      id: jsonDb.asset_history.length > 0 ? Math.max(...jsonDb.asset_history.map(h => h.id)) + 1 : 1,
+      asset_id: assignment.asset_id,
+      action_type: 'Returned',
+      performed_by: assignment.assigned_by,
+      description: `Returned by ${prevEmpName}. Condition: ${data.return_condition}. Notes: ${data.remarks || 'None'}`,
+      created_at: new Date().toISOString()
+    });
+
+    saveJsonDb();
+    return jsonDb.asset_assignments[index];
   }
 };
 export default db;

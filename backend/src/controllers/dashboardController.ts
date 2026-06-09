@@ -7,11 +7,15 @@ export async function getStats(req: Request, res: Response): Promise<void> {
     const employees = await db.getEmployees();
     const departments = await db.getDepartments();
     const skills = await db.getSkills();
+    const assets = await db.getAssets();
 
     const totalEmployees = employees.length;
     const activeEmployees = employees.filter(e => e.status === 'Active').length;
     const totalDepts = departments.length;
     const totalSkills = skills.length;
+    const totalAssets = assets.length;
+    const assignedAssets = assets.filter(a => a.status === 'Assigned').length;
+    const availableAssets = assets.filter(a => a.status === 'Available').length;
 
     // Calculate realistic trends based on joining dates
     // (Assume joining dates before the last 30 days are baseline)
@@ -48,6 +52,24 @@ export async function getStats(req: Request, res: Response): Promise<void> {
           trend: 'up',
           percentage: '12.5%',
           label: 'vs last month'
+        },
+        total_assets: {
+          value: totalAssets,
+          trend: 'flat',
+          percentage: '0%',
+          label: 'registered assets'
+        },
+        assigned_assets: {
+          value: assignedAssets,
+          trend: 'flat',
+          percentage: '0%',
+          label: 'allocated'
+        },
+        available_assets: {
+          value: availableAssets,
+          trend: 'flat',
+          percentage: '0%',
+          label: 'in inventory'
         }
       }
     });

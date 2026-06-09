@@ -25,6 +25,7 @@ import { ProjectDetails } from './pages/projects/ProjectDetails';
 import { TeamWorkspace } from './pages/teams/TeamWorkspace';
 import { ReportsCenter } from './pages/reports/ReportsCenter';
 import { AuditLogs } from './pages/audit/AuditLogs';
+import { AssetWorkspace } from './pages/assets/AssetWorkspace';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -149,6 +150,7 @@ const App: React.FC = () => {
               <Route path="/teams" element={<ProtectedRoute allowedRoles={['Super Admin', 'Admin', 'HR', 'Manager']}><TeamWorkspace /></ProtectedRoute>} />
               <Route path="/reports" element={<ProtectedRoute allowedRoles={['Super Admin', 'Admin', 'HR']}><ReportsCenter /></ProtectedRoute>} />
               <Route path="/audit-logs" element={<ProtectedRoute allowedRoles={['Super Admin', 'Admin']}><AuditLogs /></ProtectedRoute>} />
+              <Route path="/assets" element={<ProtectedRoute><AssetWorkspace /></ProtectedRoute>} />
               {/* Catch-all Redirect */}
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

@@ -250,7 +250,7 @@ export interface TeamMember {
   employee_id: number;
 }
 
-export type NotificationType = 'TASK' | 'LEAVE' | 'ATTENDANCE' | 'PROJECT' | 'SYSTEM';
+export type NotificationType = 'TASK' | 'LEAVE' | 'ATTENDANCE' | 'PROJECT' | 'SYSTEM' | 'ASSET';
 
 export interface Notification {
   id: number;
@@ -262,7 +262,7 @@ export interface Notification {
   created_at?: string;
 }
 
-export type AuditLogModule = 'AUTH' | 'EMPLOYEES' | 'DEPARTMENTS' | 'LEAVES' | 'ATTENDANCE' | 'TASKS' | 'PROJECTS' | 'TEAMS' | 'SYSTEM';
+export type AuditLogModule = 'AUTH' | 'EMPLOYEES' | 'DEPARTMENTS' | 'LEAVES' | 'ATTENDANCE' | 'TASKS' | 'PROJECTS' | 'TEAMS' | 'SYSTEM' | 'ASSETS';
 
 export interface AuditLog {
   id: number;
@@ -273,6 +273,55 @@ export interface AuditLog {
   old_value?: string | null;
   new_value?: string | null;
   created_at?: string;
+}
+
+// Asset Management Interfaces
+export type AssetStatus = 'Available' | 'Assigned' | 'Maintenance' | 'Lost' | 'Damaged' | 'Retired';
+export type AssetCondition = 'New' | 'Excellent' | 'Good' | 'Fair' | 'Damaged';
+
+export interface Asset {
+  id: number;
+  asset_code: string;
+  asset_name: string;
+  asset_type: string;
+  brand?: string;
+  model?: string;
+  serial_number?: string;
+  purchase_date?: string;
+  purchase_cost?: number;
+  warranty_expiry?: string;
+  asset_condition: AssetCondition;
+  status: AssetStatus;
+  notes?: string;
+  created_at?: string;
+  updated_at?: string;
+  assigned_to?: string; // Employee full name
+  assigned_to_id?: number | null;
+  assignment_id?: number | null;
+}
+
+export interface AssetAssignment {
+  id: number;
+  asset_id: number;
+  employee_id: number;
+  assigned_by: number;
+  assigned_date: string;
+  expected_return_date?: string | null;
+  actual_return_date?: string | null;
+  return_condition?: AssetCondition | null;
+  remarks?: string | null;
+  employee_name?: string;
+  assigned_by_name?: string;
+}
+
+export interface AssetHistory {
+  id: number;
+  asset_id: number;
+  action_type: 'Created' | 'Assigned' | 'Returned' | 'Transferred' | 'Marked Damaged' | 'Sent For Maintenance' | 'Retired';
+  performed_by: number | null;
+  description: string;
+  created_at: string;
+  performed_by_name?: string;
 }
 
 

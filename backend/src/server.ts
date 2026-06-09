@@ -23,6 +23,7 @@ import notificationRouter from './routes/notificationRoutes';
 import auditRouter from './routes/auditRoutes';
 import searchRouter from './routes/searchRoutes';
 import reportRouter from './routes/reportRoutes';
+import assetRouter from './routes/assetRoutes';
 import { auditLogger } from './middleware/auditMiddleware';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './config/swagger';
@@ -109,6 +110,7 @@ app.use('/api/notifications', notificationRouter);
 app.use('/api/audit-logs', auditRouter);
 app.use('/api/search', searchRouter);
 app.use('/api/reports', reportRouter);
+app.use('/api/assets', assetRouter);
 
 // Basic status check
 app.get('/health', (req: Request, res: Response) => {

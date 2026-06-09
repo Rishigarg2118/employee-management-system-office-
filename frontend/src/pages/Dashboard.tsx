@@ -5,7 +5,8 @@ import {
   AppstoreOutlined, 
   BulbOutlined, 
   SafetyCertificateOutlined,
-  ArrowRightOutlined
+  ArrowRightOutlined,
+  DesktopOutlined
 } from '@ant-design/icons';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Link } from 'react-router-dom';
@@ -156,6 +157,42 @@ export const Dashboard: React.FC = () => {
               label={stats.summary.skills.label}
             />
           </Col>
+          {stats.summary.total_assets && (
+            <Col xs={24} sm={12} lg={6}>
+              <StatCard
+                title="Total Assets"
+                value={stats.summary.total_assets.value}
+                icon={<DesktopOutlined />}
+                trend={stats.summary.total_assets.trend}
+                percentage={stats.summary.total_assets.percentage}
+                label={stats.summary.total_assets.label}
+              />
+            </Col>
+          )}
+          {stats.summary.assigned_assets && (
+            <Col xs={24} sm={12} lg={6}>
+              <StatCard
+                title="Assigned Assets"
+                value={stats.summary.assigned_assets.value}
+                icon={<DesktopOutlined />}
+                trend={stats.summary.assigned_assets.trend}
+                percentage={stats.summary.assigned_assets.percentage}
+                label={stats.summary.assigned_assets.label}
+              />
+            </Col>
+          )}
+          {stats.summary.available_assets && (
+            <Col xs={24} sm={12} lg={6}>
+              <StatCard
+                title="Available Assets"
+                value={stats.summary.available_assets.value}
+                icon={<DesktopOutlined />}
+                trend={stats.summary.available_assets.trend}
+                percentage={stats.summary.available_assets.percentage}
+                label={stats.summary.available_assets.label}
+              />
+            </Col>
+          )}
         </Row>
       )}
 

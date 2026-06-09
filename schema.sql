@@ -213,3 +213,56 @@ CREATE TABLE IF NOT EXISTS attendance_corrections (
 CREATE INDEX IF NOT EXISTS idx_attendance_corrections_attendance ON attendance_corrections(attendance_id);
 CREATE INDEX IF NOT EXISTS idx_attendance_corrections_employee ON attendance_corrections(employee_id);
 
+-- 14. IT Assets Table
+CREATE TABLE IF NOT EXISTS assets (
+    id SERIAL PRIMARY KEY,
+    asset_code VARCHAR(50) NOT NULL UNIQUE,
+    asset_name VARCHAR(255) NOT NULL,
+    asset_type VARCHAR(100) NOT NULL,
+    brand VARCHAR(100),
+    model VARCHAR(100),
+    serial_number VARCHAR(100),
+    purchase_date DATE,
+    purchase_cost NUMERIC(10, 2),
+    warranty_expiry DATE,
+    asset_condition VARCHAR(50) NOT NULL DEFAULT 'New' CHECK (asset_condition IN ('New', 'Excellent', 'Good', 'Fair', 'Damaged')),
+    status VARCHAR(50) NOT NULL DEFAULT 'Available' CHECK (status IN ('Available', 'Assigned', 'Maintenance', 'Lost', 'Damaged', 'Retired')),
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_assets_type ON assets(asset_type);
+CREATE INDEX IF NOT EXISTS idx_assets_status ON assets(status);
+CREATE INDEX IF NOT EXISTS idx_assets_code ON assets(asset_code);
+
+-- 15. Asset Assignments Table
+CREATE TABLE IF NOT EXISTS asset_assignments (
+    id SERIAL PRIMARY KEY,
+    asset_id INTEGER NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
+    employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+    assigned_by INTEGER REFERENCES employees(id) ON DELETE SET NULL,
+    assigned_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    expected_return_date DATE,
+    actual_return_date DATE,
+    return_condition VARCHAR(50) CHECK (return_condition IN ('New', 'Excellent', 'Good', 'Fair', 'Damaged')),
+    remarks TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_asset_assignments_asset ON asset_assignments(asset_id);
+CREATE INDEX IF NOT EXISTS idx_asset_assignments_employee ON asset_assignments(employee_id);
+CREATE INDEX IF NOT EXISTS idx_asset_assignments_active ON asset_assignments(asset_id) WHERE actual_return_date IS NULL;
+
+-- 16. Asset Allocation History Table
+CREATE TABLE IF NOT EXISTS asset_history (
+    id SERIAL PRIMARY KEY,
+    asset_id INTEGER NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
+    action_type VARCHAR(50) NOT NULL CHECK (action_type IN ('Created', 'Assigned', 'Returned', 'Transferred', 'Marked Damaged', 'Sent For Maintenance', 'Retired')),
+    performed_by INTEGER REFERENCES employees(id) ON DELETE SET NULL,
+    description TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_asset_history_asset ON asset_history(asset_id);
+CREATE INDEX IF NOT EXISTS idx_asset_history_created ON asset_history(created_at DESC);
+

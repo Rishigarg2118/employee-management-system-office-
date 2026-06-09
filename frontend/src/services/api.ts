@@ -4,7 +4,8 @@ import {
   DashboardStats, DepartmentDistributionItem, GrowthTrendItem, Document,
   LeaveType, LeaveBalance, LeaveRequest, LeaveDashboardData,
   AttendanceStatus, Attendance, AttendanceAnalytics,
-  Task, TaskComment, TaskActivity
+  Task, TaskComment, TaskActivity,
+  Asset, AssetAssignment, AssetHistory
 } from '../types';
 
 export const SERVER_URL = (import.meta.env.VITE_SERVER_URL as string) || 'http://localhost:5000';
@@ -473,6 +474,41 @@ export const api = {
   },
   async getReportsDepartmentDistribution(): Promise<{ name: string; value: number }[]> {
     const res = await apiClient.get('/reports/department-distribution');
+    return res.data;
+  },
+
+  // Assets
+  async getAssets(params?: { status?: string; assetType?: string; search?: string }) {
+    const res = await apiClient.get('/assets', { params });
+    return res.data;
+  },
+  async getAssetById(id: number): Promise<Asset> {
+    const res = await apiClient.get(`/assets/${id}`);
+    return res.data;
+  },
+  async getAssetHistory(id?: number): Promise<AssetHistory[]> {
+    const url = id ? `/assets/history/${id}` : '/assets/history';
+    const res = await apiClient.get(url);
+    return res.data;
+  },
+  async createAsset(payload: any): Promise<Asset> {
+    const res = await apiClient.post('/assets', payload);
+    return res.data;
+  },
+  async updateAsset(id: number, payload: any): Promise<Asset> {
+    const res = await apiClient.put(`/assets/${id}`, payload);
+    return res.data;
+  },
+  async deleteAsset(id: number) {
+    const res = await apiClient.delete(`/assets/${id}`);
+    return res.data;
+  },
+  async assignAsset(payload: { asset_id: number; employee_id: number; expected_return_date?: string | null; remarks?: string | null }): Promise<AssetAssignment> {
+    const res = await apiClient.post('/assets/assign', payload);
+    return res.data;
+  },
+  async returnAsset(payload: { assignment_id: number; actual_return_date: string; return_condition: string; remarks?: string | null; status?: string }): Promise<AssetAssignment> {
+    const res = await apiClient.post('/assets/return', payload);
     return res.data;
   }
 };
