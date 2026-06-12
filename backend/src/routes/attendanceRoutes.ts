@@ -10,7 +10,10 @@ import {
   getAttendanceAnalytics,
   submitCorrectionRequest,
   rejectCorrectionRequest,
-  getCorrectionRequests
+  getCorrectionRequests,
+  submitHeartbeat,
+  getLiveWorkforce,
+  getProductivityDetails
 } from '../controllers/attendanceController';
 import { authenticateToken, requireRole } from '../middleware/auth';
 
@@ -22,7 +25,17 @@ router.post('/check-out', authenticateToken as any, checkOut as any);
 router.get('/today', authenticateToken as any, getAttendanceToday as any);
 router.get('/history', authenticateToken as any, getAttendanceHistory as any);
 
+// Heartbeat reporting
+router.post('/heartbeat', authenticateToken as any, submitHeartbeat as any);
+router.get('/productivity', authenticateToken as any, getProductivityDetails as any);
+
 // Management/Admin operations
+router.get('/live',
+  authenticateToken as any,
+  requireRole(['Super Admin', 'Admin', 'HR', 'Manager']) as any,
+  getLiveWorkforce as any
+);
+
 router.get('/history/:employeeId', 
   authenticateToken as any, 
   requireRole(['Super Admin', 'Admin', 'HR', 'Manager']) as any, 

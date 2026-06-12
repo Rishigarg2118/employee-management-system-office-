@@ -345,15 +345,16 @@ export const Dashboard: React.FC = () => {
               </Link>
             }
           >
-            <Table
-              dataSource={recentEmployees}
-              columns={employeeColumns}
-              rowKey="id"
-              pagination={false}
-              size="middle"
-              className="responsive-table"
-              locale={{ emptyText: <Empty description="No recent employees registered" /> }}
-            />
+            <div className="responsive-table-container">
+              <Table
+                dataSource={recentEmployees}
+                columns={employeeColumns}
+                rowKey="id"
+                pagination={false}
+                size="middle"
+                locale={{ emptyText: <Empty description="No recent employees registered" /> }}
+              />
+            </div>
           </Card>
         </Col>
 

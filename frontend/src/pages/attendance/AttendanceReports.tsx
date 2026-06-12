@@ -11,8 +11,10 @@ const { Text } = Typography;
 
 export const AttendanceReports: React.FC = () => {
   const [selectedDept, setSelectedDept] = useState<number | undefined>(undefined);
+  const [presetPeriod, setPresetPeriod] = useState<string>('custom');
   const [startDate, setStartDate] = useState<string | undefined>(undefined);
   const [endDate, setEndDate] = useState<string | undefined>(undefined);
+  const [dateRangeVal, setDateRangeVal] = useState<any>(null);
 
   // 1. Fetch departments
   const { data: departments } = useQuery({
@@ -29,6 +31,35 @@ export const AttendanceReports: React.FC = () => {
       endDate: endDate || undefined
     })
   });
+
+  // Handle Preset Period Switch
+  const handlePresetChange = (preset: string) => {
+    setPresetPeriod(preset);
+    let start: string | undefined = undefined;
+    let end: string | undefined = undefined;
+
+    if (preset === 'today') {
+      const today = dayjs().format('YYYY-MM-DD');
+      start = today;
+      end = today;
+      setDateRangeVal([dayjs(), dayjs()]);
+    } else if (preset === 'weekly') {
+      start = dayjs().subtract(7, 'day').format('YYYY-MM-DD');
+      end = dayjs().format('YYYY-MM-DD');
+      setDateRangeVal([dayjs().subtract(7, 'day'), dayjs()]);
+    } else if (preset === 'monthly') {
+      start = dayjs().subtract(30, 'day').format('YYYY-MM-DD');
+      end = dayjs().format('YYYY-MM-DD');
+      setDateRangeVal([dayjs().subtract(30, 'day'), dayjs()]);
+    } else {
+      start = undefined;
+      end = undefined;
+      setDateRangeVal(null);
+    }
+
+    setStartDate(start);
+    setEndDate(end);
+  };
 
   // 3. Export CSV handler
   const handleExportCSV = () => {
@@ -82,7 +113,7 @@ export const AttendanceReports: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", `SOFTZONE_Attendance_Report_${dayjs().format('YYYYMMDD')}.csv`);
+    link.setAttribute("download", `Enterprise_Attendance_Report_${dayjs().format('YYYYMMDD')}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -166,11 +197,24 @@ export const AttendanceReports: React.FC = () => {
         style={{ borderRadius: 16, boxShadow: '0 4px 20px -2px rgba(0, 0, 0, 0.05)', background: '#FFFFFF' }}
       >
         <Row justify="space-between" align="middle" gutter={[16, 16]}>
-          <Col>
-            <Space size={16} wrap>
+          <Col xs={24} lg={18}>
+            <Space size={12} wrap>
+              {/* Preset Period Selector */}
+              <Select
+                value={presetPeriod}
+                onChange={handlePresetChange}
+                style={{ width: 150 }}
+                placeholder="Select Period"
+              >
+                <Option value="custom">Custom Date Range</Option>
+                <Option value="today">Today (Daily)</Option>
+                <Option value="weekly">Last 7 Days (Weekly)</Option>
+                <Option value="monthly">Last 30 Days (Monthly)</Option>
+              </Select>
+
               <Select
                 placeholder="All Departments"
-                style={{ width: 220 }}
+                style={{ width: 180 }}
                 allowClear
                 value={selectedDept}
                 onChange={(val) => setSelectedDept(val)}
@@ -181,7 +225,10 @@ export const AttendanceReports: React.FC = () => {
               </Select>
 
               <DatePicker.RangePicker
+                value={dateRangeVal}
+                disabled={presetPeriod !== 'custom'}
                 onChange={(dates) => {
+                  setDateRangeVal(dates);
                   if (dates) {
                     setStartDate(dates[0]?.format('YYYY-MM-DD'));
                     setEndDate(dates[1]?.format('YYYY-MM-DD'));
@@ -194,17 +241,15 @@ export const AttendanceReports: React.FC = () => {
               />
             </Space>
           </Col>
-          <Col>
-            <Space>
-              <Button 
-                type="primary" 
-                icon={<DownloadOutlined />} 
-                onClick={handleExportCSV}
-                style={{ borderRadius: 6, background: '#10B981', borderColor: '#10B981', height: 38 }}
-              >
-                Export CSV Report
-              </Button>
-            </Space>
+          <Col xs={24} lg={6} style={{ textAlign: 'right' }}>
+            <Button 
+              type="primary" 
+              icon={<DownloadOutlined />} 
+              onClick={handleExportCSV}
+              style={{ borderRadius: 6, background: '#10B981', borderColor: '#10B981', height: 38, width: '100%' }}
+            >
+              Export CSV Report
+            </Button>
           </Col>
         </Row>
       </Card>

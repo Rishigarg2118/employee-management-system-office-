@@ -80,6 +80,7 @@ interface JsonDatabase {
   assets: any[];
   asset_assignments: any[];
   asset_history: any[];
+  activity_heartbeats: any[];
 }
 
 let jsonDb: JsonDatabase = {
@@ -106,7 +107,8 @@ let jsonDb: JsonDatabase = {
   attendance_corrections: [],
   assets: [],
   asset_assignments: [],
-  asset_history: []
+  asset_history: [],
+  activity_heartbeats: []
 };
 
 // Seed Data definition
@@ -1089,6 +1091,23 @@ export async function initializeDatabase() {
         `);
         await client.query('CREATE INDEX IF NOT EXISTS idx_asset_history_asset ON asset_history(asset_id)');
         await client.query('CREATE INDEX IF NOT EXISTS idx_asset_history_created ON asset_history(created_at DESC)');
+
+        // Activity Heartbeats for Attendance 2.0
+        await client.query(`
+          CREATE TABLE IF NOT EXISTS activity_heartbeats (
+              id SERIAL PRIMARY KEY,
+              employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+              attendance_id INTEGER NOT NULL REFERENCES attendance(id) ON DELETE CASCADE,
+              timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+              status VARCHAR(20) NOT NULL CHECK (status IN ('Active', 'Idle', 'Break')),
+              mouse_clicks INTEGER DEFAULT 0,
+              keyboard_presses INTEGER DEFAULT 0,
+              active_window VARCHAR(255),
+              screenshot_url VARCHAR(255)
+          );
+        `);
+        await client.query('CREATE INDEX IF NOT EXISTS idx_activity_heartbeats_attendance ON activity_heartbeats(attendance_id)');
+        await client.query('CREATE INDEX IF NOT EXISTS idx_activity_heartbeats_employee_date ON activity_heartbeats(employee_id, timestamp)');
 
         const empCount = await client.query('SELECT COUNT(*) FROM employees');
         if (parseInt(empCount.rows[0].count) === 0) {
@@ -3313,6 +3332,89 @@ export const db = {
       monthlyPercentage,
       dailyStats
     };
+  },
+
+  async addHeartbeat(employeeId: number, attendanceId: number, status: 'Active' | 'Idle' | 'Break', mouseClicks: number, keyboardPresses: number, activeWindow?: string, screenshotUrl?: string): Promise<any> {
+    const timestamp = new Date().toISOString();
+    if (this.isPostgres() && pool) {
+      const res = await pool.query(
+        `INSERT INTO activity_heartbeats (employee_id, attendance_id, timestamp, status, mouse_clicks, keyboard_presses, active_window, screenshot_url)
+         VALUES ($1, $2, NOW(), $3, $4, $5, $6, $7)
+         RETURNING *`,
+        [employeeId, attendanceId, status, mouseClicks, keyboardPresses, activeWindow || null, screenshotUrl || null]
+      );
+      return res.rows[0];
+    }
+
+    jsonDb.activity_heartbeats = jsonDb.activity_heartbeats || [];
+    const newId = jsonDb.activity_heartbeats.length > 0 ? Math.max(...jsonDb.activity_heartbeats.map((h: any) => h.id)) + 1 : 1;
+    const record = {
+      id: newId,
+      employee_id: employeeId,
+      attendance_id: attendanceId,
+      timestamp,
+      status,
+      mouse_clicks: mouseClicks,
+      keyboard_presses: keyboardPresses,
+      active_window: activeWindow || null,
+      screenshot_url: screenshotUrl || null
+    };
+    jsonDb.activity_heartbeats.push(record);
+    saveJsonDb();
+    return record;
+  },
+
+  async getHeartbeatsForDate(employeeId: number, dateStr: string): Promise<any[]> {
+    if (this.isPostgres() && pool) {
+      const res = await pool.query(
+        `SELECT * FROM activity_heartbeats 
+         WHERE employee_id = $1 AND timestamp::date = $2::date
+         ORDER BY timestamp ASC`,
+        [employeeId, dateStr]
+      );
+      return res.rows;
+    }
+
+    jsonDb.activity_heartbeats = jsonDb.activity_heartbeats || [];
+    return jsonDb.activity_heartbeats
+      .filter((h: any) => h.employee_id === employeeId && h.timestamp.split('T')[0] === dateStr)
+      .sort((a: any, b: any) => a.timestamp.localeCompare(b.timestamp));
+  },
+
+  async getHeartbeatsForAttendance(attendanceId: number): Promise<any[]> {
+    if (this.isPostgres() && pool) {
+      const res = await pool.query(
+        `SELECT * FROM activity_heartbeats 
+         WHERE attendance_id = $1
+         ORDER BY timestamp ASC`,
+        [attendanceId]
+      );
+      return res.rows;
+    }
+
+    jsonDb.activity_heartbeats = jsonDb.activity_heartbeats || [];
+    return jsonDb.activity_heartbeats
+      .filter((h: any) => h.attendance_id === attendanceId)
+      .sort((a: any, b: any) => a.timestamp.localeCompare(b.timestamp));
+  },
+
+  async getLatestHeartbeatForEmployee(employeeId: number): Promise<any | null> {
+    if (this.isPostgres() && pool) {
+      const res = await pool.query(
+        `SELECT * FROM activity_heartbeats 
+         WHERE employee_id = $1
+         ORDER BY timestamp DESC
+         LIMIT 1`,
+        [employeeId]
+      );
+      return res.rows[0] || null;
+    }
+
+    jsonDb.activity_heartbeats = jsonDb.activity_heartbeats || [];
+    const filtered = jsonDb.activity_heartbeats.filter((h: any) => h.employee_id === employeeId);
+    if (filtered.length === 0) return null;
+    filtered.sort((a: any, b: any) => b.timestamp.localeCompare(a.timestamp));
+    return filtered[0];
   },
 
   // --- TASK MANAGEMENT METHODS ---

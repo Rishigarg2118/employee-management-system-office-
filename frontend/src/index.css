@@ -402,3 +402,63 @@ h3, .card-title {
   color: #0369A1 !important;
   border-color: #E0F2FE !important;
 }
+
+/* Responsive Content Canvas Padding */
+.responsive-content-padding {
+  padding: 32px 40px;
+}
+
+@media (max-width: 1024px) {
+  .responsive-content-padding {
+    padding: 24px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .responsive-content-padding {
+    padding: 16px !important;
+  }
+}
+
+/* Responsive Table Container */
+.responsive-table-container {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Global AntD Table Responsiveness Override */
+.ant-table-container {
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+
+/* Responsive Form and Button Fixes */
+@media (max-width: 576px) {
+  .ant-form-item {
+    margin-bottom: 16px !important;
+  }
+  
+  .ant-btn {
+    height: 44px !important; /* Enterprise touch target min size */
+  }
+
+  .ant-btn-icon-only {
+    width: 44px !important;
+    height: 44px !important;
+  }
+  
+  /* Mobile stack buttons container */
+  .mobile-stack-buttons {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 8px;
+  }
+  
+  .mobile-stack-buttons > button,
+  .mobile-stack-buttons > div {
+    width: 100% !important;
+  }
+}
+

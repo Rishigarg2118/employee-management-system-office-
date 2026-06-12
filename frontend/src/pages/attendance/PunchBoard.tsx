@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Button, Input, Radio, Typography, Badge, Timeline, Alert, message, Space, Divider } from 'antd';
+import { Card, Button, Input, Radio, Typography, Badge, Timeline, Alert, message, Space, Divider, Row, Col, Progress } from 'antd';
 import { 
   ClockCircleOutlined, 
   EnvironmentOutlined, 
@@ -7,7 +7,12 @@ import {
   LoginOutlined, 
   LogoutOutlined,
   CalendarOutlined,
-  DashboardOutlined
+  DashboardOutlined,
+  CoffeeOutlined,
+  PlayCircleOutlined,
+  ThunderboltOutlined,
+  FieldTimeOutlined,
+  UserDeleteOutlined
 } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
@@ -22,6 +27,10 @@ export const PunchBoard: React.FC = () => {
   const [dateStr, setDateStr] = useState<string>('');
   const [workMode, setWorkMode] = useState<AttendanceStatus>('Present'); // Present = Office Desk, Work From Home = Remote
   const [remarks, setRemarks] = useState<string>('');
+  
+  // Dynamic timer states
+  const [elapsedTime, setElapsedTime] = useState<string>('00:00:00');
+  const [onBreak, setOnBreak] = useState<boolean>(localStorage.getItem('on_break') === 'true');
 
   // 1. Digital Clock effect
   useEffect(() => {
@@ -41,7 +50,41 @@ export const PunchBoard: React.FC = () => {
     queryFn: api.getAttendanceToday,
   });
 
-  // 3. Check-In Mutation
+  // 3. Fetch today's productivity details
+  const { data: productivityData, refetch: refetchProductivity } = useQuery({
+    queryKey: ['productivityToday', todayRecord?.id],
+    queryFn: () => api.getProductivityDetails({ date: new Date().toISOString().split('T')[0] }),
+    enabled: !!todayRecord && !todayRecord.check_out,
+    refetchInterval: 15000 // Refresh stats every 15 seconds
+  });
+
+  // 4. Live elapsed timer
+  useEffect(() => {
+    if (!todayRecord || todayRecord.check_out) {
+      setElapsedTime('00:00:00');
+      return;
+    }
+
+    const interval = setInterval(() => {
+      const checkInTime = new Date(todayRecord.check_in!).getTime();
+      const now = new Date().getTime();
+      const diffMs = now - checkInTime;
+
+      const hrs = Math.floor(diffMs / 3600000);
+      const mins = Math.floor((diffMs % 3600000) / 60000);
+      const secs = Math.floor((diffMs % 60000) / 1000);
+
+      const fHrs = hrs < 10 ? '0' + hrs : hrs;
+      const fMins = mins < 10 ? '0' + mins : mins;
+      const fSecs = secs < 10 ? '0' + secs : secs;
+
+      setElapsedTime(`${fHrs}:${fMins}:${fSecs}`);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [todayRecord]);
+
+  // 5. Check-In Mutation
   const checkInMutation = useMutation({
     mutationFn: (payload: { status: AttendanceStatus; remarks?: string }) => api.checkIn(payload),
     onSuccess: () => {
@@ -55,11 +98,13 @@ export const PunchBoard: React.FC = () => {
     }
   });
 
-  // 4. Check-Out Mutation
+  // 6. Check-Out Mutation
   const checkOutMutation = useMutation({
     mutationFn: api.checkOut,
     onSuccess: () => {
       message.success('Check-out recorded successfully! Shift completed.');
+      localStorage.removeItem('on_break');
+      setOnBreak(false);
       queryClient.invalidateQueries({ queryKey: ['attendanceToday'] });
       queryClient.invalidateQueries({ queryKey: ['attendanceHistory'] });
     },
@@ -81,8 +126,30 @@ export const PunchBoard: React.FC = () => {
     }
   };
 
+  const toggleBreak = async () => {
+    if (!todayRecord) return;
+    const nextBreakState = !onBreak;
+    localStorage.setItem('on_break', String(nextBreakState));
+    setOnBreak(nextBreakState);
+
+    try {
+      await api.submitHeartbeat({
+        status: nextBreakState ? 'Break' : 'Active',
+        mouseClicks: 0,
+        keyboardPresses: 0,
+        activeWindow: 'Workspace Break Panel'
+      });
+      message.success(nextBreakState ? 'Break started successfully.' : 'Work session resumed.');
+      refetchProductivity();
+    } catch (err) {
+      message.error('Failed to update break status on the server.');
+    }
+  };
+
   const getStatusBadge = () => {
     if (!todayRecord) return <Badge status="default" text="Not Checked In" />;
+    if (todayRecord.check_out) return <Badge status="default" text="Shift Completed" />;
+    if (onBreak) return <Badge status="warning" text="On Break" />;
     
     switch (todayRecord.status) {
       case 'Present':
@@ -119,6 +186,15 @@ export const PunchBoard: React.FC = () => {
       };
     }
 
+    if (onBreak) {
+      return {
+        cardColor: '#FEF3C7',
+        borderColor: '#FDE68A',
+        textColor: '#92400E',
+        desc: 'You are currently on break. Timer is suspended.'
+      };
+    }
+
     if (todayRecord.status === 'Late') {
       return {
         cardColor: '#FFFBEB',
@@ -137,9 +213,15 @@ export const PunchBoard: React.FC = () => {
   };
 
   const details = getStatusDetails();
+  const summary = productivityData?.summary || {
+    activeHours: 0,
+    idleHours: 0,
+    breakHours: 0,
+    productivityScore: 100
+  };
 
   return (
-    <div style={{ maxWidth: 800, margin: '0 auto', padding: '12px 0' }}>
+    <div style={{ maxWidth: 850, margin: '0 auto', padding: '12px 0' }}>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 24 }}>
         
         {/* PUNCH INTERFACE */}
@@ -154,64 +236,218 @@ export const PunchBoard: React.FC = () => {
           }}
         >
           <Space direction="vertical" size={4} style={{ width: '100%' }}>
-            <Text style={{ fontSize: 14, color: '#64748B', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <Text style={{ fontSize: 13, color: '#64748B', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               {dateStr}
             </Text>
             
-            {/* Real-time Clock Display */}
-            <Title level={1} style={{ 
-              fontSize: '3.5rem', 
-              margin: '12px 0', 
-              color: '#0F172A', 
-              fontFamily: 'Courier New, monospace',
-              fontWeight: 700,
-              letterSpacing: 2
-            }}>
-              {time || '00:00:00'}
-            </Title>
+            {/* Real-time Clock Display or Live Session Timer */}
+            {todayRecord && !todayRecord.check_out ? (
+              <div>
+                <Title level={1} style={{ 
+                  fontSize: '3.5rem', 
+                  margin: '8px 0', 
+                  color: onBreak ? '#D97706' : '#10B981', 
+                  fontFamily: 'Courier New, monospace',
+                  fontWeight: 700,
+                  letterSpacing: 2
+                }}>
+                  {elapsedTime}
+                </Title>
+                <Text type="secondary" style={{ fontSize: 13, fontWeight: 500 }}>
+                  Active Work Session Time
+                </Text>
+              </div>
+            ) : (
+              <div>
+                <Title level={1} style={{ 
+                  fontSize: '3.5rem', 
+                  margin: '8px 0', 
+                  color: '#0F172A', 
+                  fontFamily: 'Courier New, monospace',
+                  fontWeight: 700,
+                  letterSpacing: 2
+                }}>
+                  {time || '00:00:00'}
+                </Title>
+                <Text type="secondary" style={{ fontSize: 13, fontWeight: 500 }}>
+                  Current Local Time
+                </Text>
+              </div>
+            )}
             
-            <div style={{ margin: '8px 0 24px' }}>
+            <div style={{ margin: '12px 0 20px' }}>
               {getStatusBadge()}
             </div>
           </Space>
 
-          {/* Quick Stats Panel if Checked In */}
+          {/* Live Hours & Target Compliance Grid */}
           {todayRecord && (
-            <div style={{ 
-              background: details.cardColor, 
-              border: `1px solid ${details.borderColor}`,
-              borderRadius: 12, 
-              padding: '16px 24px', 
-              margin: '0 auto 24px', 
-              maxWidth: 500,
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 8,
-              textAlign: 'left'
-            }}>
-              <Text style={{ fontSize: 13, color: details.textColor, fontWeight: 600 }}>
-                {details.desc}
+            <div style={{ maxWidth: 700, margin: '0 auto 24px', textAlign: 'left' }}>
+              <Divider style={{ margin: '16px 0' }} />
+              
+              <Row gutter={[16, 16]} style={{ marginBottom: 20 }}>
+                {/* Target Compliance Progress */}
+                <Col xs={24} md={10}>
+                  <Card size="small" style={{ borderRadius: 12, border: '1px solid #E2E8F0', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px 0' }}>
+                    <Space align="center" size={16}>
+                      <Progress 
+                        type="circle" 
+                        percent={Math.min(100, Math.round(((() => {
+                          if (!todayRecord || todayRecord.check_out) {
+                            return todayRecord?.working_hours ? parseFloat(String(todayRecord.working_hours)) : 0;
+                          }
+                          const parts = elapsedTime.split(':').map(Number);
+                          if (parts.length !== 3) return 0;
+                          return parts[0] + parts[1]/60 + parts[2]/3600;
+                        })() / 8) * 100))} 
+                        size={80} 
+                        strokeColor={onBreak ? '#F59E0B' : '#10B981'}
+                      />
+                      <div>
+                        <Text strong style={{ display: 'block', fontSize: 14 }}>Daily Compliance</Text>
+                        <Text type="secondary" style={{ fontSize: 12 }}>Target: 8h shift</Text>
+                        <div style={{ marginTop: 4 }}>
+                          <Badge status={onBreak ? "warning" : todayRecord.check_out ? "default" : "success"} text={onBreak ? "Break" : todayRecord.check_out ? "Completed" : "Active"} />
+                        </div>
+                      </div>
+                    </Space>
+                  </Card>
+                </Col>
+
+                {/* Status description */}
+                <Col xs={24} md={14}>
+                  <div style={{ 
+                    background: details.cardColor, 
+                    border: `1px solid ${details.borderColor}`,
+                    borderRadius: 12, 
+                    padding: '20px 24px', 
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    gap: 8
+                  }}>
+                    <Text style={{ fontSize: 13, color: details.textColor, fontWeight: 600 }}>
+                      {details.desc}
+                    </Text>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
+                      <Space direction="vertical" size={0}>
+                        <Text style={{ fontSize: 11, color: '#64748B' }}>Check-in</Text>
+                        <Text style={{ fontSize: 14, color: '#0F172A', fontWeight: 600 }}>
+                          {todayRecord.check_in ? new Date(todayRecord.check_in).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                        </Text>
+                      </Space>
+                      <Space direction="vertical" size={0}>
+                        <Text style={{ fontSize: 11, color: '#64748B' }}>Check-out</Text>
+                        <Text style={{ fontSize: 14, color: '#0F172A', fontWeight: 600 }}>
+                          {todayRecord.check_out ? new Date(todayRecord.check_out).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                        </Text>
+                      </Space>
+                      <Space direction="vertical" size={0}>
+                        <Text style={{ fontSize: 11, color: '#64748B' }}>Reported Hours</Text>
+                        <Text style={{ fontSize: 14, color: '#0F172A', fontWeight: 600 }}>
+                          {todayRecord.working_hours ? `${todayRecord.working_hours} hrs` : '--'}
+                        </Text>
+                      </Space>
+                    </div>
+                  </div>
+                </Col>
+              </Row>
+
+              {/* Working Hours Stats Grid */}
+              <Text strong style={{ display: 'block', marginBottom: 12, color: '#475569' }}>
+                Shift Hours & Telemetry Ledger
               </Text>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
-                <Space direction="vertical" size={0}>
-                  <Text style={{ fontSize: 11, color: '#64748B' }}>Check-in</Text>
-                  <Text style={{ fontSize: 14, color: '#0F172A', fontWeight: 600 }}>
-                    {todayRecord.check_in ? new Date(todayRecord.check_in).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
-                  </Text>
-                </Space>
-                <Space direction="vertical" size={0}>
-                  <Text style={{ fontSize: 11, color: '#64748B' }}>Check-out</Text>
-                  <Text style={{ fontSize: 14, color: '#0F172A', fontWeight: 600 }}>
-                    {todayRecord.check_out ? new Date(todayRecord.check_out).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
-                  </Text>
-                </Space>
-                <Space direction="vertical" size={0}>
-                  <Text style={{ fontSize: 11, color: '#64748B' }}>Duration</Text>
-                  <Text style={{ fontSize: 14, color: '#0F172A', fontWeight: 600 }}>
-                    {todayRecord.working_hours ? `${todayRecord.working_hours} hrs` : '--'}
-                  </Text>
-                </Space>
-              </div>
+              
+              <Row gutter={[12, 12]} style={{ marginBottom: 16 }}>
+                <Col xs={12} sm={8}>
+                  <Card size="small" style={{ background: '#F8FAFC', borderRadius: 8, textAlign: 'center', border: '1px solid #E2E8F0' }}>
+                    <Text type="secondary" style={{ fontSize: 11, fontWeight: 500 }}>WEEKLY WORKING HOURS</Text>
+                    <Title level={4} style={{ margin: '4px 0 0', fontSize: 18, fontWeight: 700 }}>
+                      {((() => {
+                        if (!queryClient.getQueryData(['attendanceHistory'])) return '0.00';
+                        const history: any = queryClient.getQueryData(['attendanceHistory']);
+                        const oneWeekAgo = new Date();
+                        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+                        let sum = 0;
+                        if (Array.isArray(history)) {
+                          history.forEach((rec: any) => {
+                            if (new Date(rec.date) >= oneWeekAgo) sum += parseFloat(String(rec.working_hours || 0));
+                          });
+                        }
+                        return sum.toFixed(2);
+                      })())}h
+                    </Title>
+                  </Card>
+                </Col>
+                
+                <Col xs={12} sm={8}>
+                  <Card size="small" style={{ background: '#F8FAFC', borderRadius: 8, textAlign: 'center', border: '1px solid #E2E8F0' }}>
+                    <Text type="secondary" style={{ fontSize: 11, fontWeight: 500 }}>MONTHLY WORKING HOURS</Text>
+                    <Title level={4} style={{ margin: '4px 0 0', fontSize: 18, fontWeight: 700 }}>
+                      {((() => {
+                        if (!queryClient.getQueryData(['attendanceHistory'])) return '0.00';
+                        const history: any = queryClient.getQueryData(['attendanceHistory']);
+                        const oneMonthAgo = new Date();
+                        oneMonthAgo.setDate(oneMonthAgo.getDate() - 30);
+                        let sum = 0;
+                        if (Array.isArray(history)) {
+                          history.forEach((rec: any) => {
+                            if (new Date(rec.date) >= oneMonthAgo) sum += parseFloat(String(rec.working_hours || 0));
+                          });
+                        }
+                        return sum.toFixed(2);
+                      })())}h
+                    </Title>
+                  </Card>
+                </Col>
+
+                <Col xs={12} sm={8}>
+                  <Card size="small" style={{ background: '#F8FAFC', borderRadius: 8, textAlign: 'center', border: '1px solid #E2E8F0' }}>
+                    <Text type="secondary" style={{ fontSize: 11, fontWeight: 500 }}>ACCUMULATED OVERTIME</Text>
+                    <Title level={4} style={{ margin: '4px 0 0', fontSize: 18, color: '#10B981', fontWeight: 700 }}>
+                      {((() => {
+                        if (!queryClient.getQueryData(['attendanceHistory'])) return '0.00';
+                        const history: any = queryClient.getQueryData(['attendanceHistory']);
+                        let sum = 0;
+                        if (Array.isArray(history)) {
+                          history.forEach((rec: any) => {
+                            const hrs = parseFloat(String(rec.working_hours || 0));
+                            if (hrs > 8) sum += (hrs - 8);
+                          });
+                        }
+                        return sum.toFixed(2);
+                      })())}h
+                    </Title>
+                  </Card>
+                </Col>
+              </Row>
+
+              {/* Productivity Breakdown Row */}
+              {!todayRecord.check_out && (
+                <Row gutter={[12, 12]}>
+                  <Col xs={8}>
+                    <Card size="small" style={{ background: '#F0FDF4', borderRadius: 8, textAlign: 'center', border: '1px solid #DCFCE7' }}>
+                      <Title level={5} style={{ margin: 0, fontSize: 14, color: '#15803D' }}>{summary.activeHours.toFixed(2)}h</Title>
+                      <Text type="secondary" style={{ fontSize: 10 }}>Active Time</Text>
+                    </Card>
+                  </Col>
+                  <Col xs={8}>
+                    <Card size="small" style={{ background: '#FEF2F2', borderRadius: 8, textAlign: 'center', border: '1px solid #FEE2E2' }}>
+                      <Title level={5} style={{ margin: 0, fontSize: 14, color: '#991B1B' }}>{summary.idleHours.toFixed(2)}h</Title>
+                      <Text type="secondary" style={{ fontSize: 10 }}>Idle Time</Text>
+                    </Card>
+                  </Col>
+                  <Col xs={8}>
+                    <Card size="small" style={{ background: '#FFFBEB', borderRadius: 8, textAlign: 'center', border: '1px solid #FEF3C7' }}>
+                      <Title level={5} style={{ margin: 0, fontSize: 14, color: '#92400E' }}>{summary.breakHours.toFixed(2)}h</Title>
+                      <Text type="secondary" style={{ fontSize: 10 }}>Break Time</Text>
+                    </Card>
+                  </Col>
+                </Row>
+              )}
+              
+              <Divider style={{ margin: '16px 0' }} />
             </div>
           )}
 
@@ -257,29 +493,50 @@ export const PunchBoard: React.FC = () => {
             </div>
           )}
 
-          {/* Large Punch Button */}
+          {/* Large Punch Button & Break Actions */}
           <div style={{ marginTop: 12 }}>
-            <Button
-              type="primary"
-              disabled={isLoading || (todayRecord && todayRecord.check_out ? true : false)}
-              onClick={handlePunch}
-              loading={checkInMutation.isPending || checkOutMutation.isPending}
-              icon={!todayRecord ? <LoginOutlined /> : <LogoutOutlined />}
-              style={{
-                height: 52,
-                padding: '0 48px',
-                fontSize: 16,
-                fontWeight: 600,
-                borderRadius: 26,
-                boxShadow: !todayRecord 
-                  ? '0 10px 15px -3px rgba(16, 185, 129, 0.3)' 
-                  : '0 10px 15px -3px rgba(239, 68, 68, 0.3)',
-                background: !todayRecord ? '#10B981' : '#EF4444',
-                borderColor: !todayRecord ? '#10B981' : '#EF4444'
-              }}
-            >
-              {!todayRecord ? 'Clock In Shift' : 'Clock Out Shift'}
-            </Button>
+            <Space size={16}>
+              <Button
+                type="primary"
+                disabled={isLoading || (todayRecord && todayRecord.check_out ? true : false)}
+                onClick={handlePunch}
+                loading={checkInMutation.isPending || checkOutMutation.isPending}
+                icon={!todayRecord ? <LoginOutlined /> : <LogoutOutlined />}
+                style={{
+                  height: 50,
+                  padding: '0 36px',
+                  fontSize: 15,
+                  fontWeight: 600,
+                  borderRadius: 25,
+                  boxShadow: !todayRecord 
+                    ? '0 6px 12px -3px rgba(16, 185, 129, 0.2)' 
+                    : '0 6px 12px -3px rgba(239, 68, 68, 0.2)',
+                  background: !todayRecord ? '#10B981' : '#EF4444',
+                  borderColor: !todayRecord ? '#10B981' : '#EF4444'
+                }}
+              >
+                {!todayRecord ? 'Clock In Shift' : 'Clock Out Shift'}
+              </Button>
+
+              {todayRecord && !todayRecord.check_out && (
+                <Button
+                  onClick={toggleBreak}
+                  icon={onBreak ? <PlayCircleOutlined /> : <CoffeeOutlined />}
+                  style={{
+                    height: 50,
+                    padding: '0 36px',
+                    fontSize: 15,
+                    fontWeight: 600,
+                    borderRadius: 25,
+                    color: onBreak ? '#10B981' : '#F59E0B',
+                    borderColor: onBreak ? '#10B981' : '#F59E0B',
+                    boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)'
+                  }}
+                >
+                  {onBreak ? 'Resume Work' : 'Go on Break'}
+                </Button>
+              )}
+            </Space>
             
             {todayRecord && todayRecord.check_out && (
               <Paragraph style={{ color: '#64748B', marginTop: 12, fontSize: 13 }}>

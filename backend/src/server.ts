@@ -29,7 +29,7 @@ import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './config/swagger';
 import { createRateLimiter } from './middleware/rateLimiter';
 
-const app = express();
+const app = express(); // trigger restart 5
 const PORT = process.env.PORT || 5000;
 
 // Security headers via helmet

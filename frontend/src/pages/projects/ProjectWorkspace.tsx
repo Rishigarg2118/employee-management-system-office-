@@ -163,7 +163,7 @@ export const ProjectWorkspace: React.FC = () => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       {/* Title Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
         <div>
           <Title level={2} style={{ margin: 0, fontWeight: 700, color: '#0F172A' }}>Projects Space</Title>
           <Text type="secondary" style={{ fontSize: 14 }}>
@@ -175,7 +175,7 @@ export const ProjectWorkspace: React.FC = () => {
             type="primary" 
             icon={<PlusOutlined />} 
             onClick={handleOpenCreate}
-            style={{ height: 40, background: '#10B981', borderColor: '#10B981' }}
+            style={{ height: 44, background: '#10B981', borderColor: '#10B981', display: 'flex', alignItems: 'center' }}
           >
             Create Project
           </Button>
@@ -227,150 +227,157 @@ export const ProjectWorkspace: React.FC = () => {
 
       {/* Filter and Table Control Card */}
       <Card bordered={false} style={{ borderRadius: 12, boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-        <div style={{ display: 'flex', gap: 16, marginBottom: 20, flexWrap: 'wrap' }}>
-          <Input
-            placeholder="Search projects..."
-            prefix={<SearchOutlined style={{ color: '#64748B' }} />}
-            value={searchText}
-            onChange={e => setSearchText(e.target.value)}
-            style={{ width: 300, borderRadius: 8 }}
-          />
-          <Select
-            value={statusFilter}
-            onChange={value => setStatusFilter(value)}
-            style={{ width: 160 }}
-            placeholder="Filter by Status"
-          >
-            <Option value="all">All Statuses</Option>
-            <Option value="Planning">Planning</Option>
-            <Option value="Active">Active</Option>
-            <Option value="Review">Review</Option>
-            <Option value="Completed">Completed</Option>
-            <Option value="Archived">Archived</Option>
-          </Select>
-        </div>
+        <Row gutter={[16, 16]} style={{ marginBottom: 20 }}>
+          <Col xs={24} md={12} lg={8}>
+            <Input
+              placeholder="Search projects..."
+              prefix={<SearchOutlined style={{ color: '#64748B' }} />}
+              value={searchText}
+              onChange={e => setSearchText(e.target.value)}
+              style={{ width: '100%', borderRadius: 8, height: 38 }}
+            />
+          </Col>
+          <Col xs={24} md={6} lg={4}>
+            <Select
+              value={statusFilter}
+              onChange={value => setStatusFilter(value)}
+              style={{ width: '100%', height: 38 }}
+              placeholder="Filter by Status"
+            >
+              <Option value="all">All Statuses</Option>
+              <Option value="Planning">Planning</Option>
+              <Option value="Active">Active</Option>
+              <Option value="Review">Review</Option>
+              <Option value="Completed">Completed</Option>
+              <Option value="Archived">Archived</Option>
+            </Select>
+          </Col>
+        </Row>
 
-        <Table
-          dataSource={filteredProjects}
-          rowKey="id"
-          loading={isLoading}
-          onRow={(record) => ({
-            onClick: () => navigate(`/projects/${record.id}`),
-            style: { cursor: 'pointer' }
-          })}
-          pagination={{ pageSize: 10, showSizeChanger: true }}
-          columns={[
-            {
-              title: 'Project Name',
-              dataIndex: 'name',
-              key: 'name',
-              render: (name: string, record: Project) => (
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <Text strong style={{ color: '#0F172A', fontSize: 14 }}>{name}</Text>
-                  {record.description && (
-                    <Text type="secondary" style={{ fontSize: 12 }} ellipsis={{ tooltip: record.description }}>
-                      {record.description}
-                    </Text>
-                  )}
-                </div>
-              )
-            },
-            {
-              title: 'Status',
-              dataIndex: 'status',
-              key: 'status',
-              width: 120,
-              render: (status: ProjectStatus) => renderStatusTag(status)
-            },
-            {
-              title: 'Timeline',
-              key: 'timeline',
-              width: 200,
-              render: (_, record: Project) => (
-                <Space direction="vertical" size={2} style={{ fontSize: 12 }}>
-                  <span style={{ color: '#475569' }}>Start: {record.start_date}</span>
-                  <span style={{ color: '#94A3B8' }}>End: {record.deadline || 'No Deadline'}</span>
-                </Space>
-              )
-            },
-            {
-              title: 'Project Manager',
-              dataIndex: 'manager',
-              key: 'manager',
-              width: 200,
-              render: (manager: any) => {
-                if (!manager) return <Text type="secondary" style={{ fontSize: 13 }}>Unassigned</Text>;
-                return (
-                  <Space>
-                    <Avatar 
-                      src={manager.avatar_url ? `${SERVER_URL}/${manager.avatar_url}` : undefined}
-                      icon={!manager.avatar_url && <UserOutlined />}
-                      size="small"
-                      style={{ backgroundColor: '#10B981' }}
-                    />
-                    <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1 }}>
-                      <Text strong style={{ fontSize: 13 }}>{manager.first_name} {manager.last_name}</Text>
-                      <Text type="secondary" style={{ fontSize: 11 }}>{manager.designation}</Text>
-                    </div>
+        <div className="responsive-table-container">
+          <Table
+            dataSource={filteredProjects}
+            rowKey="id"
+            loading={isLoading}
+            onRow={(record) => ({
+              onClick: () => navigate(`/projects/${record.id}`),
+              style: { cursor: 'pointer' }
+            })}
+            scroll={{ x: 'max-content' }}
+            pagination={{ pageSize: 10, showSizeChanger: true }}
+            columns={[
+              {
+                title: 'Project Name',
+                dataIndex: 'name',
+                key: 'name',
+                render: (name: string, record: Project) => (
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <Text strong style={{ color: '#0F172A', fontSize: 14 }}>{name}</Text>
+                    {record.description && (
+                      <Text type="secondary" style={{ fontSize: 12 }} ellipsis={{ tooltip: record.description }}>
+                        {record.description}
+                      </Text>
+                    )}
+                  </div>
+                )
+              },
+              {
+                title: 'Status',
+                dataIndex: 'status',
+                key: 'status',
+                width: 120,
+                render: (status: ProjectStatus) => renderStatusTag(status)
+              },
+              {
+                title: 'Timeline',
+                key: 'timeline',
+                width: 200,
+                render: (_, record: Project) => (
+                  <Space direction="vertical" size={2} style={{ fontSize: 12 }}>
+                    <span style={{ color: '#475569' }}>Start: {record.start_date}</span>
+                    <span style={{ color: '#94A3B8' }}>End: {record.deadline || 'No Deadline'}</span>
                   </Space>
-                );
-              }
-            },
-            {
-              title: 'Team Size',
-              key: 'team',
-              width: 120,
-              render: (_, record: Project) => {
-                const count = record.members?.length || 0;
-                return (
-                  <Tooltip 
-                    title={
-                      record.members && record.members.length > 0 
-                        ? record.members.map(m => `${m.first_name} ${m.last_name}`).join(', ') 
-                        : 'No team members'
-                    }
-                  >
-                    <Space size={4}>
-                      <TeamOutlined style={{ color: '#64748B' }} />
-                      <Text style={{ fontSize: 13, fontWeight: 500 }}>{count} members</Text>
+                )
+              },
+              {
+                title: 'Project Manager',
+                dataIndex: 'manager',
+                key: 'manager',
+                width: 200,
+                render: (manager: any) => {
+                  if (!manager) return <Text type="secondary" style={{ fontSize: 13 }}>Unassigned</Text>;
+                  return (
+                    <Space>
+                      <Avatar 
+                        src={manager.avatar_url ? `${SERVER_URL}/${manager.avatar_url}` : undefined}
+                        icon={!manager.avatar_url && <UserOutlined />}
+                        size="small"
+                        style={{ backgroundColor: '#10B981' }}
+                      />
+                      <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1 }}>
+                        <Text strong style={{ fontSize: 13 }}>{manager.first_name} {manager.last_name}</Text>
+                        <Text type="secondary" style={{ fontSize: 11 }}>{manager.designation}</Text>
+                      </div>
                     </Space>
-                  </Tooltip>
-                );
-              }
-            },
-            {
-              title: 'Actions',
-              key: 'actions',
-              width: 120,
-              render: (_, record: Project) => {
-                if (!canModify) return null;
-                return (
-                  <Space onClick={e => e.stopPropagation()}>
-                    <Button 
-                      type="text" 
-                      icon={<EditOutlined />} 
-                      onClick={(e) => handleOpenEdit(record, e)}
-                    />
-                    <Popconfirm
-                      title="Are you sure you want to delete this project?"
-                      description="This action cannot be undone."
-                      onConfirm={(e) => handleDelete(record.id, e)}
-                      okText="Delete"
-                      cancelText="Cancel"
-                      okButtonProps={{ danger: true }}
+                  );
+                }
+              },
+              {
+                title: 'Team Size',
+                key: 'team',
+                width: 120,
+                render: (_, record: Project) => {
+                  const count = record.members?.length || 0;
+                  return (
+                    <Tooltip 
+                      title={
+                        record.members && record.members.length > 0 
+                          ? record.members.map(m => `${m.first_name} ${m.last_name}`).join(', ') 
+                          : 'No team members'
+                      }
                     >
+                      <Space size={4}>
+                        <TeamOutlined style={{ color: '#64748B' }} />
+                        <Text style={{ fontSize: 13, fontWeight: 500 }}>{count} members</Text>
+                      </Space>
+                    </Tooltip>
+                  );
+                }
+              },
+              {
+                title: 'Actions',
+                key: 'actions',
+                width: 120,
+                render: (_, record: Project) => {
+                  if (!canModify) return null;
+                  return (
+                    <Space onClick={e => e.stopPropagation()}>
                       <Button 
                         type="text" 
-                        danger 
-                        icon={<DeleteOutlined />} 
+                        icon={<EditOutlined />} 
+                        onClick={(e) => handleOpenEdit(record, e)}
                       />
-                    </Popconfirm>
-                  </Space>
-                );
+                      <Popconfirm
+                        title="Are you sure you want to delete this project?"
+                        description="This action cannot be undone."
+                        onConfirm={(e) => handleDelete(record.id, e)}
+                        okText="Delete"
+                        cancelText="Cancel"
+                        okButtonProps={{ danger: true }}
+                      >
+                        <Button 
+                          type="text" 
+                          danger 
+                          icon={<DeleteOutlined />} 
+                        />
+                      </Popconfirm>
+                    </Space>
+                  );
+                }
               }
-            }
-          ]}
-        />
+            ]}
+          />
+        </div>
       </Card>
 
       {/* Creation / Editing Modal */}
@@ -402,7 +409,7 @@ export const ProjectWorkspace: React.FC = () => {
           </Form.Item>
 
           <Row gutter={16}>
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <Form.Item
                 name="start_date"
                 label="Start Date"
@@ -411,7 +418,7 @@ export const ProjectWorkspace: React.FC = () => {
                 <DatePicker style={{ width: '100%' }} />
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <Form.Item name="deadline" label="Deadline">
                 <DatePicker style={{ width: '100%' }} />
               </Form.Item>
@@ -419,7 +426,7 @@ export const ProjectWorkspace: React.FC = () => {
           </Row>
 
           <Row gutter={16}>
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <Form.Item name="status" label="Project Status">
                 <Select style={{ width: '100%' }}>
                   <Option value="Planning">Planning</Option>
@@ -430,9 +437,9 @@ export const ProjectWorkspace: React.FC = () => {
                 </Select>
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <Form.Item name="manager_id" label="Project Manager">
-                <Select placeholder="Assign Manager" showSearch optionFilterProp="children" allowClear>
+                <Select placeholder="Assign Manager" showSearch optionFilterProp="children" allowClear style={{ width: '100%' }}>
                   {employees.map(emp => (
                     <Option key={emp.id} value={emp.id}>
                       {emp.first_name} {emp.last_name} ({emp.designation})

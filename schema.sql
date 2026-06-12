@@ -266,3 +266,20 @@ CREATE TABLE IF NOT EXISTS asset_history (
 CREATE INDEX IF NOT EXISTS idx_asset_history_asset ON asset_history(asset_id);
 CREATE INDEX IF NOT EXISTS idx_asset_history_created ON asset_history(created_at DESC);
 
+-- 17. Activity Heartbeats Table (Attendance 2.0 Monitoring)
+CREATE TABLE IF NOT EXISTS activity_heartbeats (
+    id SERIAL PRIMARY KEY,
+    employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+    attendance_id INTEGER NOT NULL REFERENCES attendance(id) ON DELETE CASCADE,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status VARCHAR(20) NOT NULL CHECK (status IN ('Active', 'Idle', 'Break')),
+    mouse_clicks INTEGER DEFAULT 0,
+    keyboard_presses INTEGER DEFAULT 0,
+    active_window VARCHAR(255),
+    screenshot_url VARCHAR(255)
+);
+
+CREATE INDEX IF NOT EXISTS idx_activity_heartbeats_attendance ON activity_heartbeats(attendance_id);
+CREATE INDEX IF NOT EXISTS idx_activity_heartbeats_employee_date ON activity_heartbeats(employee_id, timestamp);
+
+

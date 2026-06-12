@@ -267,6 +267,20 @@ async function migrate() {
           public_id VARCHAR(255) NOT NULL,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
+
+      CREATE TABLE IF NOT EXISTS activity_heartbeats (
+          id SERIAL PRIMARY KEY,
+          employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+          attendance_id INTEGER NOT NULL REFERENCES attendance(id) ON DELETE CASCADE,
+          timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          status VARCHAR(20) NOT NULL CHECK (status IN ('Active', 'Idle', 'Break')),
+          mouse_clicks INTEGER DEFAULT 0,
+          keyboard_presses INTEGER DEFAULT 0,
+          active_window VARCHAR(255),
+          screenshot_url VARCHAR(255)
+      );
+      CREATE INDEX IF NOT EXISTS idx_activity_heartbeats_attendance ON activity_heartbeats(attendance_id);
+      CREATE INDEX IF NOT EXISTS idx_activity_heartbeats_employee_date ON activity_heartbeats(employee_id, timestamp);
     `);
 
     // 1. Truncate all tables to clear out auto-seeding defaults
@@ -275,6 +289,7 @@ async function migrate() {
       TRUNCATE TABLE 
         active_sessions,
         cloudinary_mappings,
+        activity_heartbeats,
         attendance_corrections,
         audit_logs,
         notifications,
@@ -407,10 +422,15 @@ async function migrate() {
       'departments', 'employees', 'skills', 'documents', 'activities',
       'leave_types', 'leave_requests', 'leave_approvals', 'attendance',
       'projects', 'teams', 'tasks', 'task_comments', 'task_activities',
-      'notifications', 'audit_logs'
+      'notifications', 'audit_logs', 'activity_heartbeats'
     ];
     for (const tbl of tablesWithSequences) {
       await client.query(`SELECT setval('${tbl}_id_seq', COALESCE((SELECT MAX(id) FROM ${tbl}), 1))`);
+    }
+
+    // Optional: Seed activity_heartbeats if they exist in jsonDb
+    if (jsonDb.activity_heartbeats && jsonDb.activity_heartbeats.length > 0) {
+      await insertInto('activity_heartbeats', ['id', 'employee_id', 'attendance_id', 'timestamp', 'status', 'mouse_clicks', 'keyboard_presses', 'active_window', 'screenshot_url'], jsonDb.activity_heartbeats);
     }
 
     await client.query('COMMIT');

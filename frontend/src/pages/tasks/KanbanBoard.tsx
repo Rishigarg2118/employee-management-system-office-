@@ -79,12 +79,15 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
 
   return (
     <div style={{
-      display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+      display: 'flex',
+      overflowX: 'auto',
       gap: 20,
       alignItems: 'start',
       fontFamily: 'Inter',
-      minHeight: '650px'
+      minHeight: '650px',
+      paddingBottom: 16,
+      width: '100%',
+      WebkitOverflowScrolling: 'touch'
     }}>
       {COLUMNS.map((column) => {
         const columnTasks = tasks.filter((t) => t.status === column.key);
@@ -102,7 +105,9 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
               minHeight: 600,
               display: 'flex',
               flexDirection: 'column',
-              boxShadow: '0 1px 2px 0 rgba(0,0,0,0.02)'
+              boxShadow: '0 1px 2px 0 rgba(0,0,0,0.02)',
+              width: 280,
+              flexShrink: 0
             }}
           >
             {/* COLUMN HEADER */}

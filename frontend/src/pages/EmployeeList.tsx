@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { 
   Table, Input, Select, Button, Space, Avatar, 
-  Popconfirm, Drawer, Dropdown, Menu, message, Card, Tooltip, Empty 
+  Popconfirm, Drawer, Dropdown, Menu, message, Card, Tooltip, Empty,
+  Row, Col
 } from 'antd';
 import { 
   SearchOutlined, 
@@ -294,8 +295,8 @@ export const EmployeeList: React.FC = () => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
       {/* HEADER SECTION */}
-      <div style={{ display: 'flex', justifyContent: 'between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-        <div style={{ flex: 1 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+        <div style={{ flex: 1, minWidth: '240px' }}>
           <h1 className="page-title">
             Employee Registry
           </h1>
@@ -308,7 +309,7 @@ export const EmployeeList: React.FC = () => {
             type="primary" 
             icon={<PlusOutlined />} 
             onClick={() => navigate('/employees/new')}
-            style={{ display: 'flex', alignItems: 'center' }}
+            style={{ display: 'flex', alignItems: 'center', height: '44px' }}
           >
             Add Employee
           </Button>
@@ -317,70 +318,81 @@ export const EmployeeList: React.FC = () => {
 
       {/* FILTERS CARD */}
       <Card bodyStyle={{ padding: '16px 20px' }} style={{ border: '1px solid var(--border-color)' }}>
-        <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
-          <Input
-            placeholder="Search by name, email, or employee ID..."
-            prefix={<SearchOutlined style={{ color: '#8c8c8c' }} />}
-            defaultValue={search}
-            onPressEnter={(e) => handleSearch((e.target as HTMLInputElement).value)}
-            style={{ width: '100%', maxWidth: '320px', height: '38px' }}
-            allowClear
-            onChange={(e) => !e.target.value && handleSearch('')}
-          />
+        <Row gutter={[16, 16]} align="middle">
+          <Col xs={24} md={10} lg={8}>
+            <Input
+              placeholder="Search by name, email, or employee ID..."
+              prefix={<SearchOutlined style={{ color: '#8c8c8c' }} />}
+              defaultValue={search}
+              onPressEnter={(e) => handleSearch((e.target as HTMLInputElement).value)}
+              style={{ width: '100%', height: '38px' }}
+              allowClear
+              onChange={(e) => !e.target.value && handleSearch('')}
+            />
+          </Col>
           
-          <Select
-            placeholder="Filter Department"
-            allowClear
-            style={{ width: '180px', height: '38px' }}
-            value={departmentId}
-            onChange={(val) => handleFilterChange('department_id', val)}
-            options={departments.map(d => ({ label: d.name, value: d.id.toString() }))}
-          />
+          <Col xs={24} sm={12} md={6} lg={5}>
+            <Select
+              placeholder="Filter Department"
+              allowClear
+              style={{ width: '100%', height: '38px' }}
+              value={departmentId}
+              onChange={(val) => handleFilterChange('department_id', val)}
+              options={departments.map((d: Department) => ({ label: d.name, value: d.id.toString() }))}
+            />
+          </Col>
 
-          <Select
-            placeholder="Filter Status"
-            allowClear
-            style={{ width: '160px', height: '38px' }}
-            value={status}
-            onChange={(val) => handleFilterChange('status', val)}
-            options={[
-              { label: 'Active', value: 'Active' },
-              { label: 'Inactive', value: 'Inactive' },
-              { label: 'On Leave', value: 'On Leave' },
-              { label: 'Probation', value: 'Probation' }
-            ]}
-          />
+          <Col xs={24} sm={12} md={5} lg={4}>
+            <Select
+              placeholder="Filter Status"
+              allowClear
+              style={{ width: '100%', height: '38px' }}
+              value={status}
+              onChange={(val) => handleFilterChange('status', val)}
+              options={[
+                { label: 'Active', value: 'Active' },
+                { label: 'Inactive', value: 'Inactive' },
+                { label: 'On Leave', value: 'On Leave' },
+                { label: 'Probation', value: 'Probation' }
+              ]}
+            />
+          </Col>
 
-          {searchParams.toString() && (
-            <Button 
-              type="text" 
-              onClick={() => setSearchParams({})}
-              style={{ fontSize: 13, color: 'var(--text-secondary)' }}
-            >
-              Reset Filters
-            </Button>
-          )}
-        </div>
+          <Col xs={24} md={3}>
+            {searchParams.toString() && (
+              <Button 
+                type="text" 
+                onClick={() => setSearchParams({})}
+                style={{ fontSize: 13, color: 'var(--text-secondary)', padding: 0 }}
+              >
+                Reset Filters
+              </Button>
+            )}
+          </Col>
+        </Row>
       </Card>
 
       {/* TABLE WORKSPACE */}
       <Card bodyStyle={{ padding: 0 }} style={{ overflow: 'hidden' }}>
-        <Table
-          rowSelection={(currentUser?.role === 'Super Admin' || currentUser?.role === 'Admin') ? rowSelection : undefined}
-          columns={columns}
-          dataSource={employees}
-          rowKey="id"
-          pagination={{
-            current: page,
-            pageSize: limit,
-            total: total,
-            showSizeChanger: true,
-            pageSizeOptions: ['5', '10', '25', '50']
-          }}
-          loading={loading}
-          onChange={handleTableChange}
-          locale={{ emptyText: <Empty description="No employees match your search parameters." /> }}
-        />
+        <div className="responsive-table-container">
+          <Table
+            rowSelection={(currentUser?.role === 'Super Admin' || currentUser?.role === 'Admin') ? rowSelection : undefined}
+            columns={columns}
+            dataSource={employees}
+            rowKey="id"
+            scroll={{ x: 'max-content' }}
+            pagination={{
+              current: page,
+              pageSize: limit,
+              total: total,
+              showSizeChanger: true,
+              pageSizeOptions: ['5', '10', '25', '50']
+            }}
+            loading={loading}
+            onChange={handleTableChange}
+            locale={{ emptyText: <Empty description="No employees match your search parameters." /> }}
+          />
+        </div>
       </Card>
 
       {/* FLOATING BULK ACTIONS DRAWER (Stripe / Linear style) */}
@@ -389,23 +401,22 @@ export const EmployeeList: React.FC = () => {
         placement="bottom"
         closable={false}
         open={selectedRowKeys.length > 0}
-        height={72}
+        height="auto"
         mask={false}
         style={{
           borderTop: '1px solid var(--border-color)',
           background: '#000000',
           color: '#FFFFFF',
-          display: 'flex',
-          alignItems: 'center',
           boxShadow: '0 -10px 30px rgba(0, 0, 0, 0.08)'
         }}
         bodyStyle={{
-          padding: '0 40px',
+          padding: '16px 24px',
           display: 'flex',
+          flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'space-between',
-          width: '100%',
-          height: '100%'
+          flexWrap: 'wrap',
+          gap: '16px'
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
@@ -421,7 +432,7 @@ export const EmployeeList: React.FC = () => {
           </Button>
         </div>
 
-        <Space size={16}>
+        <Space size={16} wrap style={{ width: '100%', justifyContent: 'flex-end' }}>
           <Select
             placeholder="Change Status"
             style={{ width: '150px' }}
@@ -448,7 +459,7 @@ export const EmployeeList: React.FC = () => {
               danger 
               type="primary" 
               icon={<DeleteOutlined />}
-              style={{ height: '32px', display: 'flex', alignItems: 'center' }}
+              style={{ height: '38px', display: 'flex', alignItems: 'center' }}
             >
               Bulk Delete
             </Button>

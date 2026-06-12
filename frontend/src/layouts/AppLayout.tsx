@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Layout, Menu, Button, Input, Dropdown, Badge, Avatar, Space, Drawer, List, Typography, Divider } from 'antd';
 import { 
   DashboardOutlined, 
@@ -37,7 +37,63 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
   const location = useLocation();
 
   const [notifDrawerVisible, setNotifDrawerVisible] = useState(false);
+  const [mobileMenuVisible, setMobileMenuVisible] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Global Heartbeat and User Activity Monitoring
+  useEffect(() => {
+    if (!user) return;
+
+    let clickCount = 0;
+    let keyCount = 0;
+
+    const handleTrackClick = () => { clickCount++; };
+    const handleTrackKey = () => { keyCount++; };
+
+    document.addEventListener('click', handleTrackClick);
+    document.addEventListener('keydown', handleTrackKey);
+
+    const sendPing = async () => {
+      try {
+        const attendance = await api.getAttendanceToday();
+        if (attendance && !attendance.check_out) {
+          const onBreak = localStorage.getItem('on_break') === 'true';
+          const status = onBreak ? 'Break' : (clickCount + keyCount > 0 ? 'Active' : 'Idle');
+          
+          await api.submitHeartbeat({
+            status,
+            mouseClicks: clickCount,
+            keyboardPresses: keyCount,
+            activeWindow: document.title || 'Web Browser'
+          });
+
+          // Reset counters after successful ping
+          clickCount = 0;
+          keyCount = 0;
+        }
+      } catch (err) {
+        // Silently catch error if backend returns 400 (not checked in)
+      }
+    };
+
+    // Ping every 30 seconds
+    const interval = setInterval(sendPing, 30000);
+
+    return () => {
+      document.removeEventListener('click', handleTrackClick);
+      document.removeEventListener('keydown', handleTrackKey);
+      clearInterval(interval);
+    };
+  }, [user]);
 
   // Query notifications
   const { data: notifications = [] } = useQuery<any[]>({
@@ -78,6 +134,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
     } else {
       navigate(key);
     }
+    setMobileMenuVisible(false);
   };
 
   const getActiveKey = () => {
@@ -186,74 +243,99 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
   const avatarUrl = user?.avatar_url ? `${API_URL.replace('/api', '')}/${user.avatar_url}` : undefined;
   const userFullName = user ? `${user.first_name} ${user.last_name}` : 'Enterprise User';
 
-  return (
-    <Layout style={{ minHeight: '100vh', background: '#F8FAFC' }}>
-      {/* LEFT SIDEBAR */}
-      <Sider
-        trigger={null}
-        collapsible
-        collapsed={collapsed}
-        width={240}
-        theme="dark"
-        style={{
-          borderRight: '1px solid #1E293B',
-          position: 'fixed',
-          left: 0,
-          top: 0,
-          bottom: 0,
-          zIndex: 100,
-          height: '100vh',
-          background: '#0F172A',
-          overflowY: 'auto'
-        }}
-      >
+  const siderContent = (
+    <>
+      <div style={{
+        height: 64,
+        display: 'flex',
+        alignItems: 'center',
+        padding: '0 24px',
+        borderBottom: '1px solid #1E293B',
+        gap: 12
+      }}>
         <div style={{
-          height: 64,
+          width: 24,
+          height: 24,
+          borderRadius: 6,
+          background: '#10B981',
           display: 'flex',
           alignItems: 'center',
-          padding: '0 24px',
-          borderBottom: '1px solid #1E293B',
-          gap: 12
+          justifyContent: 'center',
+          color: '#FFFFFF',
+          fontWeight: 'bold',
+          fontSize: 14
         }}>
-          <div style={{
-            width: 24,
-            height: 24,
-            borderRadius: 6,
-            background: '#10B981',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#FFFFFF',
-            fontWeight: 'bold',
-            fontSize: 14
-          }}>
-            Ω
-          </div>
-          {!collapsed && (
-            <span style={{
-              fontWeight: 600,
-              fontSize: 16,
-              letterSpacing: '-0.02em',
-              color: '#FFFFFF',
-              fontFamily: 'var(--font-sans)'
-            }}>
-              Social Connect
-            </span>
-          )}
+          Ω
         </div>
-        
-        <Menu
+        {(!collapsed || isMobile) && (
+          <span style={{
+            fontWeight: 600,
+            fontSize: 16,
+            letterSpacing: '-0.02em',
+            color: '#FFFFFF',
+            fontFamily: 'var(--font-sans)'
+          }}>
+            Social Connect
+          </span>
+        )}
+      </div>
+      
+      <Menu
+        theme="dark"
+        mode="inline"
+        selectedKeys={[getActiveKey()]}
+        onClick={({ key }) => {
+          navigate(key);
+          setMobileMenuVisible(false);
+        }}
+        style={{ borderRight: 0, marginTop: 16, background: 'transparent' }}
+        items={filteredMenuItems}
+      />
+    </>
+  );
+
+  return (
+    <Layout style={{ minHeight: '100vh', background: '#F8FAFC' }}>
+      {/* MOBILE DRAWER SIDEBAR */}
+      {isMobile ? (
+        <Drawer
+          placement="left"
+          onClose={() => setMobileMenuVisible(false)}
+          open={mobileMenuVisible}
+          bodyStyle={{ padding: 0, background: '#0F172A' }}
+          headerStyle={{ display: 'none' }}
+          width={240}
+        >
+          <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+            {siderContent}
+          </div>
+        </Drawer>
+      ) : (
+        /* DESKTOP SIDEBAR */
+        <Sider
+          trigger={null}
+          collapsible
+          collapsed={collapsed}
+          width={240}
           theme="dark"
-          mode="inline"
-          selectedKeys={[getActiveKey()]}
-          onClick={({ key }) => navigate(key)}
-          style={{ borderRight: 0, marginTop: 16, background: 'transparent' }}
-          items={filteredMenuItems}
-        />
-      </Sider>
+          style={{
+            borderRight: '1px solid #1E293B',
+            position: 'fixed',
+            left: 0,
+            top: 0,
+            bottom: 0,
+            zIndex: 100,
+            height: '100vh',
+            background: '#0F172A',
+            overflowY: 'auto'
+          }}
+        >
+          {siderContent}
+        </Sider>
+      )}
 
       <Layout style={{ 
-        marginLeft: collapsed ? 80 : 240, 
+        marginLeft: isMobile ? 0 : (collapsed ? 80 : 240), 
         transition: 'all 0.2s',
         background: '#F8FAFC'
       }}>
@@ -274,30 +356,38 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
             <Button
               type="text"
               icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-              onClick={() => setCollapsed(!collapsed)}
+              onClick={() => {
+                if (isMobile) {
+                  setMobileMenuVisible(true);
+                } else {
+                  setCollapsed(!collapsed);
+                }
+              }}
               style={{ fontSize: '16px', width: 40, height: 40 }}
             />
-            <GlobalSearch />
+            {!isMobile && <GlobalSearch />}
           </Space>
 
-          <Space size={20}>
+          <Space size={isMobile ? 8 : 20}>
             {/* Quick Action Button */}
-            <Dropdown menu={quickActionsMenu} placement="bottomRight" trigger={['click']}>
-              <Button 
-                type="primary" 
-                icon={<PlusOutlined />} 
-                style={{ 
-                  height: 36, 
-                  display: 'flex', 
-                  alignItems: 'center',
-                  background: '#10B981',
-                  borderColor: '#10B981',
-                  borderRadius: 6
-                }}
-              >
-                Quick Action
-              </Button>
-            </Dropdown>
+            {!isMobile && (
+              <Dropdown menu={quickActionsMenu} placement="bottomRight" trigger={['click']}>
+                <Button 
+                  type="primary" 
+                  icon={<PlusOutlined />} 
+                  style={{ 
+                    height: 36, 
+                    display: 'flex', 
+                    alignItems: 'center',
+                    background: '#10B981',
+                    borderColor: '#10B981',
+                    borderRadius: 6
+                  }}
+                >
+                  Quick Action
+                </Button>
+              </Dropdown>
+            )}
 
             {/* Notifications */}
             <Badge count={unreadCount} overflowCount={9} color="#10B981">
@@ -331,11 +421,13 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
         </Header>
 
         {/* CONTENT CANVAS */}
-        <Content style={{
-          padding: '32px 40px',
-          background: '#F8FAFC',
-          minHeight: 'calc(100vh - 64px)'
-        }}>
+        <Content 
+          className="responsive-content-padding"
+          style={{
+            background: '#F8FAFC',
+            minHeight: 'calc(100vh - 64px)'
+          }}
+        >
           <div className="fade-in">
             {children}
           </div>

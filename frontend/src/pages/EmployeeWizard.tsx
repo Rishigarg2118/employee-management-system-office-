@@ -317,7 +317,7 @@ export const EmployeeWizard: React.FC = () => {
             </div>
 
             <Row gutter={16}>
-              <Col span={12}>
+              <Col xs={24} md={12}>
                 <Form.Item
                   name="first_name"
                   label="First Name"
@@ -326,7 +326,7 @@ export const EmployeeWizard: React.FC = () => {
                   <Input placeholder="Sarah" style={{ height: '40px' }} />
                 </Form.Item>
               </Col>
-              <Col span={12}>
+              <Col xs={24} md={12}>
                 <Form.Item
                   name="last_name"
                   label="Last Name"
@@ -368,7 +368,7 @@ export const EmployeeWizard: React.FC = () => {
             <h3 style={{ fontSize: '18px', fontWeight: 500, marginBottom: '24px' }}>Employment Profile</h3>
 
             <Row gutter={16}>
-              <Col span={12}>
+              <Col xs={24} md={12}>
                 <Form.Item
                   name="employee_id"
                   label="Employee ID (Code)"
@@ -377,7 +377,7 @@ export const EmployeeWizard: React.FC = () => {
                   <Input placeholder="EMP-001" style={{ height: '40px', fontFamily: 'monospace' }} disabled={isEditMode || !isHrOrAdmin} />
                 </Form.Item>
               </Col>
-              <Col span={12}>
+              <Col xs={24} md={12}>
                 <Form.Item
                   name="designation"
                   label="Designation / Role Title"
@@ -389,7 +389,7 @@ export const EmployeeWizard: React.FC = () => {
             </Row>
 
             <Row gutter={16}>
-              <Col span={12}>
+              <Col xs={24} md={12}>
                 <Form.Item
                   name="joining_date"
                   label="Joining / Hire Date"
@@ -398,7 +398,7 @@ export const EmployeeWizard: React.FC = () => {
                   <DatePicker style={{ width: '100%', height: '40px' }} placeholder="Select date" format="YYYY-MM-DD" disabled={!isHrOrAdmin} />
                 </Form.Item>
               </Col>
-              <Col span={12}>
+              <Col xs={24} md={12}>
                 <Form.Item
                   name="role"
                   label="System Role Authorization"
@@ -471,8 +471,8 @@ export const EmployeeWizard: React.FC = () => {
             {selectedSkills.length > 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 {selectedSkills.map((sel, idx) => (
-                  <Row gutter={16} key={idx} align="middle">
-                    <Col span={10}>
+                  <Row gutter={[16, 8]} key={idx} align="middle">
+                    <Col xs={24} sm={10}>
                       <Select
                         placeholder="Choose skill..."
                         style={{ width: '100%', height: '38px' }}
@@ -481,7 +481,7 @@ export const EmployeeWizard: React.FC = () => {
                         options={skillsList.map(s => ({ label: `${s.name} (${s.category})`, value: s.id }))}
                       />
                     </Col>
-                    <Col span={10}>
+                    <Col xs={20} sm={10}>
                       <Select
                         placeholder="Proficiency..."
                         style={{ width: '100%', height: '38px' }}
@@ -494,7 +494,7 @@ export const EmployeeWizard: React.FC = () => {
                         ]}
                       />
                     </Col>
-                    <Col span={4}>
+                    <Col xs={4} sm={4} style={{ textAlign: 'right' }}>
                       <Button 
                         danger 
                         type="text" 

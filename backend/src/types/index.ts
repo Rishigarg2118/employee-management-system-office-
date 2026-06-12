@@ -324,4 +324,17 @@ export interface AssetHistory {
   performed_by_name?: string;
 }
 
+export interface ActivityHeartbeat {
+  id: number;
+  employee_id: number;
+  attendance_id: number;
+  timestamp: string;
+  status: 'Active' | 'Idle' | 'Break';
+  mouse_clicks: number;
+  keyboard_presses: number;
+  active_window?: string | null;
+  screenshot_url?: string | null;
+}
+
+
 

@@ -354,6 +354,18 @@ export const api = {
     const res = await apiClient.get('/attendance/report', { params });
     return res.data;
   },
+  async submitHeartbeat(payload: { status: 'Active' | 'Idle' | 'Break'; mouseClicks: number; keyboardPresses: number; activeWindow?: string | null }): Promise<any> {
+    const res = await apiClient.post('/attendance/heartbeat', payload);
+    return res.data;
+  },
+  async getLiveWorkforce(params?: { departmentId?: number }): Promise<any> {
+    const res = await apiClient.get('/attendance/live', { params });
+    return res.data;
+  },
+  async getProductivityDetails(params?: { employeeId?: number; date?: string }): Promise<any> {
+    const res = await apiClient.get('/attendance/productivity', { params });
+    return res.data;
+  },
 
   // Task Management (Phase 2)
   async getTasks(params?: { status?: string; assigneeId?: number; departmentId?: number; priority?: string; projectId?: number; teamId?: number }): Promise<Task[]> {
