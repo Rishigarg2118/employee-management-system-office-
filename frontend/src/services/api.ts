@@ -8,8 +8,8 @@ import {
   Asset, AssetAssignment, AssetHistory
 } from '../types';
 
-export const SERVER_URL = (import.meta.env.VITE_SERVER_URL as string) || 'http://localhost:5000';
-export const API_URL = (import.meta.env.VITE_API_URL as string) || `${SERVER_URL}/api`;
+export const SERVER_URL = (import.meta.env.VITE_SERVER_URL as string) || '';
+export const API_URL = (import.meta.env.VITE_API_URL as string) || (SERVER_URL ? `${SERVER_URL}/api` : '/api');
 
 export const apiClient = axios.create({
   baseURL: API_URL,

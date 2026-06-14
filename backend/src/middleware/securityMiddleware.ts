@@ -25,10 +25,25 @@ export async function verifyRequestSecurity(req: Request, res: Response, next: N
     return next();
   }
 
-  // Bypass security signature checks for web browser frontend connections
+  // Bypass security signature checks for web browser frontend connections (including local and production configurations)
   const origin = req.headers.origin;
-  if (origin && (origin.includes('localhost:5173') || origin.includes('localhost:3000') || origin.includes('localhost:5174') || origin.includes('localhost:5175'))) {
-    return next();
+  if (origin) {
+    const cleanOrigin = origin.trim().replace(/\/$/, '');
+    const allowedOrigins = [
+      'http://localhost:5173',
+      'http://localhost:5174',
+      'http://localhost:5175',
+      'http://localhost:3000',
+      process.env.FRONTEND_URL || '',
+      ...(process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim()) : [])
+    ].filter(Boolean).map(o => o.trim().replace(/\/$/, ''));
+
+    const isVercel = cleanOrigin.endsWith('.vercel.app');
+    const isAllowed = allowedOrigins.includes(cleanOrigin) || isVercel;
+
+    if (isAllowed) {
+      return next();
+    }
   }
 
   const signature = req.headers['x-signature'] as string;

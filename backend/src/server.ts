@@ -53,7 +53,10 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (!origin) return callback(null, true);
+    const clean = origin.replace(/\/$/, '');
+    // Allow exact whitelist matches OR any *.vercel.app preview deployment
+    if (allowedOrigins.includes(clean) || clean.endsWith('.vercel.app')) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));

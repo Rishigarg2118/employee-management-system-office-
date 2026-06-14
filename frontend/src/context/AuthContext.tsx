@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 import { Employee } from '../types';
 import { api, resetAuthSession } from '../services/api';
 
@@ -19,9 +19,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<Employee | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const justLoggedIn = useRef(false);
 
   useEffect(() => {
     async function loadStoredAuth() {
+      // Skip re-validation if a login action just set the token directly
+      if (justLoggedIn.current) {
+        justLoggedIn.current = false;
+        setIsLoading(false);
+        return;
+      }
+
       const storedToken = localStorage.getItem('hrms_token');
       const storedUser = localStorage.getItem('hrms_user');
 
@@ -47,6 +55,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       resetAuthSession();
       const data = await api.login(credentials);
+      justLoggedIn.current = true;
       setToken(data.token);
       setUser(data.user);
       localStorage.setItem('hrms_token', data.token);
@@ -65,6 +74,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       resetAuthSession();
       const data = await api.googleLogin(idToken);
+      justLoggedIn.current = true;
       setToken(data.token);
       setUser(data.user);
       localStorage.setItem('hrms_token', data.token);
