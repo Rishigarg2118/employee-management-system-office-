@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { login, setup, me, refresh, logout, systemStatus } from '../controllers/authController';
+import { login, setup, me, refresh, logout, systemStatus, googleLogin } from '../controllers/authController';
 import { authenticateToken } from '../middleware/auth';
 import { createRateLimiter } from '../middleware/rateLimiter';
 
@@ -12,6 +12,7 @@ const loginLimiter = createRateLimiter({
 });
 
 router.post('/login', loginLimiter as any, login);
+router.post('/google-login', loginLimiter as any, googleLogin);
 router.post('/setup', setup);
 router.get('/me', authenticateToken as any, me as any);
 router.post('/refresh', refresh as any);

@@ -45,3 +45,54 @@ export function requireRole(roles: ('Super Admin' | 'Admin' | 'HR' | 'Manager' |
     next();
   };
 }
+
+import db from '../config/db';
+
+export async function requireApprovedDevice(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  if (!req.user) {
+    res.status(401).json({ message: 'Authentication required.' });
+    return;
+  }
+
+  const deviceUuid = req.headers['x-device-uuid'] as string;
+  if (!deviceUuid) {
+    res.status(400).json({ message: 'Device UUID header x-device-uuid is required.' });
+    return;
+  }
+
+  try {
+    let deviceStatus: string | null = null;
+
+    if (db.isPostgres()) {
+      const result = await db.query(
+        'SELECT status FROM agent_devices WHERE device_uuid = $1 AND employee_id = $2',
+        [deviceUuid, req.user.id]
+      );
+      if (result.rows.length > 0) {
+        deviceStatus = result.rows[0].status;
+      }
+    } else {
+      const fallbackDb = (db as any).getJsonDb ? (db as any).getJsonDb() : {};
+      const devices = fallbackDb.agent_devices || [];
+      const dev = devices.find((d: any) => d.device_uuid === deviceUuid && d.employee_id === req.user?.id);
+      if (dev) {
+        deviceStatus = dev.status;
+      }
+    }
+
+    if (!deviceStatus) {
+      res.status(403).json({ message: 'Device is not registered.' });
+      return;
+    }
+
+    if (deviceStatus !== 'Approved') {
+      res.status(403).json({ message: `Device status is ${deviceStatus}. Device must be Approved.` });
+      return;
+    }
+
+    next();
+  } catch (err) {
+    console.error('requireApprovedDevice error:', err);
+    res.status(500).json({ message: 'Internal server error checking device trust.' });
+  }
+}

@@ -143,6 +143,10 @@ export const api = {
     const res = await apiClient.post('/auth/login', payload);
     return res.data; // returns { token, refreshToken, user }
   },
+  async googleLogin(idToken: string) {
+    const res = await apiClient.post('/auth/google-login', { idToken });
+    return res.data;
+  },
   async setup(payload: any) {
     const res = await apiClient.post('/auth/setup', payload);
     return res.data;
@@ -488,6 +492,10 @@ export const api = {
     const res = await apiClient.get('/reports/department-distribution');
     return res.data;
   },
+  async getComprehensiveReport(params?: any): Promise<any> {
+    const res = await apiClient.get('/reports/analytics', { params });
+    return res.data;
+  },
 
   // Assets
   async getAssets(params?: { status?: string; assetType?: string; search?: string }) {
@@ -521,6 +529,38 @@ export const api = {
   },
   async returnAsset(payload: { assignment_id: number; actual_return_date: string; return_condition: string; remarks?: string | null; status?: string }): Promise<AssetAssignment> {
     const res = await apiClient.post('/assets/return', payload);
+    return res.data;
+  },
+  
+  // Device Trust (Phase 1)
+  async getDevices(params?: { status?: string; departmentId?: number }): Promise<any[]> {
+    const res = await apiClient.get('/devices/all', { params });
+    return res.data;
+  },
+  async updateDeviceStatus(id: number, status: string): Promise<any> {
+    const res = await apiClient.put(`/devices/${id}/status`, { status });
+    return res.data;
+  },
+
+  // Productivity Dashboard Analytics
+  async getProductivityLeaderboard(params?: { departmentId?: number }): Promise<any> {
+    const res = await apiClient.get('/attendance/productivity/leaderboard', { params });
+    return res.data;
+  },
+  async getProductivityInsights(params?: { employeeId?: number }): Promise<any> {
+    const res = await apiClient.get('/attendance/productivity/insights', { params });
+    return res.data;
+  },
+  async getProductivityClassifications(): Promise<any[]> {
+    const res = await apiClient.get('/productivity/classifications');
+    return res.data;
+  },
+  async createOrUpdateProductivityClassification(payload: { pattern: string; category: string; tag: string; score: number }): Promise<any> {
+    const res = await apiClient.post('/productivity/classifications', payload);
+    return res.data;
+  },
+  async deleteProductivityClassification(id: number): Promise<any> {
+    const res = await apiClient.delete(`/productivity/classifications/${id}`);
     return res.data;
   }
 };

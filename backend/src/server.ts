@@ -24,7 +24,11 @@ import auditRouter from './routes/auditRoutes';
 import searchRouter from './routes/searchRoutes';
 import reportRouter from './routes/reportRoutes';
 import assetRouter from './routes/assetRoutes';
+import deviceRouter from './routes/deviceRoutes';
+import productivityRouter from './routes/productivityRoutes';
+import { checkUpdate, downloadUpdate, triggerRollbackCommand } from './controllers/updateController';
 import { auditLogger } from './middleware/auditMiddleware';
+import { verifyRequestSecurity } from './middleware/securityMiddleware';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './config/swagger';
 import { createRateLimiter } from './middleware/rateLimiter';
@@ -56,7 +60,7 @@ app.use(cors({
     }
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-signature', 'x-nonce', 'x-timestamp', 'x-device-fingerprint', 'x-device-uuid'],
   credentials: true
 }));
 
@@ -74,6 +78,7 @@ const globalLimiter = createRateLimiter({
   message: 'Too many requests from this IP. Please try again after 15 minutes.'
 });
 app.use('/api', globalLimiter);
+app.use('/api', verifyRequestSecurity as any);
 
 // Serve file uploads redirect middleware for Cloudinary
 app.get('/uploads/:filename', async (req, res, next) => {
@@ -109,8 +114,15 @@ app.use('/api/teams', teamRouter);
 app.use('/api/notifications', notificationRouter);
 app.use('/api/audit-logs', auditRouter);
 app.use('/api/search', searchRouter);
+app.use('/api/productivity', productivityRouter);
 app.use('/api/reports', reportRouter);
 app.use('/api/assets', assetRouter);
+app.use('/api/devices', deviceRouter);
+
+// Auto-updater client/server endpoints
+app.get('/updates/check', checkUpdate);
+app.get('/updates/download/:filename', downloadUpdate);
+app.post('/updates/rollback', triggerRollbackCommand);
 
 // Basic status check
 app.get('/health', (req: Request, res: Response) => {

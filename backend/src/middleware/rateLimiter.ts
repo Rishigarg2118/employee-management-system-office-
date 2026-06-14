@@ -8,6 +8,10 @@ const limitStore = new Map<string, RateLimitInfo>();
 
 export function createRateLimiter(options: { windowMs: number; max: number; message: string }) {
   return (req: Request, res: Response, next: NextFunction): void => {
+    if (process.env.NODE_ENV !== 'production') {
+      next();
+      return;
+    }
     const ip = req.ip || req.socket.remoteAddress || 'unknown';
     const key = `${ip}:${req.baseUrl || req.path}`;
     const now = Date.now();

@@ -1,12 +1,13 @@
 import React from 'react';
 import { Tabs, Card, Typography } from 'antd';
-import { ClockCircleOutlined, HistoryOutlined, TeamOutlined, LineChartOutlined, FileExcelOutlined } from '@ant-design/icons';
+import { ClockCircleOutlined, HistoryOutlined, TeamOutlined, LineChartOutlined, FileExcelOutlined, DesktopOutlined } from '@ant-design/icons';
 import { useAuth } from '../../context/AuthContext';
 import { PunchBoard } from './PunchBoard';
 import { AttendanceLogs } from './AttendanceLogs';
 import { ManagerCorrections } from './ManagerCorrections';
 import { AttendanceAnalytics } from './AttendanceAnalytics';
 import { AttendanceReports } from './AttendanceReports';
+import { DeviceManagement } from './DeviceManagement';
 
 const { Title, Paragraph } = Typography;
 
@@ -46,6 +47,15 @@ export const AttendanceWorkspace: React.FC = () => {
           </span>
         ),
         children: <ManagerCorrections />
+      },
+      {
+        key: 'devices',
+        label: (
+          <span style={{ fontSize: 14, fontWeight: 500 }}>
+            <DesktopOutlined /> Device Trust
+          </span>
+        ),
+        children: <DeviceManagement />
       },
       {
         key: 'analytics',

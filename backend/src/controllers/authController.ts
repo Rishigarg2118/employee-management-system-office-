@@ -3,6 +3,7 @@ import * as bcrypt from 'bcryptjs';
 import * as jwt from 'jsonwebtoken';
 import { db } from '../config/db';
 import { AuthenticatedRequest } from '../middleware/auth';
+import { verifyGoogleToken } from '../middleware/googleAuth';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'enterprise_hrms_super_secure_jwt_secret_key_2026';
 
@@ -143,9 +144,24 @@ export async function refresh(req: AuthenticatedRequest, res: Response): Promise
     return;
   }
 
-  if (!(await db.hasSession(refreshToken))) {
-    res.status(401).json({ message: 'Invalid or expired refresh session.' });
-    return;
+  const sessionExists = await db.hasSession(refreshToken);
+  
+  if (!sessionExists) {
+    // RTR Theft Detection: If token is valid but session does not exist, it was previously rotated.
+    try {
+      const decoded = jwt.verify(refreshToken, JWT_SECRET) as any;
+      await db.revokeAllSessionsForEmployee(decoded.id);
+      await db.logActivity(
+        decoded.id, 
+        'SECURITY_ALERT', 
+        `Potential Token Theft Detected: Rotated refresh token was reused. All active sessions for user have been revoked.`
+      );
+      res.status(401).json({ message: 'Security Alert: Unauthorized session reuse detected. Session terminated.' });
+      return;
+    } catch {
+      res.status(401).json({ message: 'Invalid or expired refresh session.' });
+      return;
+    }
   }
 
   try {
@@ -203,5 +219,80 @@ export async function systemStatus(req: AuthenticatedRequest, res: Response): Pr
   } catch (err) {
     console.error('System status check error:', err);
     res.status(500).json({ message: 'Error checking system initialization status.' });
+  }
+}
+
+export async function googleLogin(req: AuthenticatedRequest, res: Response): Promise<void> {
+  const { idToken } = req.body;
+
+  if (!idToken) {
+    res.status(400).json({ message: 'Google ID Token is required.' });
+    return;
+  }
+
+  try {
+    const payload = await verifyGoogleToken(idToken);
+    if (!payload || !payload.email) {
+      res.status(401).json({ message: 'Invalid Google Identity token.' });
+      return;
+    }
+
+    let employee = await db.getEmployeeByEmail(email);
+
+    if (!employee) {
+      // Auto-register employee if not registered in HRMS
+      const depts = await db.getDepartments();
+      const defaultDeptId = depts.length > 0 ? depts[0].id : null;
+      
+      const newEmpId = 'EMP-G' + Math.floor(1000 + Math.random() * 9000);
+      employee = await db.createEmployee({
+        employee_id: newEmpId,
+        first_name: payload.given_name || payload.name?.split(' ')[0] || 'Google',
+        last_name: payload.family_name || payload.name?.split(' ')[1] || 'User',
+        email,
+        password: '', // no local password needed for Google SSO
+        designation: 'Staff Associate',
+        status: 'Active',
+        joining_date: new Date().toISOString().split('T')[0],
+        role: 'Employee',
+        phone: '',
+        bio: 'Google OAuth auto-registered user.',
+        department_id: defaultDeptId
+      });
+      await db.logActivity(employee.id, 'EMPLOYEE_CREATED', `Google OAuth user ${email} auto-registered upon login.`);
+    }
+
+    if (employee.status === 'Inactive') {
+      res.status(403).json({ message: 'Account is deactivated. Contact HR admin.' });
+      return;
+    }
+
+    // Generate Access & Refresh tokens
+    const accessToken = jwt.sign(
+      { id: employee.id, email: employee.email, role: employee.role },
+      JWT_SECRET,
+      { expiresIn: '15m' }
+    );
+
+    const newRefreshToken = jwt.sign(
+      { id: employee.id, email: employee.email, role: employee.role },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    // Save refresh token session to database
+    await db.addSession(employee.id, newRefreshToken, new Date(Date.now() + 7 * 24 * 3600 * 1000));
+
+    // Remove password from response
+    const { password: _, ...userWithoutPassword } = employee;
+
+    res.json({
+      token: accessToken,
+      refreshToken: newRefreshToken,
+      user: userWithoutPassword
+    });
+  } catch (err: any) {
+    console.error('Google Login verification error:', err);
+    res.status(500).json({ message: 'Internal server error verifying Google credentials.' });
   }
 }

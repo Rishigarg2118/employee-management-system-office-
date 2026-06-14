@@ -8,6 +8,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (credentials: any) => Promise<void>;
+  loginWithGoogle: (idToken: string) => Promise<void>;
   logout: () => void;
   updateUser: (user: Employee) => void;
 }
@@ -59,6 +60,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const loginWithGoogle = async (idToken: string) => {
+    setIsLoading(true);
+    try {
+      resetAuthSession();
+      const data = await api.googleLogin(idToken);
+      setToken(data.token);
+      setUser(data.user);
+      localStorage.setItem('hrms_token', data.token);
+      localStorage.setItem('hrms_refresh_token', data.refreshToken);
+      localStorage.setItem('hrms_user', JSON.stringify(data.user));
+    } catch (err) {
+      logout();
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const logout = () => {
     resetAuthSession();
     const refreshToken = localStorage.getItem('hrms_refresh_token');
@@ -82,7 +101,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const isAuthenticated = !!token;
 
   return (
-    <AuthContext.Provider value={{ user, token, isAuthenticated, isLoading, login, logout, updateUser }}>
+    <AuthContext.Provider value={{ user, token, isAuthenticated, isLoading, login, loginWithGoogle, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

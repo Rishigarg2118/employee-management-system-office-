@@ -1,4 +1,5 @@
-import { Pool } from 'pg';
+import { Pool, types } from 'pg';
+types.setTypeParser(1114, (str) => new Date(str + 'Z'));
 import * as fs from 'fs';
 import * as path from 'path';
 import * as bcrypt from 'bcryptjs';
@@ -47,6 +48,9 @@ if (dbEnabled) {
       password: process.env.DB_PASSWORD || 'postgres',
       database: process.env.DB_DATABASE || 'premium_hrms',
       ssl: sslConfig,
+      max: 20,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 2000,
     });
     console.log('[Database] PostgreSQL Pool created.');
   } catch (err) {
@@ -81,6 +85,7 @@ interface JsonDatabase {
   asset_assignments: any[];
   asset_history: any[];
   activity_heartbeats: any[];
+  agent_devices: any[];
 }
 
 let jsonDb: JsonDatabase = {
@@ -108,7 +113,8 @@ let jsonDb: JsonDatabase = {
   assets: [],
   asset_assignments: [],
   asset_history: [],
-  activity_heartbeats: []
+  activity_heartbeats: [],
+  agent_devices: []
 };
 
 // Seed Data definition
@@ -773,11 +779,26 @@ async function seedJsonDatabase() {
       actor_name: 'Sarah Jenkins',
       action: 'Created Project "Event Management 360"',
       module: 'PROJECTS',
-      old_value: null,
       new_value: JSON.stringify(jsonDb.projects[0]),
       created_at: new Date('2026-06-01T09:00:00Z').toISOString()
     }
   ];
+
+  // 16. Seed agent devices
+  jsonDb.agent_devices = jsonDb.agent_devices || [];
+  if (!jsonDb.agent_devices.some((d: any) => d.device_uuid === 'UAT_SECURE_TEST_DEVICE_FINGERPRINT_999')) {
+    jsonDb.agent_devices.push({
+      id: 999,
+      employee_id: 4,
+      device_uuid: 'UAT_SECURE_TEST_DEVICE_FINGERPRINT_999',
+      os_platform: 'Windows',
+      hostname: 'UAT-TEST-HOST',
+      platform: 'win32',
+      status: 'Approved',
+      last_sync: new Date().toISOString(),
+      created_at: new Date().toISOString()
+    });
+  }
 
   saveJsonDb();
   console.log('[Database] Fallback JSON database successfully seeded.');
@@ -988,6 +1009,13 @@ export async function initializeDatabase() {
         `);
         await client.query('CREATE INDEX IF NOT EXISTS idx_audit_module ON audit_logs(module)');
         await client.query('CREATE INDEX IF NOT EXISTS idx_audit_created ON audit_logs(created_at DESC)');
+        
+        // Ensure action column has a capacity of 512 characters
+        try {
+          await client.query('ALTER TABLE audit_logs ALTER COLUMN action TYPE VARCHAR(512)');
+        } catch (e) {
+          console.warn('[Database] Failed to alter action column size:', e);
+        }
 
         // Additional performance lookup indexes (Phase 4 Database Optimization)
         await client.query('CREATE INDEX IF NOT EXISTS idx_employees_email ON employees(email)');
@@ -1103,11 +1131,171 @@ export async function initializeDatabase() {
               mouse_clicks INTEGER DEFAULT 0,
               keyboard_presses INTEGER DEFAULT 0,
               active_window VARCHAR(255),
-              screenshot_url VARCHAR(255)
+              screenshot_url VARCHAR(255),
+              CONSTRAINT unique_employee_timestamp UNIQUE (employee_id, timestamp)
           );
         `);
         await client.query('CREATE INDEX IF NOT EXISTS idx_activity_heartbeats_attendance ON activity_heartbeats(attendance_id)');
         await client.query('CREATE INDEX IF NOT EXISTS idx_activity_heartbeats_employee_date ON activity_heartbeats(employee_id, timestamp)');
+        await client.query('CREATE INDEX IF NOT EXISTS idx_heartbeats_employee_timestamp ON activity_heartbeats(employee_id, timestamp DESC)');
+        await client.query('CREATE INDEX IF NOT EXISTS idx_heartbeats_active_window ON activity_heartbeats(active_window) WHERE active_window IS NOT NULL');
+
+        // Productivity Classifications Table (Phase 5 Upgraded)
+        await client.query(`
+          CREATE TABLE IF NOT EXISTS productivity_classifications (
+              id SERIAL PRIMARY KEY,
+              pattern VARCHAR(255) NOT NULL UNIQUE,
+              category VARCHAR(20) NOT NULL CHECK (category IN ('Productive', 'Neutral', 'Unproductive')),
+              tag VARCHAR(50) NOT NULL DEFAULT 'Research' CHECK (tag IN ('Deep Work', 'Communication', 'Learning', 'Research', 'Entertainment', 'Social Media')),
+              score INTEGER DEFAULT 100 CHECK (score >= 0 AND score <= 100)
+          );
+        `);
+        // Safely alter existing tables if they are being updated
+        try {
+          await client.query(`ALTER TABLE productivity_classifications ADD COLUMN IF NOT EXISTS tag VARCHAR(50) NOT NULL DEFAULT 'Research' CHECK (tag IN ('Deep Work', 'Communication', 'Learning', 'Research', 'Entertainment', 'Social Media'))`);
+          await client.query(`ALTER TABLE productivity_classifications ADD COLUMN IF NOT EXISTS score INTEGER DEFAULT 100 CHECK (score >= 0 AND score <= 100)`);
+        } catch (e) {
+          console.warn('[Database] Altering productivity_classifications warning:', e);
+        }
+
+        // Auto-seed default corporate rules
+        const checkEmpty = await client.query('SELECT COUNT(*) FROM productivity_classifications');
+        if (parseInt(checkEmpty.rows[0].count, 10) === 0) {
+          const defaultRules = [
+            ['code.exe', 'Productive', 'Deep Work', 100],
+            ['vs code', 'Productive', 'Deep Work', 100],
+            ['github.com', 'Productive', 'Deep Work', 100],
+            ['stackoverflow.com', 'Productive', 'Research', 90],
+            ['slack.com', 'Neutral', 'Communication', 70],
+            ['teams.microsoft.com', 'Neutral', 'Communication', 70],
+            ['google.com', 'Neutral', 'Research', 80],
+            ['youtube.com', 'Unproductive', 'Entertainment', 50],
+            ['instagram.com', 'Unproductive', 'Social Media', 0],
+            ['facebook.com', 'Unproductive', 'Social Media', 0],
+            ['x.com', 'Unproductive', 'Social Media', 0]
+          ];
+          for (const rule of defaultRules) {
+            await client.query(
+              'INSERT INTO productivity_classifications (pattern, category, tag, score) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING',
+              rule
+            );
+          }
+          console.log('[Database] Seeded default productivity classifications.');
+        }
+
+        // Agent Devices (Phase 2)
+        await client.query(`
+          CREATE TABLE IF NOT EXISTS agent_devices (
+              id SERIAL PRIMARY KEY,
+              employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+              device_uuid VARCHAR(100) NOT NULL UNIQUE,
+              os_platform VARCHAR(50) NOT NULL,
+              hostname VARCHAR(100),
+              platform VARCHAR(50),
+              architecture VARCHAR(50),
+              app_version VARCHAR(20),
+              agent_version VARCHAR(20),
+              last_sync TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+              timezone VARCHAR(50),
+              language VARCHAR(20),
+              screen_resolution VARCHAR(50),
+              device_name VARCHAR(100),
+              status VARCHAR(20) DEFAULT 'Pending' CHECK (status IN ('Pending', 'Approved', 'Rejected', 'Revoked', 'Blocked')),
+              hardware_fingerprint VARCHAR(100),
+              installation_id VARCHAR(100),
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          );
+        `);
+        // Ensure status contains Blocked, and the new columns exist
+        await client.query(`
+          ALTER TABLE agent_devices ADD COLUMN IF NOT EXISTS hardware_fingerprint VARCHAR(100);
+        `);
+        await client.query(`
+          ALTER TABLE agent_devices ADD COLUMN IF NOT EXISTS installation_id VARCHAR(100);
+        `);
+        // Safely alter status CHECK constraint
+        try {
+          await client.query(`ALTER TABLE agent_devices DROP CONSTRAINT IF EXISTS agent_devices_status_check;`);
+          await client.query(`ALTER TABLE agent_devices ADD CONSTRAINT agent_devices_status_check CHECK (status IN ('Pending', 'Approved', 'Rejected', 'Revoked', 'Blocked'));`);
+        } catch (e) {
+          console.warn('Could not recreate status check constraint on agent_devices:', e);
+        }
+        await client.query('CREATE INDEX IF NOT EXISTS idx_agent_devices_uuid ON agent_devices(device_uuid)');
+        await client.query('CREATE INDEX IF NOT EXISTS idx_agent_devices_employee ON agent_devices(employee_id)');
+
+        // Deploy productivity intelligence views
+        try {
+          await client.query(`
+            CREATE OR REPLACE VIEW daily_productivity_summary AS
+            WITH telemetry_stats AS (
+                SELECT 
+                    employee_id,
+                    attendance_id,
+                    timestamp::DATE AS date,
+                    COUNT(*) * 0.5 / 60.0 AS total_hours,
+                    SUM(CASE WHEN status = 'Active' THEN 1 ELSE 0 END) * 0.5 / 60.0 AS active_hours,
+                    SUM(CASE WHEN status = 'Idle' THEN 1 ELSE 0 END) * 0.5 / 60.0 AS idle_hours,
+                    SUM(CASE WHEN status = 'Break' THEN 1 ELSE 0 END) * 0.5 / 60.0 AS break_hours,
+                    SUM(mouse_clicks) AS total_mouse_clicks,
+                    SUM(keyboard_presses) AS total_keyboard_presses
+                FROM activity_heartbeats
+                GROUP BY employee_id, attendance_id, timestamp::DATE
+            )
+            SELECT 
+                ts.employee_id,
+                ts.attendance_id,
+                ts.date,
+                ts.total_hours,
+                ts.active_hours,
+                ts.idle_hours,
+                ts.break_hours,
+                ts.total_mouse_clicks,
+                ts.total_keyboard_presses
+            FROM telemetry_stats ts;
+          `);
+          await client.query(`
+            CREATE OR REPLACE VIEW weekly_productivity_summary AS
+            SELECT 
+                employee_id,
+                DATE_TRUNC('week', date)::DATE AS week_start,
+                AVG(total_hours) AS avg_daily_hours,
+                AVG(active_hours) AS avg_active_hours,
+                AVG(idle_hours) AS avg_idle_hours,
+                AVG(break_hours) AS avg_break_hours,
+                SUM(total_mouse_clicks) AS weekly_mouse_clicks,
+                SUM(total_keyboard_presses) AS weekly_keyboard_presses
+            FROM daily_productivity_summary
+            GROUP BY employee_id, DATE_TRUNC('week', date)::DATE;
+          `);
+          await client.query(`
+            CREATE OR REPLACE VIEW monthly_productivity_summary AS
+            SELECT 
+                employee_id,
+                DATE_TRUNC('month', date)::DATE AS month_start,
+                AVG(total_hours) AS avg_daily_hours,
+                AVG(active_hours) AS avg_active_hours,
+                AVG(idle_hours) AS avg_idle_hours,
+                AVG(break_hours) AS avg_break_hours,
+                SUM(total_mouse_clicks) AS monthly_mouse_clicks,
+                SUM(total_keyboard_presses) AS monthly_keyboard_presses
+            FROM daily_productivity_summary
+            GROUP BY employee_id, DATE_TRUNC('month', date)::DATE;
+          `);
+          console.log('[Database] Productivity intelligence views created successfully.');
+        } catch (viewErr) {
+          console.error('[Database] Failed to deploy productivity views:', viewErr);
+        }
+
+        // Ensure UAT test device is seeded and approved for Marcus (ID: 4)
+        try {
+          await client.query(`
+            INSERT INTO agent_devices (employee_id, device_uuid, os_platform, hostname, platform, status)
+            VALUES (4, 'UAT_SECURE_TEST_DEVICE_FINGERPRINT_999', 'Windows', 'UAT-TEST-HOST', 'win32', 'Approved')
+            ON CONFLICT (device_uuid) DO UPDATE SET status = 'Approved'
+          `);
+        } catch (e) {
+          console.warn('[Database] Failed to seed UAT test device:', e);
+        }
 
         const empCount = await client.query('SELECT COUNT(*) FROM employees');
         if (parseInt(empCount.rows[0].count) === 0) {
@@ -1535,7 +1723,7 @@ export const db = {
 
   async getEmployeeByEmail(email: string): Promise<Employee | null> {
     if (this.isPostgres() && pool) {
-      const res = await pool.query('SELECT * FROM employees WHERE email = $1 AND deleted_at IS NULL', [email]);
+      const res = await pool.query('SELECT * FROM employees WHERE LOWER(email) = LOWER($1) AND deleted_at IS NULL', [email]);
       return res.rows[0] || null;
     }
     return jsonDb.employees.find(e => e.email.toLowerCase() === email.toLowerCase() && !e.deleted_at) || null;
@@ -3334,25 +3522,62 @@ export const db = {
     };
   },
 
-  async addHeartbeat(employeeId: number, attendanceId: number, status: 'Active' | 'Idle' | 'Break', mouseClicks: number, keyboardPresses: number, activeWindow?: string, screenshotUrl?: string): Promise<any> {
-    const timestamp = new Date().toISOString();
+  async addHeartbeat(
+    employeeId: number, 
+    attendanceId: number, 
+    status: 'Active' | 'Idle' | 'Break', 
+    mouseClicks: number, 
+    keyboardPresses: number, 
+    activeWindow?: string, 
+    screenshotUrl?: string,
+    customTimestamp?: string
+  ): Promise<any> {
+    const targetTime = customTimestamp || new Date().toISOString();
+    const roundedTime = new Date(Math.round(new Date(targetTime).getTime() / 30000) * 30000).toISOString();
+
     if (this.isPostgres() && pool) {
       const res = await pool.query(
         `INSERT INTO activity_heartbeats (employee_id, attendance_id, timestamp, status, mouse_clicks, keyboard_presses, active_window, screenshot_url)
-         VALUES ($1, $2, NOW(), $3, $4, $5, $6, $7)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+         ON CONFLICT (employee_id, timestamp) 
+         DO UPDATE SET 
+           status = EXCLUDED.status,
+           mouse_clicks = GREATEST(activity_heartbeats.mouse_clicks, EXCLUDED.mouse_clicks),
+           keyboard_presses = GREATEST(activity_heartbeats.keyboard_presses, EXCLUDED.keyboard_presses),
+           active_window = COALESCE(EXCLUDED.active_window, activity_heartbeats.active_window),
+           screenshot_url = COALESCE(EXCLUDED.screenshot_url, activity_heartbeats.screenshot_url)
          RETURNING *`,
-        [employeeId, attendanceId, status, mouseClicks, keyboardPresses, activeWindow || null, screenshotUrl || null]
+        [employeeId, attendanceId, roundedTime, status, mouseClicks, keyboardPresses, activeWindow || null, screenshotUrl || null]
       );
       return res.rows[0];
     }
 
     jsonDb.activity_heartbeats = jsonDb.activity_heartbeats || [];
+    const existingIdx = jsonDb.activity_heartbeats.findIndex(
+      (h: any) => h.employee_id === employeeId && 
+                  new Date(h.timestamp).getTime() === new Date(roundedTime).getTime()
+    );
+
+    if (existingIdx !== -1) {
+      const existing = jsonDb.activity_heartbeats[existingIdx];
+      jsonDb.activity_heartbeats[existingIdx] = {
+        ...existing,
+        status,
+        mouse_clicks: Math.max(existing.mouse_clicks || 0, mouseClicks),
+        keyboard_presses: Math.max(existing.keyboard_presses || 0, keyboardPresses),
+        active_window: activeWindow || existing.active_window,
+        screenshot_url: screenshotUrl || existing.screenshot_url
+      };
+      saveJsonDb();
+      return jsonDb.activity_heartbeats[existingIdx];
+    }
+
     const newId = jsonDb.activity_heartbeats.length > 0 ? Math.max(...jsonDb.activity_heartbeats.map((h: any) => h.id)) + 1 : 1;
     const record = {
       id: newId,
       employee_id: employeeId,
       attendance_id: attendanceId,
-      timestamp,
+      timestamp: roundedTime,
       status,
       mouse_clicks: mouseClicks,
       keyboard_presses: keyboardPresses,
@@ -3362,6 +3587,94 @@ export const db = {
     jsonDb.activity_heartbeats.push(record);
     saveJsonDb();
     return record;
+  },
+
+  async addHeartbeatsBulk(packets: any[]): Promise<any[]> {
+    if (packets.length === 0) return [];
+
+    if (this.isPostgres() && pool) {
+      const uniquePacketsMap = new Map<string, any>();
+
+      packets.forEach((p) => {
+        const empId = p.employee_id || p.employeeId;
+        const targetTime = p.timestamp || new Date().toISOString();
+        const roundedTime = new Date(Math.round(new Date(targetTime).getTime() / 30000) * 30000).toISOString();
+        const key = `${empId}_${roundedTime}`;
+
+        const existing = uniquePacketsMap.get(key);
+        if (existing) {
+          existing.mouse_clicks = Math.max(existing.mouse_clicks || 0, p.mouse_clicks || p.mouseClicks || 0);
+          existing.keyboard_presses = Math.max(existing.keyboard_presses || 0, p.keyboard_presses || p.keyboardPresses || 0);
+          if (p.status === 'Active' || existing.status !== 'Active') {
+            existing.status = p.status || existing.status;
+          }
+          existing.active_window = p.active_window || p.activeWindow || existing.active_window;
+          existing.screenshot_url = p.screenshot_url || p.screenshotUrl || existing.screenshot_url;
+        } else {
+          uniquePacketsMap.set(key, {
+            employee_id: empId,
+            attendance_id: p.attendance_id || p.attendanceId,
+            roundedTime,
+            status: p.status || 'Active',
+            mouse_clicks: p.mouse_clicks || p.mouseClicks || 0,
+            keyboard_presses: p.keyboard_presses || p.keyboardPresses || 0,
+            active_window: p.active_window || p.activeWindow || null,
+            screenshot_url: p.screenshot_url || p.screenshotUrl || null
+          });
+        }
+      });
+
+      const uniquePackets = Array.from(uniquePacketsMap.values());
+      const values: any[] = [];
+      const placeholders: string[] = [];
+      let valIdx = 1;
+
+      uniquePackets.forEach((p) => {
+        placeholders.push(`($${valIdx++}, $${valIdx++}, $${valIdx++}, $${valIdx++}, $${valIdx++}, $${valIdx++}, $${valIdx++}, $${valIdx++})`);
+        values.push(
+          p.employee_id,
+          p.attendance_id,
+          p.roundedTime,
+          p.status,
+          p.mouse_clicks,
+          p.keyboard_presses,
+          p.active_window,
+          p.screenshot_url
+        );
+      });
+
+      const query = `
+        INSERT INTO activity_heartbeats (employee_id, attendance_id, timestamp, status, mouse_clicks, keyboard_presses, active_window, screenshot_url)
+        VALUES ${placeholders.join(', ')}
+        ON CONFLICT (employee_id, timestamp)
+        DO UPDATE SET
+          status = EXCLUDED.status,
+          mouse_clicks = GREATEST(activity_heartbeats.mouse_clicks, EXCLUDED.mouse_clicks),
+          keyboard_presses = GREATEST(activity_heartbeats.keyboard_presses, EXCLUDED.keyboard_presses),
+          active_window = COALESCE(EXCLUDED.active_window, activity_heartbeats.active_window),
+          screenshot_url = COALESCE(EXCLUDED.screenshot_url, activity_heartbeats.screenshot_url)
+        RETURNING *;
+      `;
+
+      const res = await pool.query(query, values);
+      return res.rows;
+    }
+
+    const results = [];
+    for (const p of packets) {
+      const res = await this.addHeartbeat(
+        p.employee_id || p.employeeId,
+        p.attendance_id || p.attendanceId,
+        p.status || 'Active',
+        p.mouse_clicks || p.mouseClicks || 0,
+        p.keyboard_presses || p.keyboardPresses || 0,
+        p.active_window || p.activeWindow || undefined,
+        p.screenshot_url || p.screenshotUrl || undefined,
+        p.timestamp
+      );
+      results.push(res);
+    }
+    return results;
   },
 
   async getHeartbeatsForDate(employeeId: number, dateStr: string): Promise<any[]> {
@@ -3378,6 +3691,23 @@ export const db = {
     jsonDb.activity_heartbeats = jsonDb.activity_heartbeats || [];
     return jsonDb.activity_heartbeats
       .filter((h: any) => h.employee_id === employeeId && h.timestamp.split('T')[0] === dateStr)
+      .sort((a: any, b: any) => a.timestamp.localeCompare(b.timestamp));
+  },
+
+  async getHeartbeatsForRange(employeeId: number, startDateStr: string, endDateStr: string): Promise<any[]> {
+    if (this.isPostgres() && pool) {
+      const res = await pool.query(
+        `SELECT * FROM activity_heartbeats 
+         WHERE employee_id = $1 AND timestamp::date >= $2::date AND timestamp::date <= $3::date
+         ORDER BY timestamp ASC`,
+        [employeeId, startDateStr, endDateStr]
+      );
+      return res.rows;
+    }
+
+    jsonDb.activity_heartbeats = jsonDb.activity_heartbeats || [];
+    return jsonDb.activity_heartbeats
+      .filter((h: any) => h.employee_id === employeeId && h.timestamp.split('T')[0] >= startDateStr && h.timestamp.split('T')[0] <= endDateStr)
       .sort((a: any, b: any) => a.timestamp.localeCompare(b.timestamp));
   },
 
@@ -5342,6 +5672,354 @@ export const db = {
 
     saveJsonDb();
     return jsonDb.asset_assignments[index];
+  },
+
+  async getDeviceByUuid(uuid: string): Promise<any | null> {
+    if (this.isPostgres() && pool) {
+      const res = await pool.query('SELECT * FROM agent_devices WHERE device_uuid = $1', [uuid]);
+      return res.rows[0] || null;
+    }
+    jsonDb.agent_devices = jsonDb.agent_devices || [];
+    return jsonDb.agent_devices.find((d: any) => d.device_uuid === uuid) || null;
+  },
+
+  async registerDevice(employeeId: number, data: any): Promise<any> {
+    if (this.isPostgres() && pool) {
+      const query = `
+        INSERT INTO agent_devices 
+        (employee_id, device_uuid, os_platform, hostname, platform, architecture, app_version, agent_version, timezone, language, screen_resolution, device_name, hardware_fingerprint, installation_id, last_sync)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW())
+        ON CONFLICT (device_uuid) DO UPDATE SET
+          employee_id = EXCLUDED.employee_id,
+          os_platform = EXCLUDED.os_platform,
+          hostname = EXCLUDED.hostname,
+          platform = EXCLUDED.platform,
+          architecture = EXCLUDED.architecture,
+          app_version = EXCLUDED.app_version,
+          agent_version = EXCLUDED.agent_version,
+          timezone = EXCLUDED.timezone,
+          language = EXCLUDED.language,
+          screen_resolution = EXCLUDED.screen_resolution,
+          device_name = EXCLUDED.device_name,
+          hardware_fingerprint = EXCLUDED.hardware_fingerprint,
+          installation_id = EXCLUDED.installation_id,
+          last_sync = NOW()
+        RETURNING *
+      `;
+      const values = [
+        employeeId,
+        data.device_uuid,
+        data.os_platform,
+        data.hostname || null,
+        data.platform || null,
+        data.architecture || null,
+        data.app_version || null,
+        data.agent_version || null,
+        data.timezone || null,
+        data.language || null,
+        data.screen_resolution || null,
+        data.device_name || null,
+        data.hardware_fingerprint || null,
+        data.installation_id || null
+      ];
+      const res = await pool.query(query, values);
+      return res.rows[0];
+    }
+
+    jsonDb.agent_devices = jsonDb.agent_devices || [];
+    const idx = jsonDb.agent_devices.findIndex((d: any) => d.device_uuid === data.device_uuid);
+    const record = {
+      id: idx !== -1 ? jsonDb.agent_devices[idx].id : (jsonDb.agent_devices.length > 0 ? Math.max(...jsonDb.agent_devices.map((d: any) => d.id)) + 1 : 1),
+      employee_id: employeeId,
+      device_uuid: data.device_uuid,
+      os_platform: data.os_platform,
+      hostname: data.hostname || null,
+      platform: data.platform || null,
+      architecture: data.architecture || null,
+      app_version: data.app_version || null,
+      agent_version: data.agent_version || null,
+      timezone: data.timezone || null,
+      language: data.language || null,
+      screen_resolution: data.screen_resolution || null,
+      device_name: data.device_name || null,
+      hardware_fingerprint: data.hardware_fingerprint || null,
+      installation_id: data.installation_id || null,
+      status: idx !== -1 ? (jsonDb.agent_devices[idx].status || 'Pending') : 'Pending',
+      last_sync: new Date().toISOString(),
+      created_at: idx !== -1 ? jsonDb.agent_devices[idx].created_at : new Date().toISOString()
+    };
+
+    if (idx !== -1) {
+      jsonDb.agent_devices[idx] = record;
+    } else {
+      jsonDb.agent_devices.push(record);
+    }
+    saveJsonDb();
+    return record;
+  },
+
+  async getAllDevices(params?: { status?: string; department_id?: number }): Promise<any[]> {
+    if (this.isPostgres() && pool) {
+      let query = `
+        SELECT d.*, 
+               e.first_name, 
+               e.last_name, 
+               e.employee_id as employee_code,
+               dept.name as department_name
+        FROM agent_devices d
+        JOIN employees e ON d.employee_id = e.id
+        LEFT JOIN departments dept ON e.department_id = dept.id
+        WHERE 1=1
+      `;
+      const values: any[] = [];
+      let valIdx = 1;
+      
+      if (params?.status) {
+        query += ` AND d.status = $${valIdx++}`;
+        values.push(params.status);
+      }
+      
+      if (params?.department_id) {
+        query += ` AND e.department_id = $${valIdx++}`;
+        values.push(params.department_id);
+      }
+      
+      query += ` ORDER BY d.last_sync DESC`;
+      const res = await pool.query(query, values);
+      return res.rows;
+    }
+    
+    // JSON Fallback
+    jsonDb.agent_devices = jsonDb.agent_devices || [];
+    let list = jsonDb.agent_devices.map(d => {
+      const emp = jsonDb.employees.find(e => e.id === d.employee_id);
+      const dept = emp ? jsonDb.departments.find(dp => dp.id === emp.department_id) : null;
+      return {
+        ...d,
+        first_name: emp ? emp.first_name : '',
+        last_name: emp ? emp.last_name : '',
+        employee_code: emp ? emp.employee_id : '',
+        department_name: dept ? dept.name : '',
+        status: d.status || 'Pending'
+      };
+    });
+    
+    if (params?.status) {
+      list = list.filter(d => d.status === params.status);
+    }
+    if (params?.department_id) {
+      list = list.filter(d => {
+        const emp = jsonDb.employees.find(e => e.id === d.employee_id);
+        return emp && emp.department_id === params.department_id;
+      });
+    }
+    return list.sort((a, b) => new Date(b.last_sync).getTime() - new Date(a.last_sync).getTime());
+  },
+
+  async updateDeviceStatus(id: number, status: string): Promise<any | null> {
+    if (this.isPostgres() && pool) {
+      const res = await pool.query(
+        'UPDATE agent_devices SET status = $1, last_sync = NOW() WHERE id = $2 RETURNING *',
+        [status, id]
+      );
+      return res.rows[0] || null;
+    }
+    
+    jsonDb.agent_devices = jsonDb.agent_devices || [];
+    const idx = jsonDb.agent_devices.findIndex(d => d.id === id);
+    if (idx === -1) return null;
+    
+    jsonDb.agent_devices[idx] = {
+      ...jsonDb.agent_devices[idx],
+      status,
+      last_sync: new Date().toISOString()
+    };
+    saveJsonDb();
+    return jsonDb.agent_devices[idx];
+  },
+
+  async getProductivityDaily(employeeId: number, dateStr: string): Promise<any | null> {
+    if (this.isPostgres() && pool) {
+      const res = await pool.query(
+        'SELECT * FROM daily_productivity_summary WHERE employee_id = $1 AND date = $2::date',
+        [employeeId, dateStr]
+      );
+      return res.rows[0] || null;
+    }
+
+    jsonDb.activity_heartbeats = jsonDb.activity_heartbeats || [];
+    const dateHbs = jsonDb.activity_heartbeats.filter(
+      (h: any) => h.employee_id === employeeId && h.timestamp.split('T')[0] === dateStr
+    );
+    if (dateHbs.length === 0) return null;
+
+    let active = 0, idle = 0, brk = 0, clicks = 0, keys = 0;
+    dateHbs.forEach((h: any) => {
+      if (h.status === 'Active') active += 0.5;
+      else if (h.status === 'Idle') idle += 0.5;
+      else if (h.status === 'Break') brk += 0.5;
+      clicks += h.mouse_clicks || 0;
+      keys += h.keyboard_presses || 0;
+    });
+
+    return {
+      employee_id: employeeId,
+      date: dateStr,
+      total_hours: parseFloat(((active + idle + brk) / 60).toFixed(2)),
+      active_hours: parseFloat((active / 60).toFixed(2)),
+      idle_hours: parseFloat((idle / 60).toFixed(2)),
+      break_hours: parseFloat((brk / 60).toFixed(2)),
+      total_mouse_clicks: clicks,
+      total_keyboard_presses: keys
+    };
+  },
+
+  async getProductivityWeeklySummary(employeeId: number, weekStartStr: string): Promise<any[]> {
+    if (this.isPostgres() && pool) {
+      const res = await pool.query(
+        'SELECT * FROM weekly_productivity_summary WHERE employee_id = $1 AND week_start = $2::date',
+        [employeeId, weekStartStr]
+      );
+      return res.rows;
+    }
+
+    // JSON Rollup fallback: aggregate 7 days from start date
+    const start = new Date(weekStartStr);
+    const summaries = [];
+    for (let i = 0; i < 7; i++) {
+      const nextDate = new Date(start.getTime() + i * 24 * 60 * 60 * 1000);
+      const nextDateStr = nextDate.toISOString().split('T')[0];
+      const daily = await this.getProductivityDaily(employeeId, nextDateStr);
+      if (daily) summaries.push(daily);
+    }
+
+    if (summaries.length === 0) return [];
+    const totalDays = summaries.length;
+    return [{
+      employee_id: employeeId,
+      week_start: weekStartStr,
+      avg_daily_hours: parseFloat((summaries.reduce((sum, s) => sum + s.total_hours, 0) / totalDays).toFixed(2)),
+      avg_active_hours: parseFloat((summaries.reduce((sum, s) => sum + s.active_hours, 0) / totalDays).toFixed(2)),
+      avg_idle_hours: parseFloat((summaries.reduce((sum, s) => sum + s.idle_hours, 0) / totalDays).toFixed(2)),
+      avg_break_hours: parseFloat((summaries.reduce((sum, s) => sum + s.break_hours, 0) / totalDays).toFixed(2)),
+      weekly_mouse_clicks: summaries.reduce((sum, s) => sum + s.total_mouse_clicks, 0),
+      weekly_keyboard_presses: summaries.reduce((sum, s) => sum + s.total_keyboard_presses, 0)
+    }];
+  },
+
+  async getProductivityMonthlySummary(employeeId: number, monthStartStr: string): Promise<any[]> {
+    if (this.isPostgres() && pool) {
+      const res = await pool.query(
+        'SELECT * FROM monthly_productivity_summary WHERE employee_id = $1 AND month_start = $2::date',
+        [employeeId, monthStartStr]
+      );
+      return res.rows;
+    }
+
+    // JSON Rollup fallback: aggregate 30 days from start date
+    const start = new Date(monthStartStr);
+    const summaries = [];
+    for (let i = 0; i < 30; i++) {
+      const nextDate = new Date(start.getTime() + i * 24 * 60 * 60 * 1000);
+      const nextDateStr = nextDate.toISOString().split('T')[0];
+      const daily = await this.getProductivityDaily(employeeId, nextDateStr);
+      if (daily) summaries.push(daily);
+    }
+
+    if (summaries.length === 0) return [];
+    const totalDays = summaries.length;
+    return [{
+      employee_id: employeeId,
+      month_start: monthStartStr,
+      avg_daily_hours: parseFloat((summaries.reduce((sum, s) => sum + s.total_hours, 0) / totalDays).toFixed(2)),
+      avg_active_hours: parseFloat((summaries.reduce((sum, s) => sum + s.active_hours, 0) / totalDays).toFixed(2)),
+      avg_idle_hours: parseFloat((summaries.reduce((sum, s) => sum + s.idle_hours, 0) / totalDays).toFixed(2)),
+      avg_break_hours: parseFloat((summaries.reduce((sum, s) => sum + s.break_hours, 0) / totalDays).toFixed(2)),
+      monthly_mouse_clicks: summaries.reduce((sum, s) => sum + s.total_mouse_clicks, 0),
+      monthly_keyboard_presses: summaries.reduce((sum, s) => sum + s.total_keyboard_presses, 0)
+    }];
+  },
+
+  classificationCache: null as any[] | null,
+
+  async loadClassificationsCache(): Promise<any[]> {
+    if (this.classificationCache) return this.classificationCache;
+
+    if (this.isPostgres() && pool) {
+      const res = await pool.query('SELECT * FROM productivity_classifications');
+      this.classificationCache = res.rows;
+    } else {
+      const fallbackDb = (jsonDb as any);
+      fallbackDb.productivity_classifications = fallbackDb.productivity_classifications || [];
+      this.classificationCache = fallbackDb.productivity_classifications;
+    }
+    return this.classificationCache || [];
+  },
+
+  async getProductivityClassifications(): Promise<any[]> {
+    return this.loadClassificationsCache();
+  },
+
+  async createOrUpdateProductivityClassification(
+    pattern: string, 
+    category: 'Productive' | 'Unproductive' | 'Neutral',
+    tag: 'Deep Work' | 'Communication' | 'Learning' | 'Research' | 'Entertainment' | 'Social Media' = 'Research',
+    score: number = 100
+  ): Promise<any> {
+    const patternLower = pattern.toLowerCase();
+    
+    if (this.isPostgres() && pool) {
+      const res = await pool.query(
+        `INSERT INTO productivity_classifications (pattern, category, tag, score) VALUES ($1, $2, $3, $4)
+         ON CONFLICT (pattern) 
+         DO UPDATE SET category = EXCLUDED.category, tag = EXCLUDED.tag, score = EXCLUDED.score
+         RETURNING *`,
+        [patternLower, category, tag, score]
+      );
+      this.classificationCache = null; // invalidate cache
+      return res.rows[0];
+    }
+
+    const fallbackDb = (jsonDb as any);
+    fallbackDb.productivity_classifications = fallbackDb.productivity_classifications || [];
+    const idx = fallbackDb.productivity_classifications.findIndex((c: any) => c.pattern === patternLower);
+    let record;
+    if (idx !== -1) {
+      fallbackDb.productivity_classifications[idx].category = category;
+      fallbackDb.productivity_classifications[idx].tag = tag;
+      fallbackDb.productivity_classifications[idx].score = score;
+      record = fallbackDb.productivity_classifications[idx];
+    } else {
+      const newId = fallbackDb.productivity_classifications.length > 0 ? Math.max(...fallbackDb.productivity_classifications.map((c: any) => c.id)) + 1 : 1;
+      record = { id: newId, pattern: patternLower, category, tag, score };
+      fallbackDb.productivity_classifications.push(record);
+    }
+    saveJsonDb();
+    this.classificationCache = null; // invalidate cache
+    return record;
+  },
+
+  async deleteProductivityClassification(id: number): Promise<boolean> {
+    if (this.isPostgres() && pool) {
+      const res = await pool.query('DELETE FROM productivity_classifications WHERE id = $1', [id]);
+      this.classificationCache = null; // invalidate cache
+      return (res.rowCount ?? 0) > 0;
+    }
+    
+    const fallbackDb = (jsonDb as any);
+    fallbackDb.productivity_classifications = fallbackDb.productivity_classifications || [];
+    const idx = fallbackDb.productivity_classifications.findIndex((c: any) => c.id === id);
+    if (idx !== -1) {
+      fallbackDb.productivity_classifications.splice(idx, 1);
+      saveJsonDb();
+      this.classificationCache = null; // invalidate cache
+      return true;
+    }
+    return false;
+  },
+
+  getJsonDb() {
+    return jsonDb;
   }
 };
 export default db;

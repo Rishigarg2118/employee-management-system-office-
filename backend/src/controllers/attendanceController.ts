@@ -1,5 +1,7 @@
 import { Response } from 'express';
+import zlib from 'zlib';
 import { db } from '../config/db';
+import { telemetryQueue } from '../config/telemetryQueue';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { AttendanceStatus } from '../types';
 
@@ -494,20 +496,65 @@ export async function submitHeartbeat(req: AuthenticatedRequest, res: Response):
       return;
     }
 
-    const hb = await db.addHeartbeat(
-      req.user.id,
-      attendance.id,
+    // Buffer heartbeat packet to the async bulk-insert queue
+    telemetryQueue.enqueue({
+      employeeId: req.user.id,
+      attendanceId: attendance.id,
       status,
-      mouseClicks || 0,
-      keyboardPresses || 0,
-      activeWindow || null,
-      screenshotUrl || null
-    );
+      mouseClicks: mouseClicks || 0,
+      keyboardPresses: keyboardPresses || 0,
+      activeWindow: activeWindow || undefined,
+      screenshotUrl: screenshotUrl || undefined,
+      timestamp: new Date().toISOString()
+    });
 
-    res.status(201).json(hb);
+    res.status(202).json({ message: 'Heartbeat enqueued successfully for bulk sync.' });
   } catch (err) {
     console.error('submitHeartbeat error:', err);
-    res.status(500).json({ message: 'Error saving activity heartbeat.' });
+    res.status(500).json({ message: 'Error enqueuing activity heartbeat.' });
+  }
+}
+
+export async function bulkSyncHeartbeats(req: AuthenticatedRequest, res: Response): Promise<void> {
+  if (!req.user) {
+    res.status(401).json({ message: 'Unauthorized' });
+    return;
+  }
+
+  const { compressedData } = req.body;
+  if (!compressedData) {
+    res.status(400).json({ message: 'compressedData is required' });
+    return;
+  }
+
+  try {
+    const compressedBuffer = Buffer.from(compressedData, 'base64');
+    const decompressedJson = zlib.gunzipSync(compressedBuffer).toString('utf-8');
+    const packetList = JSON.parse(decompressedJson);
+
+    const attendance = await db.getAttendanceToday(req.user.id);
+    if (!attendance) {
+      res.status(400).json({ message: 'Not checked in today.' });
+      return;
+    }
+
+    // Map packets to schema names and execute bulk insert statement
+    const mapped = packetList.map((packet: any) => ({
+      employee_id: req.user!.id,
+      attendance_id: attendance.id,
+      status: packet.status || 'Active',
+      mouse_clicks: packet.mouseClicks || 0,
+      keyboard_presses: packet.keyboardPresses || 0,
+      active_window: packet.activeWindow || null,
+      screenshot_url: packet.screenshotUrl || null,
+      timestamp: packet.timestamp || new Date().toISOString()
+    }));
+
+    const saved = await db.addHeartbeatsBulk(mapped);
+    res.status(201).json({ count: saved.length });
+  } catch (err) {
+    console.error('bulkSyncHeartbeats error:', err);
+    res.status(500).json({ message: 'Error processing bulk heartbeats sync.' });
   }
 }
 
@@ -520,6 +567,36 @@ const PRODUCTIVITY_RULES = {
   breakLimitMinutes: 60,
   breakPenaltyPerQuarterHour: 5
 };
+
+function getHeartbeatClassification(activeWindow: string | null | undefined, rules: any[]) {
+  if (!activeWindow) return { category: 'Neutral', tag: 'Research', score: 80 };
+  
+  const labelLower = activeWindow.toLowerCase();
+  let bestMatch: any = null;
+  
+  for (const rule of rules) {
+    const pat = rule.pattern.toLowerCase();
+    if (labelLower.includes(pat)) {
+      if (!bestMatch || pat.length > bestMatch.pattern.length) {
+        bestMatch = rule;
+      }
+    }
+  }
+  
+  if (bestMatch) {
+    return {
+      category: bestMatch.category,
+      tag: bestMatch.tag,
+      score: bestMatch.score
+    };
+  }
+  
+  const labelLowerClean = labelLower.trim();
+  if (labelLowerClean.includes('code') || labelLowerClean.includes('vs code') || labelLowerClean.includes('editor')) {
+    return { category: 'Productive', tag: 'Deep Work', score: 100 };
+  }
+  return { category: 'Neutral', tag: 'Research', score: 80 };
+}
 
 export async function getLiveWorkforce(req: AuthenticatedRequest, res: Response): Promise<void> {
   if (!req.user) {
@@ -543,11 +620,20 @@ export async function getLiveWorkforce(req: AuthenticatedRequest, res: Response)
       targetDeptId = parseInt(req.query.departmentId as string);
     }
 
+    const allDepts = await db.getDepartments();
     const allEmployees = await db.getEmployees();
     const targetEmployees = allEmployees.filter(e => {
       if (e.status !== 'Active' && e.status !== 'Probation') return false;
       if (targetDeptId !== undefined && e.department_id !== targetDeptId) return false;
       return true;
+    }).map(e => {
+      const dept = allDepts.find(d => d.id === e.department_id);
+      const manager = dept && dept.manager_id ? allEmployees.find(m => m.id === dept.manager_id) : null;
+      return {
+        ...e,
+        department: dept || null,
+        manager: manager || null
+      };
     });
 
     const todayStr = new Date().toISOString().split('T')[0];
@@ -568,6 +654,8 @@ export async function getLiveWorkforce(req: AuthenticatedRequest, res: Response)
       }
     });
 
+    const rules = await db.getProductivityClassifications();
+
     for (const emp of targetEmployees) {
       const attendance = await db.getAttendanceToday(emp.id);
       const latestHb = await db.getLatestHeartbeatForEmployee(emp.id);
@@ -578,6 +666,9 @@ export async function getLiveWorkforce(req: AuthenticatedRequest, res: Response)
       let idleMinutes = 0;
       let breakMinutes = 0;
       let totalMinutes = 0;
+      let deepWorkMinutes = 0;
+      let totalActiveScoreSum = 0;
+      let activeHeartbeatCount = 0;
       
       // Consecutive idle checks
       let consecutiveIdleCount = 0;
@@ -592,18 +683,25 @@ export async function getLiveWorkforce(req: AuthenticatedRequest, res: Response)
           isIdleStreak = false;
         }
         
-        if (hb.status === 'Active') activeMinutes += 0.5;
+        if (hb.status === 'Active') {
+          activeMinutes += 0.5;
+          const classification = getHeartbeatClassification(hb.active_window || hb.activeWindow, rules);
+          totalActiveScoreSum += classification.score;
+          activeHeartbeatCount++;
+          if (classification.category === 'Productive' && classification.tag === 'Deep Work') {
+            deepWorkMinutes += 0.5;
+          }
+        }
         else if (hb.status === 'Idle') idleMinutes += 0.5;
         else if (hb.status === 'Break') breakMinutes += 0.5;
         totalMinutes += 0.5;
       }
 
-      // 1. Calculate Base Productivity Ratio
-      const measuredMinutes = activeMinutes + idleMinutes;
-      let baseScore = 100;
-      if (measuredMinutes > 0) {
-        baseScore = Math.round((activeMinutes / measuredMinutes) * 100);
-      }
+      // Calculate Focus Score
+      const focusScore = activeHeartbeatCount > 0 ? Math.round(totalActiveScoreSum / activeHeartbeatCount) : 100;
+      const activePct = totalMinutes > 0 ? Math.round((activeMinutes / totalMinutes) * 100) : 0;
+      const idlePct = totalMinutes > 0 ? Math.round((idleMinutes / totalMinutes) * 100) : 0;
+      const breakPct = totalMinutes > 0 ? Math.round((breakMinutes / totalMinutes) * 100) : 0;
 
       // 2. Add Task Completion Bonus
       const completedTaskCount = completedTasksMap[emp.id] || 0;
@@ -620,7 +718,42 @@ export async function getLiveWorkforce(req: AuthenticatedRequest, res: Response)
       }
 
       // Final Score calculation
-      const productivityScore = Math.max(0, Math.min(100, Math.round(baseScore * PRODUCTIVITY_RULES.activeWeight + taskBonus - penalties)));
+      const productivityScore = Math.max(0, Math.min(100, Math.round(focusScore * PRODUCTIVITY_RULES.activeWeight + taskBonus - penalties)));
+
+      // Fetch weekly and monthly historical aggregates
+      const date7DaysAgo = new Date();
+      date7DaysAgo.setDate(date7DaysAgo.getDate() - 7);
+      const date7DaysAgoStr = date7DaysAgo.toISOString().split('T')[0];
+
+      const date30DaysAgo = new Date();
+      date30DaysAgo.setDate(date30DaysAgo.getDate() - 30);
+      const date30DaysAgoStr = date30DaysAgo.toISOString().split('T')[0];
+
+      const heartbeatsPastMonth = await db.getHeartbeatsForRange(emp.id, date30DaysAgoStr, todayStr);
+      let weeklyScoreSum = 0;
+      let weeklyCount = 0;
+      let monthlyScoreSum = 0;
+      let monthlyCount = 0;
+
+      heartbeatsPastMonth.forEach((hb: any) => {
+        if (hb.status === 'Active') {
+          const classification = getHeartbeatClassification(hb.active_window || hb.activeWindow, rules);
+          const hbDate = new Date(hb.timestamp).getTime();
+          
+          monthlyScoreSum += classification.score;
+          monthlyCount++;
+
+          const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+          if (Date.now() - hbDate <= sevenDaysMs) {
+            weeklyScoreSum += classification.score;
+            weeklyCount++;
+          }
+        }
+      });
+
+      const dailyScore = focusScore;
+      const weeklyScore = weeklyCount > 0 ? Math.round(weeklyScoreSum / weeklyCount) : focusScore;
+      const monthlyScore = monthlyCount > 0 ? Math.round(monthlyScoreSum / monthlyCount) : focusScore;
 
       if (attendance && !attendance.check_out) {
         const now = new Date();
@@ -713,12 +846,23 @@ export async function getLiveWorkforce(req: AuthenticatedRequest, res: Response)
         currentStatus,
         lastActive: latestHb ? latestHb.timestamp : null,
         activeWindow: latestHb && currentStatus !== 'Offline' ? latestHb.active_window : null,
+        department: (emp as any).department ? (emp as any).department.name : 'Unassigned',
+        manager: (emp as any).manager ? `${(emp as any).manager.first_name} ${(emp as any).manager.last_name}` : 'No Manager',
         todayStats: {
           activeHours: parseFloat((activeMinutes / 60).toFixed(2)),
           idleHours: parseFloat((idleMinutes / 60).toFixed(2)),
           breakHours: parseFloat((breakMinutes / 60).toFixed(2)),
           totalHours: parseFloat((totalMinutes / 60).toFixed(2)),
-          productivityScore
+          productivityScore: productivityScore,
+          focusScore,
+          deepWorkMinutes: Math.round(deepWorkMinutes),
+          activePercentage: activePct,
+          idlePercentage: idlePct,
+          breakPercentage: breakPct,
+          dailyScore,
+          weeklyScore,
+          monthlyScore,
+          machineName: latestHb ? (latestHb.machine_name || latestHb.machineName || 'Workstation') : 'Workstation'
         }
       });
     }
@@ -736,7 +880,359 @@ export async function getLiveWorkforce(req: AuthenticatedRequest, res: Response)
     });
   } catch (err) {
     console.error('getLiveWorkforce error:', err);
-    res.status(500).json({ message: 'Error fetching live workforce status.' });
+    res.status(500).json({ message: 'Error retrieving live workforce command metrics.' });
+  }
+}
+
+function parseDomain(windowTitle: string | null): string | null {
+  if (!windowTitle) return null;
+  const match = windowTitle.match(/(?:https?:\/\/)?(?:www\.)?([a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)+)/);
+  if (match) {
+    return match[1].toLowerCase();
+  }
+  return null;
+}
+
+function classifyAppOrDomainDynamic(windowTitle: string | null, classifications: any[]): 'Productive' | 'Unproductive' | 'Neutral' {
+  if (!windowTitle) return 'Neutral';
+  const val = windowTitle.toLowerCase();
+  
+  const match = classifications.find(c => val.includes(c.pattern));
+  if (match) {
+    return match.category;
+  }
+
+  const productivePatterns = [
+    'code.exe', 'vscode', 'idea64.exe', 'visual studio', 'slack', 'teams.exe', 
+    'slack.exe', 'cmd.exe', 'powershell.exe', 'git', 'docker', 'github.com', 
+    'stackoverflow.com', 'figma.com', 'localhost', 'enterprise.io', 'excel.exe', 
+    'word.exe', 'powerpnt.exe', 'outlook.exe', 'postman.exe', 'chrome.exe - google search'
+  ];
+  
+  const unproductivePatterns = [
+    'youtube.com', 'facebook.com', 'reddit.com', 'twitter.com', 'instagram.com', 
+    'netflix.com', 'steam.exe', 'game.exe', 'discord.exe', 'roblox', 'tiktok.com'
+  ];
+
+  if (productivePatterns.some(p => val.includes(p))) {
+    return 'Productive';
+  }
+  if (unproductivePatterns.some(p => val.includes(p))) {
+    return 'Unproductive';
+  }
+  return 'Neutral';
+}
+
+function calculateProductivityMetrics(
+  heartbeats: any[], 
+  completedTasksCount: number, 
+  isLate: boolean,
+  breakLimitMinutes: number = 60,
+  classifications: any[] = []
+) {
+  let activeIntervals = 0;
+  let idleIntervals = 0;
+  let breakIntervals = 0;
+  let totalInputs = 0;
+  let contextSwitches = 0;
+  
+  const appDurations: { [app: string]: number } = {};
+  const webDurations: { [web: string]: number } = {};
+  
+  const hourlySums = Array(24).fill(0);
+  const hourlyCounts = Array(24).fill(0);
+  
+  let prevWindow: string | null = null;
+  
+  const sortedHbs = [...heartbeats].sort((a, b) => {
+    return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
+  });
+  
+  sortedHbs.forEach((h) => {
+    const status = h.status || 'Active';
+    const activeWindow = h.active_window || h.activeWindow || null;
+    const clicks = h.mouse_clicks || h.mouseClicks || 0;
+    const presses = h.keyboard_presses || h.keyboardPresses || 0;
+    const inputs = clicks + presses;
+    totalInputs += inputs;
+    
+    const hDate = new Date(h.timestamp);
+    const hour = hDate.getHours();
+    
+    const category = classifyAppOrDomainDynamic(activeWindow, classifications);
+    let appName = 'Unknown';
+    if (activeWindow) {
+      const parts = activeWindow.split(' - ');
+      appName = parts[parts.length - 1] || activeWindow;
+    }
+    
+    const domain = parseDomain(activeWindow);
+    
+    if (status === 'Active') {
+      activeIntervals++;
+      appDurations[appName] = (appDurations[appName] || 0) + 0.5;
+      if (domain) {
+        webDurations[domain] = (webDurations[domain] || 0) + 0.5;
+      }
+    } else if (status === 'Idle') {
+      idleIntervals++;
+    } else if (status === 'Break') {
+      breakIntervals++;
+    }
+    
+    if (activeWindow && prevWindow && activeWindow.toLowerCase() !== prevWindow.toLowerCase()) {
+      contextSwitches++;
+    }
+    if (activeWindow) {
+      prevWindow = activeWindow;
+    }
+    
+    if (status !== 'Break') {
+      const weight = category === 'Productive' ? 1.0 : (category === 'Neutral' ? 0.5 : 0.0);
+      const density = Math.min(1.0, inputs / 30);
+      const score = weight * density * 100;
+      hourlySums[hour] += score;
+      hourlyCounts[hour]++;
+    }
+  });
+  
+  const measuredIntervals = activeIntervals + idleIntervals;
+  const totalIntervals = measuredIntervals + breakIntervals;
+  
+  const activeHours = parseFloat((activeIntervals / 120).toFixed(2));
+  const idleHours = parseFloat((idleIntervals / 120).toFixed(2));
+  const breakHours = parseFloat((breakIntervals / 120).toFixed(2));
+  const totalHours = parseFloat((totalIntervals / 120).toFixed(2));
+  
+  const idlePercentage = totalIntervals > 0 ? parseFloat(((idleIntervals / totalIntervals) * 100).toFixed(1)) : 0;
+  const breakPercentage = totalIntervals > 0 ? parseFloat(((breakIntervals / totalIntervals) * 100).toFixed(1)) : 0;
+  
+  let baseScoreSum = 0;
+  sortedHbs.forEach(h => {
+    if (h.status !== 'Break') {
+      const activeWindow = h.active_window || h.activeWindow || null;
+      const clicks = h.mouse_clicks || h.mouseClicks || 0;
+      const presses = h.keyboard_presses || h.keyboardPresses || 0;
+      const inputs = clicks + presses;
+      const category = classifyAppOrDomainDynamic(activeWindow, classifications);
+      const weight = category === 'Productive' ? 1.0 : (category === 'Neutral' ? 0.5 : 0.0);
+      const density = Math.min(1.0, inputs / 30);
+      baseScoreSum += weight * density;
+    }
+  });
+  
+  let productivityScore = 0;
+  if (measuredIntervals > 0) {
+    const baseScore = (baseScoreSum / measuredIntervals) * 100;
+    
+    const taskBonus = Math.min(15, completedTasksCount * 5);
+    
+    let penalties = 0;
+    if (isLate) penalties += 10;
+    const breakMinutes = breakIntervals * 0.5;
+    if (breakMinutes > breakLimitMinutes) {
+      const extraBreak = breakMinutes - breakLimitMinutes;
+      penalties += Math.floor(extraBreak / 15) * 5;
+    }
+    
+    productivityScore = Math.round(Math.max(0, Math.min(100, baseScore + taskBonus - penalties)));
+  }
+  
+  let focusBlocksCount = 0;
+  const windowSize = 30; 
+  for (let i = 0; i <= sortedHbs.length - windowSize; i += windowSize) {
+    const slice = sortedHbs.slice(i, i + windowSize);
+    let sliceActiveIdle = 0;
+    let sliceProductive = 0;
+    let sliceUnproductive = 0;
+    let sliceIdle = 0;
+    let slicePrevWin: string | null = null;
+    let sliceSwitches = 0;
+    
+    slice.forEach(h => {
+      const status = h.status || 'Active';
+      const activeWindow = h.active_window || h.activeWindow || null;
+      if (status === 'Active' || status === 'Idle') {
+        sliceActiveIdle++;
+        const category = classifyAppOrDomainDynamic(activeWindow, classifications);
+        if (category === 'Productive') sliceProductive++;
+        if (category === 'Unproductive') sliceUnproductive++;
+        if (status === 'Idle') sliceIdle++;
+        
+        if (activeWindow && slicePrevWin && activeWindow.toLowerCase() !== slicePrevWin.toLowerCase()) {
+          sliceSwitches++;
+        }
+        if (activeWindow) slicePrevWin = activeWindow;
+      }
+    });
+    
+    if (sliceActiveIdle >= 10) {
+      const productiveRatio = sliceProductive / sliceActiveIdle;
+      if (productiveRatio >= 0.8 && sliceUnproductive === 0 && sliceIdle <= 6) {
+        focusBlocksCount++;
+      }
+    }
+  }
+  
+  const workingMinutes = measuredIntervals * 0.5;
+  const focusScore = workingMinutes > 0 ? Math.round(Math.min(100, (focusBlocksCount * 15 / workingMinutes) * 100)) : 0;
+  
+  const inputRate = activeIntervals > 0 ? (totalInputs / (activeIntervals * 0.5)) : 0;
+  const inputMultiplier = Math.min(1.0, inputRate / 40);
+  const idleRatio = measuredIntervals > 0 ? (idleIntervals / measuredIntervals) : 0;
+  const deepWorkScore = Math.round(focusScore * (1.0 - idleRatio) * inputMultiplier);
+  
+  const workingHours = measuredIntervals / 120;
+  const switchesPerHour = workingHours > 0 ? (contextSwitches / workingHours) : 0;
+  const efficiencyScore = Math.round(productivityScore * (1.0 - Math.min(0.40, switchesPerHour / 50)));
+  
+  const timeline: any[] = [];
+  for (let i = 0; i < sortedHbs.length; i += windowSize) {
+    const slice = sortedHbs.slice(i, i + windowSize);
+    if (slice.length === 0) continue;
+    
+    const startStr = slice[0].timestamp;
+    const endStr = slice[slice.length - 1].timestamp;
+    
+    let activeC = 0, idleC = 0, breakC = 0, inputC = 0;
+    const appFreq: { [app: string]: number } = {};
+    const webFreq: { [web: string]: number } = {};
+    
+    slice.forEach(h => {
+      const status = h.status || 'Active';
+      const activeWindow = h.active_window || h.activeWindow || null;
+      const clicks = h.mouse_clicks || h.mouseClicks || 0;
+      const presses = h.keyboard_presses || h.keyboardPresses || 0;
+      inputC += (clicks + presses);
+      
+      if (status === 'Active') {
+        activeC++;
+        if (activeWindow) {
+          const parts = activeWindow.split(' - ');
+          const app = parts[parts.length - 1] || activeWindow;
+          appFreq[app] = (appFreq[app] || 0) + 1;
+          const dom = parseDomain(activeWindow);
+          if (dom) webFreq[dom] = (webFreq[dom] || 0) + 1;
+        }
+      } else if (status === 'Idle') {
+        idleC++;
+      } else {
+        breakC++;
+      }
+    });
+    
+    let dominantApp = 'None';
+    let maxAppCount = 0;
+    for (const app in appFreq) {
+      if (appFreq[app] > maxAppCount) {
+        maxAppCount = appFreq[app];
+        dominantApp = app;
+      }
+    }
+    
+    let dominantWeb = 'None';
+    let maxWebCount = 0;
+    for (const web in webFreq) {
+      if (webFreq[web] > maxWebCount) {
+        maxWebCount = webFreq[web];
+        dominantWeb = web;
+      }
+    }
+    
+    let dominantStatus = 'Break';
+    if (activeC >= idleC && activeC >= breakC) dominantStatus = 'Active';
+    else if (idleC >= activeC && idleC >= breakC) dominantStatus = 'Idle';
+    
+    timeline.push({
+      start: startStr,
+      end: endStr,
+      status: dominantStatus,
+      app: dominantApp,
+      website: dominantWeb,
+      inputs: inputC
+    });
+  }
+  
+  const heatmap = hourlySums.map((sum, hr) => {
+    const count = hourlyCounts[hr];
+    return count > 0 ? Math.round(sum / count) : 0;
+  });
+  
+  const insights: string[] = [];
+  if (idleRatio > 0.25 && measuredIntervals > 10) {
+    insights.push(`Workstation idle ratio is high (${Math.round(idleRatio * 100)}%). Investigate if the employee is doing offline tasks, physical paperwork, or collaborative meetings.`);
+  }
+  if (switchesPerHour > 20 && measuredIntervals > 10) {
+    insights.push(`High multitasking detected (${Math.round(switchesPerHour)} switches/hr). Recommend task grouping or 'do not disturb' sessions to enhance focus.`);
+  }
+  if (breakIntervals * 0.5 < 15 && workingMinutes > 510) {
+    insights.push(`Long work hours detected with minimal breaks. Remind the employee to take short breaks to avoid fatigue.`);
+  }
+  if (activeIntervals > 120 && inputRate < 5) {
+    insights.push(`High active app duration but extremely low mouse/keyboard inputs. Check if this aligns with video conference participation or extensive document review.`);
+  }
+  if (focusScore < 30 && workingMinutes > 120) {
+    insights.push(`Sustained focus blocks are sparse today. Suggest scheduling a designated 90-minute deep work block daily with chat notifications muted.`);
+  }
+  
+  return {
+    productivityScore,
+    focusScore,
+    deepWorkScore,
+    efficiencyScore,
+    contextSwitches,
+    switchesPerHour: parseFloat(switchesPerHour.toFixed(1)),
+    activeHours,
+    idleHours,
+    breakHours,
+    totalHours,
+    idlePercentage,
+    breakPercentage,
+    appUsage: appDurations,
+    webUsage: webDurations,
+    timeline,
+    heatmap,
+    insights
+  };
+}
+export async function getProductivityClassifications(req: AuthenticatedRequest, res: Response): Promise<void> {
+  try {
+    const list = await db.getProductivityClassifications();
+    res.json(list);
+  } catch (err) {
+    console.error('getProductivityClassifications error:', err);
+    res.status(500).json({ message: 'Error fetching productivity classifications.' });
+  }
+}
+
+export async function createOrUpdateProductivityClassification(req: AuthenticatedRequest, res: Response): Promise<void> {
+  if (!req.user) {
+    res.status(401).json({ message: 'Unauthorized' });
+    return;
+  }
+
+  const { pattern, category } = req.body;
+  if (!pattern || !category || !['Productive', 'Unproductive', 'Neutral'].includes(category)) {
+    res.status(400).json({ message: 'pattern and valid category (Productive, Unproductive, Neutral) are required.' });
+    return;
+  }
+
+  try {
+    const record = await db.createOrUpdateProductivityClassification(pattern, category);
+    
+    await db.logActivity(
+      req.user.id,
+      'SYSTEM',
+      `Productivity classification updated: ${pattern} set to ${category}.`
+    );
+
+    res.json({
+      message: 'Productivity classification saved successfully.',
+      classification: record
+    });
+  } catch (err) {
+    console.error('createOrUpdateProductivityClassification error:', err);
+    res.status(500).json({ message: 'Error saving productivity classification.' });
   }
 }
 
@@ -773,40 +1269,20 @@ export async function getProductivityDetails(req: AuthenticatedRequest, res: Res
       }
     }
 
+    const classifications = await db.getProductivityClassifications();
     const heartbeats = await db.getHeartbeatsForDate(employeeId, dateStr);
     const attendanceRecord = await db.getAttendanceToday(employeeId);
     
-    // Calculate Today's stats using updated logic
-    let activeMinutes = 0;
-    let idleMinutes = 0;
-    let breakMinutes = 0;
-    heartbeats.forEach(h => {
-      if (h.status === 'Active') activeMinutes += 0.5;
-      else if (h.status === 'Idle') idleMinutes += 0.5;
-      else if (h.status === 'Break') breakMinutes += 0.5;
-    });
-
-    const measuredMinutes = activeMinutes + idleMinutes;
-    let baseScore = 100;
-    if (measuredMinutes > 0) {
-      baseScore = Math.round((activeMinutes / measuredMinutes) * 100);
-    }
-
-    // Fetch done tasks for completed count
     const tasks = await db.getTasks({ assigneeId: employeeId, status: 'Done' });
     const completedToday = tasks.filter((t: any) => t.updated_at && new Date(t.updated_at).toISOString().split('T')[0] === dateStr);
-    const taskBonus = Math.min(PRODUCTIVITY_RULES.maxTaskBonus, completedToday.length * PRODUCTIVITY_RULES.taskCompletedBonus);
 
-    let penalties = 0;
-    if (attendanceRecord && attendanceRecord.status === 'Late') {
-      penalties += PRODUCTIVITY_RULES.lateArrivalPenalty;
-    }
-    if (breakMinutes > PRODUCTIVITY_RULES.breakLimitMinutes) {
-      const extraBreakMins = breakMinutes - PRODUCTIVITY_RULES.breakLimitMinutes;
-      penalties += Math.floor(extraBreakMins / 15) * PRODUCTIVITY_RULES.breakPenaltyPerQuarterHour;
-    }
-
-    const productivityScore = Math.max(0, Math.min(100, Math.round(baseScore * PRODUCTIVITY_RULES.activeWeight + taskBonus - penalties)));
+    const metrics = calculateProductivityMetrics(
+      heartbeats,
+      completedToday.length,
+      attendanceRecord ? attendanceRecord.status === 'Late' : false,
+      PRODUCTIVITY_RULES.breakLimitMinutes,
+      classifications
+    );
 
     // Generate Weekly History (last 7 days)
     const weeklySummary: any[] = [];
@@ -815,40 +1291,24 @@ export async function getProductivityDetails(req: AuthenticatedRequest, res: Res
       const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() - i);
       const dStr = d.toISOString().split('T')[0];
       const hbs = await db.getHeartbeatsForDate(employeeId, dStr);
-
-      let actMins = 0;
-      let idlMins = 0;
-      let brkMins = 0;
-      hbs.forEach(h => {
-        if (h.status === 'Active') actMins += 0.5;
-        else if (h.status === 'Idle') idlMins += 0.5;
-        else if (h.status === 'Break') brkMins += 0.5;
-      });
-
-      const measMins = actMins + idlMins;
-      let dayBaseScore = 100;
-      if (measMins > 0) {
-        dayBaseScore = Math.round((actMins / measMins) * 100);
-      }
-
       const completedOnDay = tasks.filter((t: any) => t.updated_at && new Date(t.updated_at).toISOString().split('T')[0] === dStr);
-      const dayTaskBonus = Math.min(PRODUCTIVITY_RULES.maxTaskBonus, completedOnDay.length * PRODUCTIVITY_RULES.taskCompletedBonus);
-
-      // We won't penalize historical late/breaks heavily without full logs, but let's calculate reasonably
-      let dayPenalties = 0;
-      if (brkMins > PRODUCTIVITY_RULES.breakLimitMinutes) {
-        const extraMins = brkMins - PRODUCTIVITY_RULES.breakLimitMinutes;
-        dayPenalties += Math.floor(extraMins / 15) * PRODUCTIVITY_RULES.breakPenaltyPerQuarterHour;
-      }
-
-      const dayScore = Math.max(0, Math.min(100, Math.round(dayBaseScore * PRODUCTIVITY_RULES.activeWeight + dayTaskBonus - dayPenalties)));
+      
+      const dayMetrics = calculateProductivityMetrics(
+        hbs,
+        completedOnDay.length,
+        false, // late penalties excluded historical rollup
+        PRODUCTIVITY_RULES.breakLimitMinutes,
+        classifications
+      );
 
       weeklySummary.push({
         date: dStr,
-        activeHours: parseFloat((actMins / 60).toFixed(2)),
-        idleHours: parseFloat((idlMins / 60).toFixed(2)),
-        breakHours: parseFloat((brkMins / 60).toFixed(2)),
-        productivityScore: dayScore
+        activeHours: dayMetrics.activeHours,
+        idleHours: dayMetrics.idleHours,
+        breakHours: dayMetrics.breakHours,
+        productivityScore: dayMetrics.productivityScore,
+        focusScore: dayMetrics.focusScore,
+        deepWorkScore: dayMetrics.deepWorkScore
       });
     }
 
@@ -856,16 +1316,137 @@ export async function getProductivityDetails(req: AuthenticatedRequest, res: Res
       date: dateStr,
       heartbeats,
       summary: {
-        activeHours: parseFloat((activeMinutes / 60).toFixed(2)),
-        idleHours: parseFloat((idleMinutes / 60).toFixed(2)),
-        breakHours: parseFloat((breakMinutes / 60).toFixed(2)),
-        totalHours: parseFloat(((activeMinutes + idleMinutes + breakMinutes) / 60).toFixed(2)),
-        productivityScore
+        activeHours: metrics.activeHours,
+        idleHours: metrics.idleHours,
+        breakHours: metrics.breakHours,
+        totalHours: metrics.totalHours,
+        productivityScore: metrics.productivityScore,
+        focusScore: metrics.focusScore,
+        deepWorkScore: metrics.deepWorkScore,
+        efficiencyScore: metrics.efficiencyScore,
+        contextSwitches: metrics.contextSwitches,
+        idlePercentage: metrics.idlePercentage,
+        breakPercentage: metrics.breakPercentage
       },
+      appUsage: metrics.appUsage,
+      webUsage: metrics.webUsage,
+      timeline: metrics.timeline,
+      heatmap: metrics.heatmap,
+      insights: metrics.insights,
       weeklySummary
     });
   } catch (err) {
     console.error('getProductivityDetails error:', err);
     res.status(500).json({ message: 'Error retrieving productivity details.' });
+  }
+}
+
+export async function getProductivityLeaderboard(req: AuthenticatedRequest, res: Response): Promise<void> {
+  if (!req.user) {
+    res.status(401).json({ message: 'Unauthorized' });
+    return;
+  }
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  const dateStr = (req.query.date as string) || todayStr;
+
+  try {
+    let targetDeptId: number | undefined = undefined;
+
+    if (req.user.role === 'Manager') {
+      const depts = await db.getDepartments();
+      const managedDept = depts.find(d => d.manager_id === req.user?.id);
+      if (!managedDept) {
+        res.status(403).json({ message: 'Forbidden: Manager does not manage any department.' });
+        return;
+      }
+      targetDeptId = managedDept.id;
+    } else if (req.query.departmentId) {
+      targetDeptId = parseInt(req.query.departmentId as string);
+    }
+
+    const classifications = await db.getProductivityClassifications();
+    const employees = await db.getEmployees();
+    const filteredEmps = targetDeptId ? employees.filter(e => e.department_id === targetDeptId) : employees;
+
+    const leaderboard = [];
+    for (const emp of filteredEmps) {
+      const hbs = await db.getHeartbeatsForDate(emp.id, dateStr);
+      const tasks = await db.getTasks({ assigneeId: emp.id, status: 'Done' });
+      const completedOnDay = tasks.filter((t: any) => t.updated_at && new Date(t.updated_at).toISOString().split('T')[0] === dateStr);
+
+      const metrics = calculateProductivityMetrics(
+        hbs,
+        completedOnDay.length,
+        false,
+        PRODUCTIVITY_RULES.breakLimitMinutes,
+        classifications
+      );
+
+      leaderboard.push({
+        employeeId: emp.id,
+        firstName: emp.first_name,
+        lastName: emp.last_name,
+        role: emp.role,
+        productivityScore: metrics.productivityScore,
+        focusScore: metrics.focusScore,
+        deepWorkScore: metrics.deepWorkScore,
+        activeHours: metrics.activeHours
+      });
+    }
+
+    leaderboard.sort((a, b) => b.productivityScore - a.productivityScore);
+
+    res.json({
+      date: dateStr,
+      leaderboard
+    });
+  } catch (err) {
+    console.error('getProductivityLeaderboard error:', err);
+    res.status(500).json({ message: 'Error retrieving productivity leaderboard.' });
+  }
+}
+
+export async function getProductivityInsights(req: AuthenticatedRequest, res: Response): Promise<void> {
+  if (!req.user) {
+    res.status(401).json({ message: 'Unauthorized' });
+    return;
+  }
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  const dateStr = (req.query.date as string) || todayStr;
+
+  try {
+    let employeeId = req.user.id;
+    if (req.query.employeeId) {
+      employeeId = parseInt(req.query.employeeId as string);
+    }
+
+    if (req.user.role === 'Employee' && req.user.id !== employeeId) {
+      res.status(403).json({ message: 'Forbidden: Cannot access other employee\'s insights.' });
+      return;
+    }
+
+    const classifications = await db.getProductivityClassifications();
+    const heartbeats = await db.getHeartbeatsForDate(employeeId, dateStr);
+    const tasks = await db.getTasks({ assigneeId: employeeId, status: 'Done' });
+    const completedToday = tasks.filter((t: any) => t.updated_at && new Date(t.updated_at).toISOString().split('T')[0] === dateStr);
+
+    const metrics = calculateProductivityMetrics(
+      heartbeats,
+      completedToday.length,
+      false,
+      PRODUCTIVITY_RULES.breakLimitMinutes,
+      classifications
+    );
+
+    res.json({
+      date: dateStr,
+      employeeId,
+      insights: metrics.insights
+    });
+  } catch (err) {
+    console.error('getProductivityInsights error:', err);
+    res.status(500).json({ message: 'Error retrieving productivity insights.' });
   }
 }

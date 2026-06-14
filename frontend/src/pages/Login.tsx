@@ -10,7 +10,7 @@ export const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isSystemEmpty, setIsSystemEmpty] = useState(false);
-  const { login, isAuthenticated } = useAuth();
+  const { login, loginWithGoogle, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -31,7 +31,34 @@ export const Login: React.FC = () => {
       }
     }
     checkSystemState();
+
+    // Initialize Google Identity Sign-In
+    const google = (window as any).google;
+    if (google) {
+      google.accounts.id.initialize({
+        client_id: (import.meta.env.VITE_GOOGLE_CLIENT_ID as string) || '322211297571-nqh9a9hcn233i8ojd64tar4b106cs4r1.apps.googleusercontent.com',
+        callback: handleGoogleLoginResponse
+      });
+      google.accounts.id.renderButton(
+        document.getElementById("google-signin-btn"),
+        { theme: "outline", size: "large", width: "100%" }
+      );
+    }
   }, [isAuthenticated, navigate]);
+
+  const handleGoogleLoginResponse = async (response: any) => {
+    setLoading(true);
+    setErrorMsg(null);
+    try {
+      await loginWithGoogle(response.credential);
+      message.success('Logged in successfully via Google.');
+      navigate('/');
+    } catch (err: any) {
+      setErrorMsg(err.response?.data?.message || 'Google authentication failed. Is your email registered?');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const onFinish = async (values: any) => {
     setLoading(true);
@@ -141,6 +168,14 @@ export const Login: React.FC = () => {
           </Button>
         </Form.Item>
       </Form>
+
+      <div style={{ display: 'flex', alignItems: 'center', margin: '20px 0', color: '#64748B', fontSize: 13 }}>
+        <div style={{ flex: 1, height: '1px', background: 'var(--border-color)' }}></div>
+        <span style={{ padding: '0 12px' }}>or</span>
+        <div style={{ flex: 1, height: '1px', background: 'var(--border-color)' }}></div>
+      </div>
+
+      <div id="google-signin-btn" style={{ width: '100%', display: 'flex', justifyContent: 'center' }}></div>
     </div>
   );
 };

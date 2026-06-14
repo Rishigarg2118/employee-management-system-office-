@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "Enterprise Telemetry monitor",
+  "version": "1.0.0",
+  "description": "Secure cross-browser telemetry monitoring client for Chrome, Edge, and Firefox.",
+  "permissions": [
+    "tabs",
+    "activeTab",
+    "nativeMessaging"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  }
+}
