@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { 
   Card, Tabs, Row, Col, Statistic, Typography, Table, Space, 
-  Select, DatePicker, Button, Spin, Tag, message, Input, Pagination 
+  Select, DatePicker, Button, Spin, Tag, message, Input, Pagination,
+  Avatar, Progress
 } from 'antd';
 import { 
   BarChartOutlined, LineChartOutlined, FileExcelOutlined, 

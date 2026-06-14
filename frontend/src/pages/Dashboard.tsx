@@ -82,7 +82,7 @@ export const Dashboard: React.FC = () => {
 
   // Live Refresh Config
   const [isLiveRefreshing, setIsLiveRefreshing] = useState(true);
-  const pollTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const pollTimerRef = useRef<any>(null);
 
   // Drawer States
   const [selectedEmpId, setSelectedEmpId] = useState<number | null>(null);

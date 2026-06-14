@@ -88,9 +88,8 @@ export const ManagerCorrections: React.FC = () => {
   });
 
   // 7. Add/Update classification rule mutation
-  const classificationMutation = useMutation({
     mutationFn: (payload: { pattern: string; category: string }) => 
-      api.createOrUpdateProductivityClassification(payload),
+      api.createOrUpdateProductivityClassification(payload as any),
     onSuccess: () => {
       message.success('Classification rule saved successfully!');
       ruleForm.resetFields();
