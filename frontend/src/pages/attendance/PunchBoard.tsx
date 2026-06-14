@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTelemetryAgent } from '../../hooks/useTelemetryAgent';
 import { Card, Button, Input, Radio, Typography, Badge, Timeline, Alert, message, Space, Divider, Row, Col, Progress } from 'antd';
 import { 
   ClockCircleOutlined, 
@@ -28,6 +29,7 @@ export const PunchBoard: React.FC = () => {
   const [workMode, setWorkMode] = useState<AttendanceStatus>('Present'); // Present = Office Desk, Work From Home = Remote
   const [remarks, setRemarks] = useState<string>('');
   
+
   // Dynamic timer states
   const [elapsedTime, setElapsedTime] = useState<string>('00:00:00');
   const [onBreak, setOnBreak] = useState<boolean>(localStorage.getItem('on_break') === 'true');
@@ -49,6 +51,9 @@ export const PunchBoard: React.FC = () => {
     queryKey: ['attendanceToday'],
     queryFn: api.getAttendanceToday,
   });
+
+  // Telemetry Agent — mounts automatically when checked in, sends heartbeat every 30s
+  useTelemetryAgent(!!todayRecord && !todayRecord?.check_out, !!todayRecord?.check_out);
 
   // 3. Fetch today's productivity details
   const { data: productivityData, refetch: refetchProductivity } = useQuery({

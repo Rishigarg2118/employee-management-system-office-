@@ -9,6 +9,14 @@ interface TelemetryPacket {
   activeWindow?: string;
   screenshotUrl?: string;
   timestamp?: string;
+  // New enriched telemetry fields
+  currentUrl?: string;
+  currentDomain?: string;
+  browserName?: string;
+  appName?: string;
+  tabSwitchCount?: number;
+  focusDurationSeconds?: number;
+  isFocused?: boolean;
 }
 
 class TelemetryQueue {
@@ -51,7 +59,14 @@ class TelemetryQueue {
         keyboard_presses: p.keyboardPresses,
         active_window: p.activeWindow,
         screenshot_url: p.screenshotUrl,
-        timestamp: p.timestamp
+        timestamp: p.timestamp,
+        current_url: p.currentUrl,
+        current_domain: p.currentDomain,
+        browser_name: p.browserName,
+        app_name: p.appName,
+        tab_switch_count: p.tabSwitchCount ?? 0,
+        focus_duration_seconds: p.focusDurationSeconds ?? 0,
+        is_focused: p.isFocused ?? true,
       }));
 
       await db.addHeartbeatsBulk(mapped);

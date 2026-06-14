@@ -358,7 +358,20 @@ export const api = {
     const res = await apiClient.get('/attendance/report', { params });
     return res.data;
   },
-  async submitHeartbeat(payload: { status: 'Active' | 'Idle' | 'Break'; mouseClicks: number; keyboardPresses: number; activeWindow?: string | null }): Promise<any> {
+  async submitHeartbeat(payload: {
+    status: 'Active' | 'Idle' | 'Break';
+    mouseClicks: number;
+    keyboardPresses: number;
+    activeWindow?: string | null;
+    currentUrl?: string | null;
+    currentDomain?: string | null;
+    browserName?: string | null;
+    appName?: string | null;
+    tabSwitchCount?: number;
+    focusDurationSeconds?: number;
+    isFocused?: boolean;
+    timestamp?: string;
+  }): Promise<any> {
     const res = await apiClient.post('/attendance/heartbeat', payload);
     return res.data;
   },

@@ -37,9 +37,9 @@ router.post('/check-out', authenticateToken as any, checkOut as any);
 router.get('/today', authenticateToken as any, getAttendanceToday as any);
 router.get('/history', authenticateToken as any, getAttendanceHistory as any);
 
-// Heartbeat reporting with rate limiting and device trust validation
-router.post('/heartbeat', authenticateToken as any, telemetryRateLimiter as any, requireApprovedDevice as any, submitHeartbeat as any);
-router.post('/bulk-heartbeat', authenticateToken as any, telemetryRateLimiter as any, requireApprovedDevice as any, bulkSyncHeartbeats as any);
+// Heartbeat reporting with rate limiting (device approval NOT required — all employees can report)
+router.post('/heartbeat', authenticateToken as any, telemetryRateLimiter as any, submitHeartbeat as any);
+router.post('/bulk-heartbeat', authenticateToken as any, telemetryRateLimiter as any, bulkSyncHeartbeats as any);
 router.get('/productivity', authenticateToken as any, getProductivityDetails as any);
 router.get('/productivity/leaderboard', authenticateToken as any, getProductivityLeaderboard as any);
 router.get('/productivity/insights', authenticateToken as any, getProductivityInsights as any);

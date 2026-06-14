@@ -478,7 +478,12 @@ export async function submitHeartbeat(req: AuthenticatedRequest, res: Response):
     return;
   }
 
-  const { status, mouseClicks, keyboardPresses, activeWindow, screenshotUrl } = req.body;
+  const {
+    status, mouseClicks, keyboardPresses, activeWindow, screenshotUrl,
+    currentUrl, currentDomain, browserName, appName,
+    tabSwitchCount, focusDurationSeconds, isFocused
+  } = req.body;
+
   if (!status || !['Active', 'Idle', 'Break'].includes(status)) {
     res.status(400).json({ message: 'Valid status (Active, Idle, Break) is required.' });
     return;
@@ -496,6 +501,24 @@ export async function submitHeartbeat(req: AuthenticatedRequest, res: Response):
       return;
     }
 
+    // Sanitize URL — strip query string and hash to avoid storing sensitive data
+    let sanitizedUrl: string | undefined = undefined;
+    if (currentUrl) {
+      try {
+        const parsed = new URL(currentUrl);
+        sanitizedUrl = `${parsed.protocol}//${parsed.hostname}${parsed.pathname}`;
+      } catch {
+        sanitizedUrl = currentUrl.split('?')[0].split('#')[0].substring(0, 500);
+      }
+    }
+
+    // Build the active window label from available data
+    const windowLabel = activeWindow
+      || (appName && currentDomain ? `${appName} — ${currentDomain}` : null)
+      || appName
+      || currentDomain
+      || undefined;
+
     // Buffer heartbeat packet to the async bulk-insert queue
     telemetryQueue.enqueue({
       employeeId: req.user.id,
@@ -503,9 +526,16 @@ export async function submitHeartbeat(req: AuthenticatedRequest, res: Response):
       status,
       mouseClicks: mouseClicks || 0,
       keyboardPresses: keyboardPresses || 0,
-      activeWindow: activeWindow || undefined,
+      activeWindow: windowLabel,
       screenshotUrl: screenshotUrl || undefined,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      currentUrl: sanitizedUrl,
+      currentDomain: currentDomain || undefined,
+      browserName: browserName || undefined,
+      appName: appName || undefined,
+      tabSwitchCount: tabSwitchCount || 0,
+      focusDurationSeconds: focusDurationSeconds || 0,
+      isFocused: isFocused !== undefined ? Boolean(isFocused) : true,
     });
 
     res.status(202).json({ message: 'Heartbeat enqueued successfully for bulk sync.' });
@@ -514,6 +544,7 @@ export async function submitHeartbeat(req: AuthenticatedRequest, res: Response):
     res.status(500).json({ message: 'Error enqueuing activity heartbeat.' });
   }
 }
+
 
 export async function bulkSyncHeartbeats(req: AuthenticatedRequest, res: Response): Promise<void> {
   if (!req.user) {
@@ -835,6 +866,29 @@ export async function getLiveWorkforce(req: AuthenticatedRequest, res: Response)
         }
       }
 
+      // TAB SWITCH VIOLATION ALERT (>5 switches in last 30min)
+      if (attendance && !attendance.check_out) {
+        const thirtyMinsAgo = new Date(Date.now() - 30 * 60 * 1000);
+        const recentHbs = heartbeatsToday.filter((hb: any) =>
+          new Date(hb.timestamp) >= thirtyMinsAgo
+        );
+        const recentTabSwitches = recentHbs.reduce((sum: number, hb: any) =>
+          sum + (hb.tab_switch_count || 0), 0);
+
+        if (recentTabSwitches > 5) {
+          alerts.push({
+            id: `tabswitch-${emp.id}-${Date.now()}`,
+            employeeId: emp.id,
+            employeeName: empName,
+            avatarUrl: emp.avatar_url,
+            type: 'TAB_SWITCH_VIOLATION',
+            severity: 'warning',
+            message: `${empName} switched tabs ${recentTabSwitches} times in the last 30 minutes.`,
+            timestamp: latestHb ? latestHb.timestamp : new Date().toISOString()
+          });
+        }
+      }
+
       liveDataList.push({
         id: emp.id,
         employee_id: emp.employee_id,
@@ -846,6 +900,12 @@ export async function getLiveWorkforce(req: AuthenticatedRequest, res: Response)
         currentStatus,
         lastActive: latestHb ? latestHb.timestamp : null,
         activeWindow: latestHb && currentStatus !== 'Offline' ? latestHb.active_window : null,
+        currentDomain: latestHb && currentStatus !== 'Offline' ? (latestHb.current_domain || null) : null,
+        currentUrl: latestHb && currentStatus !== 'Offline' ? (latestHb.current_url || null) : null,
+        browserName: latestHb && currentStatus !== 'Offline' ? (latestHb.browser_name || null) : null,
+        appName: latestHb && currentStatus !== 'Offline' ? (latestHb.app_name || null) : null,
+        isFocused: latestHb ? (latestHb.is_focused !== false) : true,
+        tabSwitchCount: latestHb ? (latestHb.tab_switch_count || 0) : 0,
         department: (emp as any).department ? (emp as any).department.name : 'Unassigned',
         manager: (emp as any).manager ? `${(emp as any).manager.first_name} ${(emp as any).manager.last_name}` : 'No Manager',
         todayStats: {
@@ -865,6 +925,7 @@ export async function getLiveWorkforce(req: AuthenticatedRequest, res: Response)
           machineName: latestHb ? (latestHb.machine_name || latestHb.machineName || 'Workstation') : 'Workstation'
         }
       });
+
     }
 
     res.json({

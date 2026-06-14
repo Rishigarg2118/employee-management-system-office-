@@ -3610,6 +3610,13 @@ export const db = {
           }
           existing.active_window = p.active_window || p.activeWindow || existing.active_window;
           existing.screenshot_url = p.screenshot_url || p.screenshotUrl || existing.screenshot_url;
+          existing.current_url = p.current_url || existing.current_url;
+          existing.current_domain = p.current_domain || existing.current_domain;
+          existing.browser_name = p.browser_name || existing.browser_name;
+          existing.app_name = p.app_name || existing.app_name;
+          existing.tab_switch_count = Math.max(existing.tab_switch_count || 0, p.tab_switch_count || 0);
+          existing.focus_duration_seconds = Math.max(existing.focus_duration_seconds || 0, p.focus_duration_seconds || 0);
+          existing.is_focused = p.is_focused ?? existing.is_focused ?? true;
         } else {
           uniquePacketsMap.set(key, {
             employee_id: empId,
@@ -3619,7 +3626,14 @@ export const db = {
             mouse_clicks: p.mouse_clicks || p.mouseClicks || 0,
             keyboard_presses: p.keyboard_presses || p.keyboardPresses || 0,
             active_window: p.active_window || p.activeWindow || null,
-            screenshot_url: p.screenshot_url || p.screenshotUrl || null
+            screenshot_url: p.screenshot_url || p.screenshotUrl || null,
+            current_url: p.current_url || null,
+            current_domain: p.current_domain || null,
+            browser_name: p.browser_name || null,
+            app_name: p.app_name || null,
+            tab_switch_count: p.tab_switch_count || 0,
+            focus_duration_seconds: p.focus_duration_seconds || 0,
+            is_focused: p.is_focused ?? true,
           });
         }
       });
@@ -3630,21 +3644,23 @@ export const db = {
       let valIdx = 1;
 
       uniquePackets.forEach((p) => {
-        placeholders.push(`($${valIdx++}, $${valIdx++}, $${valIdx++}, $${valIdx++}, $${valIdx++}, $${valIdx++}, $${valIdx++}, $${valIdx++})`);
+        const ph = Array.from({ length: 15 }, () => `$${valIdx++}`).join(', ');
+        placeholders.push(`(${ph})`);
         values.push(
-          p.employee_id,
-          p.attendance_id,
-          p.roundedTime,
-          p.status,
-          p.mouse_clicks,
-          p.keyboard_presses,
-          p.active_window,
-          p.screenshot_url
+          p.employee_id, p.attendance_id, p.roundedTime, p.status,
+          p.mouse_clicks, p.keyboard_presses, p.active_window, p.screenshot_url,
+          p.current_url, p.current_domain, p.browser_name, p.app_name,
+          p.tab_switch_count, p.focus_duration_seconds, p.is_focused
         );
       });
 
       const query = `
-        INSERT INTO activity_heartbeats (employee_id, attendance_id, timestamp, status, mouse_clicks, keyboard_presses, active_window, screenshot_url)
+        INSERT INTO activity_heartbeats (
+          employee_id, attendance_id, timestamp, status,
+          mouse_clicks, keyboard_presses, active_window, screenshot_url,
+          current_url, current_domain, browser_name, app_name,
+          tab_switch_count, focus_duration_seconds, is_focused
+        )
         VALUES ${placeholders.join(', ')}
         ON CONFLICT (employee_id, timestamp)
         DO UPDATE SET
@@ -3652,8 +3668,15 @@ export const db = {
           mouse_clicks = GREATEST(activity_heartbeats.mouse_clicks, EXCLUDED.mouse_clicks),
           keyboard_presses = GREATEST(activity_heartbeats.keyboard_presses, EXCLUDED.keyboard_presses),
           active_window = COALESCE(EXCLUDED.active_window, activity_heartbeats.active_window),
-          screenshot_url = COALESCE(EXCLUDED.screenshot_url, activity_heartbeats.screenshot_url)
-        RETURNING *;
+          screenshot_url = COALESCE(EXCLUDED.screenshot_url, activity_heartbeats.screenshot_url),
+          current_url = COALESCE(EXCLUDED.current_url, activity_heartbeats.current_url),
+          current_domain = COALESCE(EXCLUDED.current_domain, activity_heartbeats.current_domain),
+          browser_name = COALESCE(EXCLUDED.browser_name, activity_heartbeats.browser_name),
+          app_name = COALESCE(EXCLUDED.app_name, activity_heartbeats.app_name),
+          tab_switch_count = GREATEST(activity_heartbeats.tab_switch_count, EXCLUDED.tab_switch_count),
+          focus_duration_seconds = GREATEST(activity_heartbeats.focus_duration_seconds, EXCLUDED.focus_duration_seconds),
+          is_focused = EXCLUDED.is_focused
+        RETURNING *
       `;
 
       const res = await pool.query(query, values);

@@ -529,26 +529,52 @@ export const Dashboard: React.FC = () => {
                       }
                     },
                     {
-                      title: 'Active App / Web',
+                      title: 'Active App / Website',
                       key: 'current_work',
                       ellipsis: true,
                       render: (_, record: any) => {
                         if (record.currentStatus === 'Offline') {
                           return <span style={{ color: '#94A3B8', fontSize: 12 }}>— Offline —</span>;
                         }
-                        const app = record.activeWindow || 'Web Browser';
+                        // Prefer new enriched fields, fall back to activeWindow
+                        const appLabel = record.appName || record.activeWindow || 'HRMS Dashboard';
+                        const domain   = record.currentDomain || record.email?.split('@')[1] || '';
+                        const focused  = record.isFocused !== false;
+                        const switches = record.tabSwitchCount || 0;
                         return (
-                          <div style={{ display: 'flex', flexDirection: 'column', maxWidth: 200 }}>
-                            <span style={{ fontWeight: 500, color: '#1E293B', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                              {app}
-                            </span>
-                            <span style={{ fontSize: 10, color: '#10B981', display: 'flex', gap: 4, alignItems: 'center' }}>
-                              <GlobalOutlined style={{ fontSize: 10 }} /> {record.email.split('@')[1]}
-                            </span>
+                          <div style={{ display: 'flex', flexDirection: 'column', maxWidth: 220 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              {/* Focus indicator dot */}
+                              <span
+                                title={focused ? 'Tab focused' : 'Tab not in focus'}
+                                style={{
+                                  width: 7, height: 7, borderRadius: '50%',
+                                  background: focused ? '#10B981' : '#F59E0B',
+                                  flexShrink: 0,
+                                  boxShadow: focused ? '0 0 4px #10B981' : '0 0 4px #F59E0B'
+                                }}
+                              />
+                              <span style={{ fontWeight: 600, color: '#1E293B', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {appLabel}
+                              </span>
+                            </div>
+                            <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 2 }}>
+                              {domain && (
+                                <span style={{ fontSize: 10, color: '#10B981', display: 'flex', gap: 3, alignItems: 'center' }}>
+                                  <GlobalOutlined style={{ fontSize: 10 }} /> {domain}
+                                </span>
+                              )}
+                              {switches > 0 && (
+                                <span style={{ fontSize: 10, color: switches > 5 ? '#EF4444' : '#F59E0B', fontWeight: 600 }}>
+                                  {switches} tab {switches === 1 ? 'switch' : 'switches'}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         );
                       }
                     },
+
                     {
                       title: 'Department / Manager',
                       key: 'dept',
