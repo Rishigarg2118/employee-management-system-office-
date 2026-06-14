@@ -237,6 +237,8 @@ export async function googleLogin(req: AuthenticatedRequest, res: Response): Pro
       return;
     }
 
+    const email = payload.email.trim().toLowerCase();
+    const gPayload = payload as any;
     let employee = await db.getEmployeeByEmail(email);
 
     if (!employee) {
@@ -247,8 +249,8 @@ export async function googleLogin(req: AuthenticatedRequest, res: Response): Pro
       const newEmpId = 'EMP-G' + Math.floor(1000 + Math.random() * 9000);
       employee = await db.createEmployee({
         employee_id: newEmpId,
-        first_name: payload.given_name || payload.name?.split(' ')[0] || 'Google',
-        last_name: payload.family_name || payload.name?.split(' ')[1] || 'User',
+        first_name: gPayload.given_name || gPayload.name?.split(' ')[0] || 'Google',
+        last_name: gPayload.family_name || gPayload.name?.split(' ')[1] || 'User',
         email,
         password: '', // no local password needed for Google SSO
         designation: 'Staff Associate',
