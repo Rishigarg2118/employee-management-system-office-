@@ -606,7 +606,7 @@ button {
   border-radius: 12px !important;
   margin: 6px 12px !important;
   width: calc(100% - 24px) !important;
-  color: #94A3B8 !important;
+  color: rgba(255, 255, 255, 0.72) !important;
   font-size: 14px !important;
   height: 42px !important;
   line-height: 42px !important;
@@ -615,9 +615,8 @@ button {
 }
 
 .ant-menu-dark .ant-menu-item:hover {
-  color: var(--primary) !important;	
-  background: rgba(234, 88, 12, 0.06) !important;
-  border-color: rgba(234, 88, 12, 0.12) !important;
+  color: #ffffff !important;	
+  background: rgba(255, 255, 255, 0.08) !important;
   transform: translateX(4px) !important;
 }
 

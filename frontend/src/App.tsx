@@ -122,10 +122,10 @@ const AppContent: React.FC = () => {
           },
           Menu: {
             darkItemBg: 'transparent',
-            darkItemColor: '#94A3B8',
+            darkItemColor: '#cbd5e1',
             darkItemSelectedBg: 'rgba(234, 88, 12, 0.15)',
             darkItemSelectedColor: '#ea580c',
-            darkItemHoverBg: 'rgba(255, 255, 255, 0.05)',
+            darkItemHoverBg: 'rgba(255, 255, 255, 0.08)',
             darkItemHoverColor: '#FFFFFF'
           }
         }

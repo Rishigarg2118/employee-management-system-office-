@@ -316,7 +316,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
           open={mobileMenuVisible}
           bodyStyle={{ 
             padding: 0, 
-            background: isClassic ? '#ffffff' : 'rgba(15, 23, 42, 0.72)', 
+            background: isClassic ? '#ffffff' : 'rgba(15, 23, 42, 0.88)', 
             backdropFilter: isClassic ? 'none' : 'blur(20px)', 
             WebkitBackdropFilter: isClassic ? 'none' : 'blur(20px)' 
           }}
@@ -343,7 +343,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
             bottom: 0,
             zIndex: 100,
             height: '100vh',
-            background: isClassic ? '#ffffff' : 'rgba(15, 23, 42, 0.72)',
+            background: isClassic ? '#ffffff' : 'rgba(15, 23, 42, 0.88)',
             backdropFilter: isClassic ? 'none' : 'blur(20px)',
             WebkitBackdropFilter: isClassic ? 'none' : 'blur(20px)',
             overflowY: 'auto'
