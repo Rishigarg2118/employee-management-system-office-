@@ -4,32 +4,139 @@ import {
   SettingOutlined, 
   SafetyCertificateOutlined, 
   DatabaseOutlined,
-  CheckCircleOutlined
+  CheckCircleOutlined,
+  BgColorsOutlined,
+  BulbOutlined,
+  LayoutOutlined
 } from '@ant-design/icons';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 
 const { Title, Paragraph, Text } = Typography;
 
 export const Settings: React.FC = () => {
   const { user } = useAuth();
+  const { theme, setTheme } = useTheme();
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', maxWidth: '800px' }}>
       {/* HEADER SECTION */}
       <div>
-        <h1 style={{ 
-          fontSize: '32px', 
-          fontWeight: 600, 
-          letterSpacing: '-0.03em', 
-          color: '#000000',
-          marginBottom: '4px'
-        }}>
+        <h1 className="page-title">
           System Settings
         </h1>
         <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>
           Configure enterprise settings, view authorization policies, and check system environment health.
         </p>
       </div>
+
+      {/* APPEARANCE & THEME SELECTOR CARD */}
+      <Card title={<Space><BgColorsOutlined /><span>Appearance & Branding</span></Space>}>
+        <Paragraph>
+          Select your preferred workspace visual theme. Changes will apply immediately across all modules.
+        </Paragraph>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginTop: '16px' }}>
+          
+          {/* MODERN ENTERPRISE PANEL */}
+          <div 
+            onClick={() => setTheme('modern')}
+            style={{
+              border: theme === 'modern' ? '2px solid #ea580c' : '1px solid var(--border-glass, #e2e8f0)',
+              borderRadius: '16px',
+              padding: '20px',
+              cursor: 'pointer',
+              background: theme === 'modern' ? 'rgba(234, 88, 12, 0.04)' : 'rgba(255, 255, 255, 0.1)',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              boxShadow: theme === 'modern' ? '0 10px 25px -5px rgba(234, 88, 12, 0.15)' : 'var(--shadow-premium)',
+              position: 'relative',
+              overflow: 'hidden'
+            }}
+          >
+            {theme === 'modern' && (
+              <div style={{
+                position: 'absolute',
+                top: 12,
+                right: 12,
+                width: 8,
+                height: 8,
+                borderRadius: '50%',
+                background: '#ea580c',
+                boxShadow: '0 0 10px #ea580c'
+              }} />
+            )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+              <div style={{
+                padding: '8px',
+                borderRadius: '8px',
+                background: 'linear-gradient(135deg, #ea580c 0%, #d97706 100%)',
+                color: '#fff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <BulbOutlined style={{ fontSize: 18 }} />
+              </div>
+              <div>
+                <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)' }}>Modern Enterprise</h4>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>PREMIUM GLASSMORPHIC</span>
+              </div>
+            </div>
+            <Paragraph style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>
+              Flagship aesthetic with soft gradients, ambient mesh glows, interactive transparencies, and geometric Outfit typography.
+            </Paragraph>
+          </div>
+
+          {/* CLASSIC MINIMALIST PANEL */}
+          <div 
+            onClick={() => setTheme('classic')}
+            style={{
+              border: theme === 'classic' ? '2px solid #2563eb' : '1px solid var(--border-glass, #e2e8f0)',
+              borderRadius: '16px',
+              padding: '20px',
+              cursor: 'pointer',
+              background: theme === 'classic' ? 'rgba(37, 99, 235, 0.04)' : 'rgba(255, 255, 255, 0.1)',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              boxShadow: theme === 'classic' ? '0 10px 25px -5px rgba(37, 99, 235, 0.15)' : 'var(--shadow-premium)',
+              position: 'relative',
+              overflow: 'hidden'
+            }}
+          >
+            {theme === 'classic' && (
+              <div style={{
+                position: 'absolute',
+                top: 12,
+                right: 12,
+                width: 8,
+                height: 8,
+                borderRadius: '50%',
+                background: '#2563eb',
+                boxShadow: '0 0 10px #2563eb'
+              }} />
+            )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+              <div style={{
+                padding: '8px',
+                borderRadius: '8px',
+                background: '#2563eb',
+                color: '#fff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <LayoutOutlined style={{ fontSize: 18 }} />
+              </div>
+              <div>
+                <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)' }}>Classic / Minimalist</h4>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>INDIGO & SLATE</span>
+              </div>
+            </div>
+            <Paragraph style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>
+              Sleek, high-contrast, flat layout featuring clean borders, solid white workspace panels, and corporate DM Sans typography.
+            </Paragraph>
+          </div>
+
+        </div>
+      </Card>
 
       {/* SECURITY PROFILE CARD */}
       <Card title={<Space><SafetyCertificateOutlined /><span>User Session & Role Authorization</span></Space>}>

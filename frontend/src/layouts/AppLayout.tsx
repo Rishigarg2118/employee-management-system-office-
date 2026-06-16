@@ -24,6 +24,7 @@ import {
 } from '@ant-design/icons';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import api, { API_URL } from '../services/api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { GlobalSearch } from '../components/GlobalSearch';
@@ -33,6 +34,8 @@ const { Header, Sider, Content } = Layout;
 export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [collapsed, setCollapsed] = useState(false);
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
+  const isClassic = theme === 'classic';
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -250,7 +253,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
         display: 'flex',
         alignItems: 'center',
         padding: '0 24px',
-        borderBottom: '1px solid var(--border-glass)',
+        borderBottom: isClassic ? '1px solid var(--border)' : '1px solid var(--border-glass)',
         gap: 12
       }}>
         <div style={{
@@ -272,7 +275,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
             fontWeight: 600,
             fontSize: 16,
             letterSpacing: '-0.02em',
-            color: '#FFFFFF',
+            color: isClassic ? 'var(--text-primary)' : '#FFFFFF',
             fontFamily: 'var(--font-head)'
           }}>
             Social Connect
@@ -281,7 +284,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
       </div>
       
       <Menu
-        theme="dark"
+        theme={isClassic ? 'light' : 'dark'}
         mode="inline"
         selectedKeys={[getActiveKey()]}
         onClick={({ key }) => {
@@ -302,7 +305,12 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
           placement="left"
           onClose={() => setMobileMenuVisible(false)}
           open={mobileMenuVisible}
-          bodyStyle={{ padding: 0, background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}
+          bodyStyle={{ 
+            padding: 0, 
+            background: isClassic ? '#ffffff' : 'rgba(15, 23, 42, 0.65)', 
+            backdropFilter: isClassic ? 'none' : 'blur(20px)', 
+            WebkitBackdropFilter: isClassic ? 'none' : 'blur(20px)' 
+          }}
           headerStyle={{ display: 'none' }}
           width={240}
         >
@@ -317,18 +325,18 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
           collapsible
           collapsed={collapsed}
           width={240}
-          theme="dark"
+          theme={isClassic ? 'light' : 'dark'}
           style={{
-            borderRight: '1px solid var(--border-glass)',
+            borderRight: isClassic ? '1px solid var(--border)' : '1px solid var(--border-glass)',
             position: 'fixed',
             left: 0,
             top: 0,
             bottom: 0,
             zIndex: 100,
             height: '100vh',
-            background: 'rgba(15, 23, 42, 0.65)',
-            backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)',
+            background: isClassic ? '#ffffff' : 'rgba(15, 23, 42, 0.65)',
+            backdropFilter: isClassic ? 'none' : 'blur(20px)',
+            WebkitBackdropFilter: isClassic ? 'none' : 'blur(20px)',
             overflowY: 'auto'
           }}
         >
@@ -344,10 +352,10 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
         {/* TOP HEADER */}
         <Header style={{
           padding: '0 24px',
-          background: 'var(--surface-glass)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          borderBottom: '1px solid var(--border-glass)',
+          background: isClassic ? '#ffffff' : 'var(--surface-glass)',
+          backdropFilter: isClassic ? 'none' : 'blur(20px)',
+          WebkitBackdropFilter: isClassic ? 'none' : 'blur(20px)',
+          borderBottom: isClassic ? '1px solid var(--border)' : '1px solid var(--border-glass)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -403,6 +411,22 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
               />
             </Badge>
 
+            {/* Theme Toggle Button */}
+            <Button
+              type="text"
+              icon={isClassic ? <BulbOutlined style={{ fontSize: 18 }} /> : <BulbOutlined style={{ fontSize: 18, color: '#f59e0b' }} />}
+              onClick={toggleTheme}
+              style={{ 
+                width: 36, 
+                height: 36, 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                transition: 'all 0.3s ease'
+              }}
+              title={isClassic ? "Switch to Modern Enterprise Theme" : "Switch to Classic/Minimalist Theme"}
+            />
+
             {/* User Dropdown */}
             <Dropdown menu={profileMenu} placement="bottomRight" trigger={['click']}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
@@ -412,10 +436,10 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
                   style={{ backgroundColor: 'var(--primary)' }}
                 />
                 <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left', lineHeight: 1.2 }}>
-                  <span style={{ fontSize: 13, fontWeight: 500, color: '#0F172A' }}>
+                  <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>
                     {userFullName}
                   </span>
-                  <span style={{ fontSize: 11, color: '#64748B' }}>
+                  <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
                     {user?.role}
                   </span>
                 </div>

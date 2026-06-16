@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ConfigProvider, Spin } from 'antd';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { AppLayout } from './layouts/AppLayout';
 import { AuthLayout } from './layouts/AuthLayout';
 
@@ -82,36 +83,41 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return <AuthLayout>{children}</AuthLayout>;
 };
 
-const App: React.FC = () => {
+const AppContent: React.FC = () => {
+  const { theme } = useTheme();
+  const isClassic = theme === 'classic';
+
   return (
     <ConfigProvider
       theme={{
         token: {
-          fontFamily: "'Plus Jakarta Sans', 'Outfit', sans-serif",
-          colorPrimary: '#ea580c', // Warm Orange/Coral
-          colorSuccess: '#059669', // Success green
-          colorWarning: '#d97706', // Warning gold
-          colorError: '#dc2626',   // Danger red
-          colorTextBase: '#0f172a', // Primary Slate-900 text
-          colorBgBase: 'rgba(255, 255, 255, 0.45)',   // Glass background base
-          colorBorder: 'rgba(0, 0, 0, 0.08)',   // Border glass
-          borderRadius: 12,         // Modern larger border radius
+          fontFamily: isClassic
+            ? "'DM Sans', 'Syne', sans-serif"
+            : "'Plus Jakarta Sans', 'Outfit', sans-serif",
+          colorPrimary: isClassic ? '#2563eb' : '#ea580c', // Classic Indigo vs Modern Warm Orange
+          colorSuccess: isClassic ? '#10b981' : '#059669',
+          colorWarning: isClassic ? '#f59e0b' : '#d97706',
+          colorError: isClassic ? '#ef4444' : '#dc2626',
+          colorTextBase: isClassic ? '#1e293b' : '#0f172a',
+          colorBgBase: isClassic ? '#ffffff' : 'rgba(255, 255, 255, 0.45)',
+          colorBorder: isClassic ? '#e2e8f0' : 'rgba(0, 0, 0, 0.08)',
+          borderRadius: isClassic ? 8 : 12,
           wireframe: false
         },
         components: {
           Table: {
-            headerBg: 'rgba(240, 235, 225, 0.8)',
-            headerColor: '#0f172a',
-            rowHoverBg: 'rgba(255, 255, 255, 0.02)',
+            headerBg: isClassic ? '#f8fafc' : 'rgba(240, 235, 225, 0.8)',
+            headerColor: isClassic ? '#1e293b' : '#0f172a',
+            rowHoverBg: isClassic ? '#f8fafc' : 'rgba(255, 255, 255, 0.02)',
             cellPaddingBlock: 14,
             cellPaddingInline: 16
           },
           Card: {
             headerBg: 'transparent',
-            colorBorderSecondary: 'rgba(0, 0, 0, 0.08)'
+            colorBorderSecondary: isClassic ? '#e2e8f0' : 'rgba(0, 0, 0, 0.08)'
           },
           Button: {
-            borderRadius: 12,
+            borderRadius: isClassic ? 8 : 12,
             controlHeight: 38
           },
           Menu: {
@@ -160,4 +166,13 @@ const App: React.FC = () => {
     </ConfigProvider>
   );
 };
+
+const App: React.FC = () => {
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
+  );
+};
+
 export default App;

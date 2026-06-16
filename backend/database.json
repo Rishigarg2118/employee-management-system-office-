@@ -4817,6 +4817,66 @@
       "old_value": null,
       "new_value": "{\"employee_id\":\"EMP-030\",\"first_name\":\"Multipart\",\"last_name\":\"Test\",\"email\":\"multi.test11@enterprise.io\",\"designation\":\"Software Intern\",\"joining_date\":\"2026-06-04\",\"role\":\"Employee\",\"status\":\"Active\",\"department_id\":\"1\",\"skills\":\"[{\\\"skill_id\\\":1,\\\"proficiency_level\\\":\\\"Intermediate\\\"}]\"}",
       "created_at": "2026-06-06T06:44:41.941Z"
+    },
+    {
+      "id": 26,
+      "actor_id": null,
+      "actor_name": "System",
+      "action": "User Login",
+      "module": "AUTH",
+      "old_value": null,
+      "new_value": "{\"email\":\"admin@enterprise.io\",\"password\":\"******\"}",
+      "created_at": "2026-06-16T17:38:01.427Z"
+    },
+    {
+      "id": 27,
+      "actor_id": null,
+      "actor_name": "System",
+      "action": "Created auth",
+      "module": "AUTH",
+      "old_value": null,
+      "new_value": "{\"refreshToken\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTE4LCJlbWFpbCI6ImFkbWluQGVudGVycHJpc2UuaW8iLCJyb2xlIjoiQWRtaW4iLCJpYXQiOjE3ODE2MzE0ODEsImV4cCI6MTc4MjIzNjI4MX0.aXs25cAplEjvm91IWdE-H7QlzbyVddv8jd7JLHUNEfs\"}",
+      "created_at": "2026-06-16T17:45:53.184Z"
+    },
+    {
+      "id": 28,
+      "actor_id": null,
+      "actor_name": "System",
+      "action": "User Login",
+      "module": "AUTH",
+      "old_value": null,
+      "new_value": "{\"email\":\"admin@enterprise.io\",\"password\":\"******\"}",
+      "created_at": "2026-06-16T17:54:56.265Z"
+    },
+    {
+      "id": 29,
+      "actor_id": null,
+      "actor_name": "System",
+      "action": "User Login",
+      "module": "AUTH",
+      "old_value": null,
+      "new_value": "{\"email\":\"admin@enterprise.io\",\"password\":\"******\"}",
+      "created_at": "2026-06-16T17:56:14.405Z"
     }
-  ]
+  ],
+  "active_sessions": [
+    {
+      "employee_id": 118,
+      "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTE4LCJlbWFpbCI6ImFkbWluQGVudGVycHJpc2UuaW8iLCJyb2xlIjoiQWRtaW4iLCJpYXQiOjE3ODE2MzI0OTYsImV4cCI6MTc4MjIzNzI5Nn0.dBH8og501uuns8vzCYkMrdDD0Tiln30nCS2ToZSrJ2Q",
+      "expires_at": "2026-06-23T17:54:56.260Z",
+      "created_at": "2026-06-16T17:54:56.260Z"
+    },
+    {
+      "employee_id": 118,
+      "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTE4LCJlbWFpbCI6ImFkbWluQGVudGVycHJpc2UuaW8iLCJyb2xlIjoiQWRtaW4iLCJpYXQiOjE3ODE2MzI1NzQsImV4cCI6MTc4MjIzNzM3NH0.CqjxU4ZigAssB-1mZKHBj0Bfk-OIJPAkdmdlDkGDgUg",
+      "expires_at": "2026-06-23T17:56:14.399Z",
+      "created_at": "2026-06-16T17:56:14.399Z"
+    }
+  ],
+  "assets": [],
+  "asset_assignments": [],
+  "agent_devices": [],
+  "productivity_classifications": [],
+  "activity_heartbeats": [],
+  "asset_history": []
 }
