@@ -87,38 +87,38 @@ const App: React.FC = () => {
     <ConfigProvider
       theme={{
         token: {
-          fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-          colorPrimary: '#10B981', // Emerald accent
-          colorSuccess: '#22C55E', // Success green
-          colorWarning: '#F59E0B', // Warning gold
-          colorError: '#EF4444',   // Danger red
-          colorTextBase: '#0F172A', // Primary Slate-900 text
-          colorBgBase: '#FFFFFF',   // Card background
-          colorBorder: '#E2E8F0',   // Border slate-200
+          fontFamily: "'Plus Jakarta Sans', 'Outfit', sans-serif",
+          colorPrimary: '#ea580c', // Warm Orange/Coral
+          colorSuccess: '#059669', // Success green
+          colorWarning: '#d97706', // Warning gold
+          colorError: '#dc2626',   // Danger red
+          colorTextBase: '#0f172a', // Primary Slate-900 text
+          colorBgBase: 'rgba(255, 255, 255, 0.45)',   // Glass background base
+          colorBorder: 'rgba(0, 0, 0, 0.08)',   // Border glass
           borderRadius: 12,         // Modern larger border radius
           wireframe: false
         },
         components: {
           Table: {
-            headerBg: '#F8FAFC',
-            headerColor: '#64748B',
-            rowHoverBg: '#F8FAFC',
+            headerBg: 'rgba(240, 235, 225, 0.8)',
+            headerColor: '#0f172a',
+            rowHoverBg: 'rgba(255, 255, 255, 0.02)',
             cellPaddingBlock: 14,
             cellPaddingInline: 16
           },
           Card: {
-            headerBg: '#FFFFFF',
-            colorBorderSecondary: '#E2E8F0'
+            headerBg: 'transparent',
+            colorBorderSecondary: 'rgba(0, 0, 0, 0.08)'
           },
           Button: {
-            borderRadius: 8,
+            borderRadius: 12,
             controlHeight: 38
           },
           Menu: {
-            darkItemBg: '#0F172A',
+            darkItemBg: 'transparent',
             darkItemColor: '#94A3B8',
-            darkItemSelectedBg: 'rgba(16, 185, 129, 0.15)',
-            darkItemSelectedColor: '#10B981',
+            darkItemSelectedBg: 'rgba(234, 88, 12, 0.15)',
+            darkItemSelectedColor: '#ea580c',
             darkItemHoverBg: 'rgba(255, 255, 255, 0.05)',
             darkItemHoverColor: '#FFFFFF'
           }

@@ -250,14 +250,14 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
         display: 'flex',
         alignItems: 'center',
         padding: '0 24px',
-        borderBottom: '1px solid #1E293B',
+        borderBottom: '1px solid var(--border-glass)',
         gap: 12
       }}>
         <div style={{
           width: 24,
           height: 24,
           borderRadius: 6,
-          background: '#10B981',
+          background: 'var(--primary)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -273,7 +273,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
             fontSize: 16,
             letterSpacing: '-0.02em',
             color: '#FFFFFF',
-            fontFamily: 'var(--font-sans)'
+            fontFamily: 'var(--font-head)'
           }}>
             Social Connect
           </span>
@@ -295,14 +295,14 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
   );
 
   return (
-    <Layout style={{ minHeight: '100vh', background: '#F8FAFC' }}>
+    <Layout style={{ minHeight: '100vh', background: 'transparent' }}>
       {/* MOBILE DRAWER SIDEBAR */}
       {isMobile ? (
         <Drawer
           placement="left"
           onClose={() => setMobileMenuVisible(false)}
           open={mobileMenuVisible}
-          bodyStyle={{ padding: 0, background: '#0F172A' }}
+          bodyStyle={{ padding: 0, background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}
           headerStyle={{ display: 'none' }}
           width={240}
         >
@@ -319,14 +319,16 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
           width={240}
           theme="dark"
           style={{
-            borderRight: '1px solid #1E293B',
+            borderRight: '1px solid var(--border-glass)',
             position: 'fixed',
             left: 0,
             top: 0,
             bottom: 0,
             zIndex: 100,
             height: '100vh',
-            background: '#0F172A',
+            background: 'rgba(15, 23, 42, 0.65)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
             overflowY: 'auto'
           }}
         >
@@ -337,13 +339,15 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
       <Layout style={{ 
         marginLeft: isMobile ? 0 : (collapsed ? 80 : 240), 
         transition: 'all 0.2s',
-        background: '#F8FAFC'
+        background: 'transparent'
       }}>
         {/* TOP HEADER */}
         <Header style={{
           padding: '0 24px',
-          background: '#FFFFFF',
-          borderBottom: '1px solid #E2E8F0',
+          background: 'var(--surface-glass)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          borderBottom: '1px solid var(--border-glass)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -379,8 +383,8 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
                     height: 36, 
                     display: 'flex', 
                     alignItems: 'center',
-                    background: '#10B981',
-                    borderColor: '#10B981',
+                    background: 'var(--primary)',
+                    borderColor: 'var(--primary)',
                     borderRadius: 6
                   }}
                 >
@@ -390,7 +394,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
             )}
 
             {/* Notifications */}
-            <Badge count={unreadCount} overflowCount={9} color="#10B981">
+            <Badge count={unreadCount} overflowCount={9} color="var(--primary)">
               <Button
                 type="text"
                 icon={<BellOutlined style={{ fontSize: 18 }} />}
@@ -405,7 +409,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
                 <Avatar 
                   src={avatarUrl} 
                   icon={!avatarUrl && <UserOutlined />} 
-                  style={{ backgroundColor: '#10B981' }}
+                  style={{ backgroundColor: 'var(--primary)' }}
                 />
                 <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left', lineHeight: 1.2 }}>
                   <span style={{ fontSize: 13, fontWeight: 500, color: '#0F172A' }}>
@@ -424,7 +428,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
         <Content 
           className="responsive-content-padding"
           style={{
-            background: '#F8FAFC',
+            background: 'transparent',
             minHeight: 'calc(100vh - 64px)'
           }}
         >
@@ -443,7 +447,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
               <Button 
                 type="link" 
                 onClick={() => markAllReadMutation.mutate()} 
-                style={{ padding: 0, fontSize: 13, color: '#10B981' }}
+                style={{ padding: 0, fontSize: 13, color: 'var(--primary)' }}
               >
                 Mark all as read
               </Button>
@@ -462,7 +466,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
             <List.Item
               style={{
                 padding: '12px 16px',
-                background: item.is_read ? 'transparent' : 'rgba(16, 185, 129, 0.04)',
+                background: item.is_read ? 'transparent' : 'rgba(234, 88, 12, 0.04)',
                 borderBottom: '1px solid #F1F5F9',
                 cursor: 'pointer'
               }}
@@ -478,7 +482,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
                     <Typography.Text strong={!item.is_read} style={{ fontSize: 14 }}>
                       {item.title}
                     </Typography.Text>
-                    {!item.is_read && <Badge status="processing" color="#10B981" />}
+                    {!item.is_read && <Badge status="processing" color="var(--primary)" />}
                   </div>
                 }
                 description={

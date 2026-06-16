@@ -76,18 +76,18 @@ export const Login: React.FC = () => {
 
   return (
     <div style={{
-      background: '#FFFFFF',
-      border: '1px solid var(--border-color)',
-      borderRadius: '8px',
-      padding: '32px'
+      background: 'transparent',
+      border: 'none',
+      padding: 0
     }}>
       <h2 style={{ 
+        fontFamily: 'var(--font-head)',
         fontSize: '24px', 
         fontWeight: 600, 
         textAlign: 'center', 
         marginBottom: '8px',
         letterSpacing: '-0.02em',
-        color: '#000000'
+        color: 'var(--text-primary)'
       }}>
         Welcome back
       </h2>
