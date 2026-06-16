@@ -17,9 +17,9 @@ export const StatCard: React.FC<StatCardProps> = ({ title, value, icon, trend, p
       case 'up':
         return (
           <span style={{ 
-            color: '#15803D', 
-            background: '#DCFCE7', 
-            border: '1px solid #DCFCE7',
+            color: 'var(--success)', 
+            background: 'var(--success-glow)', 
+            border: '1px solid rgba(16, 185, 129, 0.15)',
             padding: '2px 8px',
             borderRadius: '9999px',
             fontSize: '11px',
@@ -35,9 +35,9 @@ export const StatCard: React.FC<StatCardProps> = ({ title, value, icon, trend, p
       case 'down':
         return (
           <span style={{ 
-            color: '#B91C1C', 
-            background: '#FEE2E2', 
-            border: '1px solid #FEE2E2',
+            color: 'var(--danger)', 
+            background: 'var(--danger-glow)', 
+            border: '1px solid rgba(220, 38, 38, 0.15)',
             padding: '2px 8px',
             borderRadius: '9999px',
             fontSize: '11px',
@@ -54,9 +54,9 @@ export const StatCard: React.FC<StatCardProps> = ({ title, value, icon, trend, p
       default:
         return (
           <span style={{ 
-            color: '#64748B', 
-            background: '#F1F5F9', 
-            border: '1px solid #E2E8F0',
+            color: 'var(--text-muted)', 
+            background: 'var(--border-glass)', 
+            border: '1px solid var(--border-glass)',
             padding: '2px 8px',
             borderRadius: '9999px',
             fontSize: '11px',
@@ -79,7 +79,7 @@ export const StatCard: React.FC<StatCardProps> = ({ title, value, icon, trend, p
           <span style={{ 
             fontSize: '12px', 
             fontWeight: 600, 
-            color: '#64748B', 
+            color: 'var(--text-secondary)', 
             textTransform: 'uppercase',
             letterSpacing: '0.05em',
             marginBottom: '8px'
@@ -89,7 +89,7 @@ export const StatCard: React.FC<StatCardProps> = ({ title, value, icon, trend, p
           <span style={{ 
             fontSize: '32px', 
             fontWeight: 700, 
-            color: '#0F172A',
+            color: 'var(--text-primary)',
             letterSpacing: '-0.03em',
             lineHeight: 1.1,
             marginBottom: '12px'
@@ -98,7 +98,7 @@ export const StatCard: React.FC<StatCardProps> = ({ title, value, icon, trend, p
           </span>
           <Space size={8} style={{ display: 'flex', alignItems: 'center' }}>
             {getTrendElement()}
-            <span style={{ fontSize: '12px', color: '#64748B' }}>
+            <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
               {label}
             </span>
           </Space>
@@ -107,12 +107,12 @@ export const StatCard: React.FC<StatCardProps> = ({ title, value, icon, trend, p
           width: '40px', 
           height: '40px', 
           borderRadius: '8px', 
-          background: '#F1F5F9', 
-          border: '1px solid #E2E8F0',
+          background: 'var(--primary-glow)', 
+          border: '1px solid var(--border-glass)',
           display: 'flex', 
           alignItems: 'center', 
           justifyContent: 'center',
-          color: '#64748B',
+          color: 'var(--primary)',
           fontSize: '18px'
         }}>
           {icon}

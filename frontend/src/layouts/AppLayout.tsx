@@ -44,12 +44,21 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
   const queryClient = useQueryClient();
 
+  const [scrolled, setScrolled] = useState(false);
+
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 1024);
     };
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 10);
+    };
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('scroll', handleScroll);
+    };
   }, []);
 
   // Global Heartbeat and User Activity Monitoring
@@ -307,7 +316,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
           open={mobileMenuVisible}
           bodyStyle={{ 
             padding: 0, 
-            background: isClassic ? '#ffffff' : 'rgba(15, 23, 42, 0.95)', 
+            background: isClassic ? '#ffffff' : 'rgba(15, 23, 42, 0.72)', 
             backdropFilter: isClassic ? 'none' : 'blur(20px)', 
             WebkitBackdropFilter: isClassic ? 'none' : 'blur(20px)' 
           }}
@@ -334,7 +343,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
             bottom: 0,
             zIndex: 100,
             height: '100vh',
-            background: isClassic ? '#ffffff' : 'rgba(15, 23, 42, 0.95)',
+            background: isClassic ? '#ffffff' : 'rgba(15, 23, 42, 0.72)',
             backdropFilter: isClassic ? 'none' : 'blur(20px)',
             WebkitBackdropFilter: isClassic ? 'none' : 'blur(20px)',
             overflowY: 'auto'
@@ -356,13 +365,17 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
           backdropFilter: isClassic ? 'none' : 'blur(20px)',
           WebkitBackdropFilter: isClassic ? 'none' : 'blur(20px)',
           borderBottom: isClassic ? '1px solid var(--border)' : '1px solid var(--border-glass)',
+          boxShadow: scrolled 
+            ? (isClassic ? '0 4px 12px rgba(0, 0, 0, 0.05)' : '0 10px 30px -10px rgba(15, 23, 42, 0.08)') 
+            : 'none',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           position: 'sticky',
           top: 0,
           zIndex: 99,
-          height: 64
+          height: 64,
+          transition: 'box-shadow 0.3s ease'
         }}>
           <Space size={16}>
             <Button

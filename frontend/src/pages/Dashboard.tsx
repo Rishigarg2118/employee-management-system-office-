@@ -345,10 +345,10 @@ export const Dashboard: React.FC = () => {
       {/* SWITCHER HEADER SECTION */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
         <div>
-          <h1 style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.03em', color: '#0F172A', margin: 0 }}>
+          <h1 style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--text-primary)', margin: 0 }}>
             Workforce command dashboard
           </h1>
-          <p style={{ color: '#64748B', margin: '4px 0 0', fontSize: 13 }}>
+          <p style={{ color: 'var(--text-secondary)', margin: '4px 0 0', fontSize: 13 }}>
             {activeTab === 'command-center' 
               ? 'Real-time telemetry, device application focus tracks, productivity ratios, and dynamic alerts.' 
               : 'Aggregated organizational distributions, FTE ratios, hiring velocity, and corporate growth.'}
@@ -364,7 +364,7 @@ export const Dashboard: React.FC = () => {
             value={activeTab}
             onChange={(val) => setActiveTab(val as string)}
             size="large"
-            style={{ borderRadius: 8, background: '#F1F5F9', border: '1px solid #E2E8F0', padding: 3 }}
+            style={{ borderRadius: 8, background: 'var(--border-glass)', border: '1px solid var(--border-glass)', padding: 3 }}
           />
         )}
       </div>
@@ -374,11 +374,11 @@ export const Dashboard: React.FC = () => {
           {/* LIVE STATUS SUMMARY BADGES */}
           <Row gutter={[16, 16]}>
             {[
-              { label: 'MANAGED STAFF', value: liveStats.total, status: 'All', color: '#3B82F6', bg: '#EFF6FF' },
-              { label: 'ACTIVE / WORKING', value: liveStats.active, status: 'Active', color: '#10B981', bg: '#F0FDF4' },
-              { label: 'IDLE STAFF', value: liveStats.idle, status: 'Idle', color: '#EF4444', bg: '#FEF2F2' },
-              { label: 'ON BREAK', value: liveStats.break, status: 'Break', color: '#F59E0B', bg: '#FFFBEB' },
-              { label: 'OFFLINE', value: liveStats.offline, status: 'Offline', color: '#94A3B8', bg: '#F8FAFC' }
+              { label: 'MANAGED STAFF', value: liveStats.total, status: 'All', color: 'var(--primary)', bg: 'var(--primary-glow)' },
+              { label: 'ACTIVE / WORKING', value: liveStats.active, status: 'Active', color: 'var(--success)', bg: 'var(--success-glow)' },
+              { label: 'IDLE STAFF', value: liveStats.idle, status: 'Idle', color: 'var(--danger)', bg: 'var(--danger-glow)' },
+              { label: 'ON BREAK', value: liveStats.break, status: 'Break', color: 'var(--warning)', bg: 'var(--warning-glow)' },
+              { label: 'OFFLINE', value: liveStats.offline, status: 'Offline', color: 'var(--text-muted)', bg: 'var(--border-glass)' }
             ].map(item => (
               <Col xs={12} sm={12} md={4.8} key={item.label} style={{ flex: '1 1 20%' }}>
                 <Card 
@@ -386,15 +386,15 @@ export const Dashboard: React.FC = () => {
                   onClick={() => setStatusFilter(item.status)}
                   style={{ 
                     borderRadius: 12, 
-                    border: '1px solid #E2E8F0', 
+                    border: '1px solid var(--border-glass)', 
                     borderLeft: `4px solid ${item.color}`,
-                    background: statusFilter === item.status ? item.bg : '#FFFFFF',
+                    background: statusFilter === item.status ? item.bg : 'var(--surface-glass)',
                     transition: 'all 0.2s',
                     cursor: 'pointer'
                   }}
                   bodyStyle={{ padding: '16px 20px' }}
                 >
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B', letterSpacing: '0.05em' }}>{item.label}</div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>{item.label}</div>
                   <div style={{ fontSize: 28, fontWeight: 800, color: item.color, marginTop: 4 }}>{item.value}</div>
                 </Card>
               </Col>
@@ -402,11 +402,11 @@ export const Dashboard: React.FC = () => {
           </Row>
 
           {/* TELEMETRY SEARCH & FILTER BAR */}
-          <Card style={{ borderRadius: 12, border: '1px solid #E2E8F0', boxShadow: 'none' }} bodyStyle={{ padding: 16 }}>
+          <Card style={{ borderRadius: 12, border: '1px solid var(--border-glass)', background: 'var(--surface-glass)', boxShadow: 'none' }} bodyStyle={{ padding: 16 }}>
             <Row gutter={[12, 12]} align="middle">
               <Col xs={24} lg={8}>
                 <Input
-                  prefix={<SearchOutlined style={{ color: '#94A3B8' }} />}
+                  prefix={<SearchOutlined style={{ color: 'var(--text-muted)' }} />}
                   placeholder="Search staff name, app, website, machine name..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -448,15 +448,15 @@ export const Dashboard: React.FC = () => {
                 >
                   Productivity Rules
                 </Button>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#F8FAFC', padding: '4px 10px', borderRadius: 8, border: '1px solid #E2E8F0' }}>
-                  <Badge status={isLiveRefreshing ? 'processing' : 'default'} color={isLiveRefreshing ? '#10B981' : '#94A3B8'} />
-                  <span style={{ fontSize: 12, fontWeight: 500, color: '#475569' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--border-glass)', padding: '4px 10px', borderRadius: 8, border: '1px solid var(--border-glass)' }}>
+                  <Badge status={isLiveRefreshing ? 'processing' : 'default'} color={isLiveRefreshing ? 'var(--success)' : 'var(--text-muted)'} />
+                  <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-secondary)' }}>
                     {isLiveRefreshing ? 'Live Sync Active' : 'Polling Paused'}
                   </span>
                   <Button
                     type="text"
                     size="small"
-                    icon={isLiveRefreshing ? <PauseCircleOutlined style={{ color: '#EF4444' }} /> : <PlayCircleOutlined style={{ color: '#10B981' }} />}
+                    icon={isLiveRefreshing ? <PauseCircleOutlined style={{ color: 'var(--danger)' }} /> : <PlayCircleOutlined style={{ color: 'var(--success)' }} />}
                     onClick={() => setIsLiveRefreshing(!isLiveRefreshing)}
                     style={{ padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', width: 20, height: 20 }}
                   />
@@ -469,7 +469,6 @@ export const Dashboard: React.FC = () => {
               </Col>
             </Row>
           </Card>
-
           {/* MAIN MONITORING CONTENT: GRID */}
           <Row gutter={[16, 16]}>
             {/* Table list */}
@@ -477,12 +476,12 @@ export const Dashboard: React.FC = () => {
               <Card 
                 title={
                   <Space>
-                    <ThunderboltOutlined style={{ color: '#10B981' }} />
+                    <ThunderboltOutlined style={{ color: 'var(--success)' }} />
                     <span style={{ fontWeight: 700 }}>Real-time Telemetry Registry</span>
                     <Tag color="cyan" style={{ borderRadius: 4 }}>{filteredEmployeesList.length} Connected</Tag>
                   </Space>
                 }
-                style={{ borderRadius: 12, border: '1px solid #E2E8F0' }}
+                style={{ borderRadius: 12, border: '1px solid var(--border-glass)', background: 'var(--surface-glass)' }}
                 bodyStyle={{ padding: 0 }}
               >
                 <Table
@@ -499,12 +498,12 @@ export const Dashboard: React.FC = () => {
                         const name = `${record.first_name} ${record.last_name}`;
                         return (
                           <Space size={10} style={{ padding: '4px 0' }}>
-                            <Badge dot status={record.currentStatus === 'Offline' ? 'default' : 'processing'} color={STATUS_COLORS[record.currentStatus] || '#94A3B8'}>
-                              <Avatar src={record.avatar_url ? `${SERVER_URL}/${record.avatar_url}` : undefined} icon={<UserOutlined />} style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', color: '#10B981' }} />
+                            <Badge dot status={record.currentStatus === 'Offline' ? 'default' : 'processing'} color={STATUS_COLORS[record.currentStatus] || 'var(--text-muted)'}>
+                              <Avatar src={record.avatar_url ? `${SERVER_URL}/${record.avatar_url}` : undefined} icon={<UserOutlined />} style={{ backgroundColor: 'var(--success-glow)', color: 'var(--success)' }} />
                             </Badge>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                              <span style={{ fontWeight: 600, color: '#0F172A', fontSize: 13 }}>{name}</span>
-                              <span style={{ fontSize: 10, color: '#64748B', display: 'flex', gap: 4, alignItems: 'center' }}>
+                              <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: 13 }}>{name}</span>
+                              <span style={{ fontSize: 10, color: 'var(--text-secondary)', display: 'flex', gap: 4, alignItems: 'center' }}>
                                 <DesktopOutlined style={{ fontSize: 11 }} /> {record.todayStats?.machineName || 'Workstation'}
                               </span>
                             </div>
@@ -534,9 +533,8 @@ export const Dashboard: React.FC = () => {
                       ellipsis: true,
                       render: (_, record: any) => {
                         if (record.currentStatus === 'Offline') {
-                          return <span style={{ color: '#94A3B8', fontSize: 12 }}>— Offline —</span>;
+                          return <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>— Offline —</span>;
                         }
-                        // Prefer new enriched fields, fall back to activeWindow
                         const appLabel = record.appName || record.activeWindow || 'HRMS Dashboard';
                         const domain   = record.currentDomain || record.email?.split('@')[1] || '';
                         const focused  = record.isFocused !== false;
@@ -544,28 +542,27 @@ export const Dashboard: React.FC = () => {
                         return (
                           <div style={{ display: 'flex', flexDirection: 'column', maxWidth: 220 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                              {/* Focus indicator dot */}
                               <span
                                 title={focused ? 'Tab focused' : 'Tab not in focus'}
                                 style={{
                                   width: 7, height: 7, borderRadius: '50%',
-                                  background: focused ? '#10B981' : '#F59E0B',
+                                  background: focused ? 'var(--success)' : 'var(--warning)',
                                   flexShrink: 0,
-                                  boxShadow: focused ? '0 0 4px #10B981' : '0 0 4px #F59E0B'
+                                  boxShadow: focused ? '0 0 4px var(--success)' : '0 0 4px var(--warning)'
                                 }}
                               />
-                              <span style={{ fontWeight: 600, color: '#1E293B', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                 {appLabel}
                               </span>
                             </div>
                             <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 2 }}>
                               {domain && (
-                                <span style={{ fontSize: 10, color: '#10B981', display: 'flex', gap: 3, alignItems: 'center' }}>
+                                <span style={{ fontSize: 10, color: 'var(--success)', display: 'flex', gap: 3, alignItems: 'center' }}>
                                   <GlobalOutlined style={{ fontSize: 10 }} /> {domain}
                                 </span>
                               )}
                               {switches > 0 && (
-                                <span style={{ fontSize: 10, color: switches > 5 ? '#EF4444' : '#F59E0B', fontWeight: 600 }}>
+                                <span style={{ fontSize: 10, color: switches > 5 ? 'var(--danger)' : 'var(--warning)', fontWeight: 600 }}>
                                   {switches} tab {switches === 1 ? 'switch' : 'switches'}
                                 </span>
                               )}
@@ -574,14 +571,13 @@ export const Dashboard: React.FC = () => {
                         );
                       }
                     },
-
                     {
                       title: 'Department / Manager',
                       key: 'dept',
                       render: (_, record: any) => (
                         <div style={{ display: 'flex', flexDirection: 'column', fontSize: 11 }}>
-                          <span style={{ fontWeight: 500, color: '#334155' }}>{record.department}</span>
-                          <span style={{ color: '#64748B' }}>Mgr: {record.manager}</span>
+                          <span style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{record.department}</span>
+                          <span style={{ color: 'var(--text-secondary)' }}>Mgr: {record.manager}</span>
                         </div>
                       )
                     },
@@ -595,9 +591,9 @@ export const Dashboard: React.FC = () => {
                         const onBreak = ts.breakHours || 0;
                         return (
                           <div style={{ display: 'flex', gap: 6, fontSize: 11 }}>
-                            <span style={{ color: '#10B981', fontWeight: 600 }}>{working}h <span style={{ fontWeight: 400, color: '#94A3B8' }}>wrk</span></span>
-                            <span style={{ color: '#EF4444', fontWeight: 600 }}>{idle}h <span style={{ fontWeight: 400, color: '#94A3B8' }}>idl</span></span>
-                            <span style={{ color: '#F59E0B', fontWeight: 600 }}>{onBreak}h <span style={{ fontWeight: 400, color: '#94A3B8' }}>brk</span></span>
+                            <span style={{ color: 'var(--success)', fontWeight: 600 }}>{working}h <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>wrk</span></span>
+                            <span style={{ color: 'var(--danger)', fontWeight: 600 }}>{idle}h <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>idl</span></span>
+                            <span style={{ color: 'var(--warning)', fontWeight: 600 }}>{onBreak}h <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>brk</span></span>
                           </div>
                         );
                       }
@@ -608,9 +604,9 @@ export const Dashboard: React.FC = () => {
                       sorter: (a: any, b: any) => (a.todayStats?.productivityScore || 0) - (b.todayStats?.productivityScore || 0),
                       render: (_, record: any) => {
                         const score = record.todayStats?.productivityScore ?? 100;
-                        let strokeColor = '#10B981';
-                        if (score < 50) strokeColor = '#EF4444';
-                        else if (score < 80) strokeColor = '#F59E0B';
+                        let strokeColor = 'var(--success)';
+                        if (score < 50) strokeColor = 'var(--danger)';
+                        else if (score < 80) strokeColor = 'var(--warning)';
                         return (
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                             <Progress 
@@ -621,7 +617,7 @@ export const Dashboard: React.FC = () => {
                               strokeColor={strokeColor} 
                               format={() => ''}
                             />
-                            <span style={{ fontWeight: 700, color: '#334155', fontSize: 12 }}>{score}%</span>
+                            <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: 12 }}>{score}%</span>
                           </div>
                         );
                       }
@@ -654,12 +650,12 @@ export const Dashboard: React.FC = () => {
               <Card 
                 title={
                   <Space>
-                    <WarningOutlined style={{ color: '#EF4444' }} />
+                    <WarningOutlined style={{ color: 'var(--danger)' }} />
                     <span style={{ fontWeight: 700 }}>Telemetry Smart Alerts</span>
                   </Space>
                 }
-                extra={<Badge count={activeAlerts.length} color="#EF4444" />}
-                style={{ borderRadius: 12, border: '1px solid #E2E8F0' }}
+                extra={<Badge count={activeAlerts.length} color="var(--danger)" />}
+                style={{ borderRadius: 12, border: '1px solid var(--border-glass)', background: 'var(--surface-glass)' }}
                 bodyStyle={{ padding: 12, maxHeight: 220, overflowY: 'auto' }}
               >
                 {activeAlerts.length > 0 ? (
@@ -670,16 +666,16 @@ export const Dashboard: React.FC = () => {
                         style={{ 
                           padding: 10, 
                           borderRadius: 8, 
-                          border: '1px solid #F1F5F9',
-                          background: alert.severity === 'error' ? '#FEF2F2' : (alert.severity === 'warning' ? '#FFFBEB' : '#F0FDF4'),
-                          borderLeft: `3px solid ${alert.severity === 'error' ? '#EF4444' : (alert.severity === 'warning' ? '#F59E0B' : '#10B981')}`,
+                          border: '1px solid var(--border-glass)',
+                          background: alert.severity === 'error' ? 'var(--danger-glow)' : (alert.severity === 'warning' ? 'var(--warning-glow)' : 'var(--success-glow)'),
+                          borderLeft: `3px solid ${alert.severity === 'error' ? 'var(--danger)' : (alert.severity === 'warning' ? 'var(--warning)' : 'var(--success)')}`,
                           display: 'flex',
                           flexDirection: 'column',
                           gap: 4
                         }}
                       >
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                          <span style={{ fontWeight: 700, fontSize: 11, color: '#334155' }}>
+                          <span style={{ fontWeight: 700, fontSize: 11, color: 'var(--text-primary)' }}>
                             {alert.type.replace('_', ' ')}
                           </span>
                           <Button 
@@ -692,9 +688,9 @@ export const Dashboard: React.FC = () => {
                             Dismiss
                           </Button>
                         </div>
-                        <p style={{ margin: 0, fontSize: 11, color: '#475569' }}>{alert.message}</p>
+                        <p style={{ margin: 0, fontSize: 11, color: 'var(--text-secondary)' }}>{alert.message}</p>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 2 }}>
-                          <span style={{ fontSize: 9, color: '#94A3B8' }}>
+                          <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>
                             {new Date(alert.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                           </span>
                           <Button 
@@ -718,11 +714,11 @@ export const Dashboard: React.FC = () => {
               <Card 
                 title={
                   <Space>
-                    <SlidersOutlined style={{ color: '#3B82F6' }} />
+                    <SlidersOutlined style={{ color: 'var(--primary)' }} />
                     <span style={{ fontWeight: 700 }}>Department Analytics Heatmap</span>
                   </Space>
                 }
-                style={{ borderRadius: 12, border: '1px solid #E2E8F0' }}
+                style={{ borderRadius: 12, border: '1px solid var(--border-glass)', background: 'var(--surface-glass)' }}
                 bodyStyle={{ padding: 12 }}
               >
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -734,22 +730,22 @@ export const Dashboard: React.FC = () => {
                     else if (avgScore < 80) color = 'orange';
 
                     return (
-                      <div key={dName} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', border: '1px solid #F1F5F9', borderRadius: 8 }}>
+                      <div key={dName} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', border: '1px solid var(--border-glass)', borderRadius: 8 }}>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                          <span style={{ fontWeight: 600, fontSize: 12, color: '#1E293B' }}>{dName}</span>
-                          <span style={{ fontSize: 10, color: '#64748B' }}>{data.active} / {data.total} Active Staff</span>
+                          <span style={{ fontWeight: 600, fontSize: 12, color: 'var(--text-primary)' }}>{dName}</span>
+                          <span style={{ fontSize: 10, color: 'var(--text-secondary)' }}>{data.active} / {data.total} Active Staff</span>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <span style={{ fontSize: 12, fontWeight: 700, color: color === 'green' ? '#10B981' : (color === 'orange' ? '#F59E0B' : '#EF4444') }}>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: color === 'green' ? 'var(--success)' : (color === 'orange' ? 'var(--warning)' : 'var(--danger)') }}>
                             {avgScore}%
                           </span>
                           <Progress 
-                            type="circle" 
-                            percent={avgScore} 
-                            size={18} 
-                            strokeWidth={14} 
-                            strokeColor={color === 'green' ? '#10B981' : (color === 'orange' ? '#F59E0B' : '#EF4444')} 
-                            format={() => ''}
+                             type="circle" 
+                             percent={avgScore} 
+                             size={18} 
+                             strokeWidth={14} 
+                             strokeColor={color === 'green' ? 'var(--success)' : (color === 'orange' ? 'var(--warning)' : 'var(--danger)')} 
+                             format={() => ''}
                           />
                         </div>
                       </div>
@@ -762,16 +758,16 @@ export const Dashboard: React.FC = () => {
               <Card 
                 title={
                   <Space>
-                    <FireOutlined style={{ color: '#F59E0B' }} />
+                    <FireOutlined style={{ color: 'var(--warning)' }} />
                     <span style={{ fontWeight: 700 }}>Workforce Rankings</span>
                   </Space>
                 }
-                style={{ borderRadius: 12, border: '1px solid #E2E8F0' }}
+                style={{ borderRadius: 12, border: '1px solid var(--border-glass)', background: 'var(--surface-glass)' }}
                 bodyStyle={{ padding: 12 }}
               >
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   <div>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: '#10B981', marginBottom: 6, letterSpacing: '0.05em' }}>TOP PRODUCERS TODAY</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--success)', marginBottom: 6, letterSpacing: '0.05em' }}>TOP PRODUCERS TODAY</div>
                     <List
                       size="small"
                       dataSource={[...liveEmployees]
@@ -781,18 +777,18 @@ export const Dashboard: React.FC = () => {
                       renderItem={(item: any, idx) => (
                         <div style={{ display: 'flex', justifyItems: 'center', justifyContent: 'space-between', padding: '4px 0', fontSize: 12 }}>
                           <Space size={8}>
-                            <span style={{ fontWeight: 700, color: '#64748B', width: 12 }}>{idx + 1}.</span>
-                            <span style={{ fontWeight: 500, color: '#334155' }}>{item.first_name} {item.last_name}</span>
+                            <span style={{ fontWeight: 700, color: 'var(--text-muted)', width: 12 }}>{idx + 1}.</span>
+                            <span style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{item.first_name} {item.last_name}</span>
                           </Space>
-                          <span style={{ fontWeight: 700, color: '#10B981' }}>{item.todayStats?.productivityScore}%</span>
+                          <span style={{ fontWeight: 700, color: 'var(--success)' }}>{item.todayStats?.productivityScore}%</span>
                         </div>
                       )}
-                      locale={{ emptyText: <span style={{ fontSize: 10, color: '#94A3B8' }}>No metrics loaded today.</span> }}
+                      locale={{ emptyText: <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>No metrics loaded today.</span> }}
                     />
                   </div>
                   
                   <div>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: '#EF4444', marginBottom: 6, letterSpacing: '0.05em' }}>ATTENTION NEEDED</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--danger)', marginBottom: 6, letterSpacing: '0.05em' }}>ATTENTION NEEDED</div>
                     <List
                       size="small"
                       dataSource={[...liveEmployees]
@@ -802,13 +798,13 @@ export const Dashboard: React.FC = () => {
                       renderItem={(item: any, idx) => (
                         <div style={{ display: 'flex', justifyItems: 'center', justifyContent: 'space-between', padding: '4px 0', fontSize: 12 }}>
                           <Space size={8}>
-                            <span style={{ fontWeight: 700, color: '#64748B', width: 12 }}>{idx + 1}.</span>
-                            <span style={{ fontWeight: 500, color: '#334155' }}>{item.first_name} {item.last_name}</span>
+                            <span style={{ fontWeight: 700, color: 'var(--text-muted)', width: 12 }}>{idx + 1}.</span>
+                            <span style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{item.first_name} {item.last_name}</span>
                           </Space>
-                          <span style={{ fontWeight: 700, color: '#EF4444' }}>{item.todayStats?.productivityScore}%</span>
+                          <span style={{ fontWeight: 700, color: 'var(--danger)' }}>{item.todayStats?.productivityScore}%</span>
                         </div>
                       )}
-                      locale={{ emptyText: <span style={{ fontSize: 10, color: '#94A3B8' }}>No metrics loaded today.</span> }}
+                      locale={{ emptyText: <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>No metrics loaded today.</span> }}
                     />
                   </div>
                 </div>
