@@ -101,7 +101,6 @@ body::after {
   box-shadow: 0 0 10px var(--primary);
 }
 
-/* Custom scrollbar for fixed Sider to match design */
 .ant-layout-sider::-webkit-scrollbar {
   width: 4px;
 }
@@ -113,7 +112,6 @@ body::after {
   background: rgba(255, 255, 255, 0.4);
 }
 
-/* Container Box */
 .glass-container {
   background: var(--surface-glass);
   backdrop-filter: blur(20px);
@@ -124,7 +122,6 @@ body::after {
   transition: var(--transition-smooth);
 }
 
-/* Hover-Interactive Card */
 .glass-card {
   background: var(--surface-glass);
   backdrop-filter: blur(24px);
@@ -142,7 +139,6 @@ body::after {
   border-color: var(--border-glass-active);
 }
 
-/* Inputs styling */
 input, select, textarea {
   background: rgba(255, 255, 255, 0.85);
   border: 1px solid var(--border-glass);
@@ -163,7 +159,6 @@ input:focus, select:focus, textarea:focus {
   box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.15), 0 0 15px rgba(234, 88, 12, 0.1);
 }
 
-/* Link styling */
 a {
   color: var(--primary);
   text-decoration: none;
@@ -174,7 +169,6 @@ a:hover {
   color: var(--secondary);
 }
 
-/* Typography elements */
 h1, .page-title {
   font-family: var(--font-head);
   font-size: 32px !important;
@@ -215,7 +209,6 @@ h3, .card-title {
   color: var(--text-secondary) !important;
 }
 
-/* Animation utilities */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
@@ -226,11 +219,10 @@ h3, .card-title {
   to { transform: rotate(360deg); }
 }
 
-.animate-fade-in, .fade-in {
+.animate-fade-in {
   animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
-/* Buttons styling */
 button {
   cursor: pointer;
   font-family: var(--font-body);
@@ -258,8 +250,6 @@ button {
   box-shadow: 0 8px 25px rgba(139, 92, 246, 0.5), 0 0 15px var(--primary-glow);
 }
 
-
-/* Premium Glass Tables */
 .glass-table-container {
   overflow-x: auto;
   border-radius: 16px;
@@ -302,7 +292,6 @@ button {
   border-bottom: none;
 }
 
-/* Status Badges */
 .status-badge {
   padding: 6px 14px;
   border-radius: 30px;
@@ -313,6 +302,7 @@ button {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.05);
 }
 
 .status-badge::before {
@@ -323,7 +313,6 @@ button {
   display: inline-block;
 }
 
-/* Success State example */
 .status-badge.success, .status-badge-approved, .status-badge-active {
   background: rgba(16, 185, 129, 0.08) !important;
   color: var(--success) !important;
@@ -335,9 +324,9 @@ button {
 }
 
 .status-badge.danger, .status-badge-rejected, .status-badge-inactive {
-  background: rgba(220, 38, 38, 0.08) !important;
+  background: rgba(244, 63, 94, 0.08) !important;
   color: var(--danger) !important;
-  border: 1px solid rgba(220, 38, 38, 0.25) !important;
+  border: 1px solid rgba(244, 63, 94, 0.25) !important;
 }
 .status-badge.danger::before, .status-badge-rejected::before, .status-badge-inactive::before {
   background: var(--danger);
@@ -345,9 +334,9 @@ button {
 }
 
 .status-badge.warning, .status-badge-pending, .status-badge-leave {
-  background: rgba(217, 119, 6, 0.08) !important;
+  background: rgba(245, 158, 11, 0.08) !important;
   color: var(--warning) !important;
-  border: 1px solid rgba(217, 119, 6, 0.25) !important;
+  border: 1px solid rgba(245, 158, 11, 0.25) !important;
 }
 .status-badge.warning::before, .status-badge-pending::before, .status-badge-leave::before {
   background: var(--warning);
@@ -364,7 +353,6 @@ button {
   box-shadow: 0 0 8px #0284c7;
 }
 
-/* Sidebar Nav Links */
 .sidebar-link {
   display: flex;
   align-items: center;
@@ -395,11 +383,16 @@ button {
   box-shadow: 0 8px 20px -6px rgba(234, 88, 12, 0.35);
 }
 
-/* Form layouts */
 .form-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 20px;
+}
+
+.form-grid-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .form-group {
